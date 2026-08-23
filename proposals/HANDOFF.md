@@ -9,7 +9,8 @@
 ## 0. 한 문장 요약
 
 `C:\AI-Harness`(AI Harness 2.2)를 **GitHub에서 받아 어느 PC에서든 설치·사용할 수 있는 3계층 구조**로 재편하는 중이다.
-**M0~M7b 구현 완료.** 남은 것은 이 PC 에 실제로 적용할지에 대한 **사용자 결정 6건**(§7)과 M8 이후 항목이다.
+**M0~M7b 구현 완료.** 이 PC 적용도 대부분 끝났다(하네스 ACL 제한, 레지스트리 8건 확정,
+claude·agy 등록 드리프트 해소). 남은 것은 **사용자 결정 4건**(§7 의 2·6·7·8)과 M8 잔여 항목이다.
 
 ---
 
@@ -131,7 +132,7 @@ proposals/HARNESS_V3_PROPOSAL.md         설계 근거 (v1.1)
 ```
 runtimes.json : state=verified  installed=3.4.4  install_dir=google-workspace-mcp
                 (레거시 디렉터리명을 -Adopt 로 채택한 상태)
-clients.json  : 아직 없음 (Register 를 실행하지 않았으므로)
+clients.json  : agy / claude 2건 (tool_policy_enforceable 포함)
 
 Sync-HarnessClients.ps1 결과 (2026-08-23 적용 후):
   google-workspace x agy     ok
