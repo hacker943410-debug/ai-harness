@@ -1,6 +1,11 @@
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
-    [string]$ToolsRoot = $(if ($env:AI_HARNESS_TOOLS_ROOT) { $env:AI_HARNESS_TOOLS_ROOT } else { 'C:\AI-Tools' }),
+    [string]$ToolsRoot = $(
+        if ($env:AI_HARNESS_TOOLS_ROOT) { $env:AI_HARNESS_TOOLS_ROOT }
+        elseif ([Environment]::GetEnvironmentVariable('AI_HARNESS_TOOLS_ROOT','User')) { [Environment]::GetEnvironmentVariable('AI_HARNESS_TOOLS_ROOT','User') }
+        elseif ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'AI-Tools' }
+        else { 'C:\AI-Tools' }
+    ),
     [string]$Profile = 'default',
     [switch]$RegisterInstalledClients
 )

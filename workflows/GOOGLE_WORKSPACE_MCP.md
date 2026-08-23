@@ -8,14 +8,36 @@
 
 MCP를 지원하는 여러 AI 클라이언트가 동일한 로컬 Google Workspace 런타임과 OAuth profile을 재사용한다. 프로젝트마다 패키지와 OAuth 토큰을 다시 설치하지 않는다.
 
-## 표준 경로
+## 경로 해석
 
-- Runtime: `C:\AI-Tools\google-workspace-mcp`
-- MCP command: `C:\AI-Tools\google-workspace-mcp\google-workspace-mcp.cmd`
-- Generic config: `C:\AI-Tools\google-workspace-mcp\mcp-config.example.json`
-- OAuth profile: `%USERPROFILE%\.config\google-workspace-mcp\profiles\default`
+**절대경로를 문서에 고정하지 않는다.** 위치는 항상 resolver 로 해석한다.
 
-경로가 다른 PC에서는 `AI_HARNESS_TOOLS_ROOT` 또는 `AI_HARNESS_GOOGLE_MCP_COMMAND` 사용자 환경변수로 위치를 해석한다. 사용자가 매번 경로를 제공하지 않는다.
+```powershell
+& "<HARNESS_ROOT>\scripts\Resolve-GoogleWorkspaceMcp.ps1"
+```
+
+| 출력 | 의미 |
+|---|---|
+| `command` | 등록에 사용할 실행 경로 |
+| `tools_root_source` | 어느 후보로 해석됐는지 |
+| `auth_files_present` | 자격증명 파일 존재 여부 (**인증 여부가 아니다**) |
+| `authenticated` | 항상 `unknown`. 실제 판정은 read-only API 호출만 할 수 있다 |
+| `drift` | `legacy_tools_root` 등 |
+
+| exit | 의미 |
+|---|---|
+| 0 | 발견, drift 없음 |
+| 3 | 발견, 조치 필요 (레거시 경로 등) |
+| 4 | 없음 (오류가 아님) |
+| 1 | 스크립트 오류 |
+
+탐색 순서: `-ToolsRoot` → `AI_HARNESS_GOOGLE_MCP_COMMAND` → `AI_HARNESS_TOOLS_ROOT` → `%LOCALAPPDATA%\AI-Tools` → 레거시 `C:\AI-Tools`(drift 보고).
+
+**현재 PC 표준 위치**
+- Tools root: `%LOCALAPPDATA%\AI-Tools`
+- OAuth profile: `%USERPROFILE%\.config\google-workspace-mcp\profiles\<profile>` (tools root 밖. **이동해도 재인증 불필요**)
+
+> 공용 도구 루트를 `C:\` 바로 아래에 만들지 않는다. 그 위치는 `Authenticated Users: Modify` 를 상속받아 다른 로컬 사용자가 MCP 실행 파일을 교체할 수 있다. 실제로 이 하네스의 초기 구성이 그 상태였다.
 
 OAuth client secret과 refresh token은 Harness, 프로젝트, Git 저장소에 복사하지 않는다.
 
