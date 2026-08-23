@@ -1,4 +1,4 @@
-# AI Harness v3 마이그레이션 — 인수인계
+﻿# AI Harness v3 마이그레이션 — 인수인계
 
 작성: 2026-08-23
 용도: 세션이 끊긴 뒤 **다음 세션이 이 문서만 읽고 이어서 작업**할 수 있게 한다.
@@ -19,7 +19,7 @@
 |---|---|
 | 하네스 로컬 | `C:\AI-Harness` |
 | 원격 | `https://github.com/hacker943410-debug/ai-harness` (**Private**) |
-| 현재 HEAD | `87372cc` + 이 문서 갱신 커밋 |
+| 현재 HEAD | `48df5dd` + 이 문서 갱신 커밋 |
 | 기준점 태그 | `v2.2.0` = `9e142bf` (롤백 지점) |
 | 도구 루트 (Layer B) | `%LOCALAPPDATA%\AI-Tools` = `C:\Users\hacke\AppData\Local\AI-Tools` |
 | 레거시 도구 루트 | `C:\AI-Tools` (**아직 존재**, ACL은 제한 완료, 삭제 대기) |
@@ -193,6 +193,9 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 | 26 | claude 는 환경변수를 `Environment:` **다음 줄들에 들여쓰기로** 출력한다. 그 줄의 꼬리만 읽으면 항상 비어 보여 선언한 키가 전부 ADD 로 나오고, **올바르게 등록해도 드리프트가 사라지지 않는다** |
 | 27 | agy 의 `mcp list` 는 명령과 인자를 **한 칸에 붙여서** 준다(`...\x.cmd start`). 마지막 칸을 통째로 command 로 쓰면 영원히 CHANGE 다. 경로에 공백이 있을 수 있으므로 **"실제로 존재하는 가장 긴 접두사"** 를 명령으로 본다 |
 | 28 | upsert 가 아닌 클라이언트의 재등록은 remove -> add 다. **add 가 실패하면 고치려던 등록이 아예 없어진다.** 실제로 claude 에서 일어났다. 지금은 실패 시 이전 등록을 복원하고 `restored` / `restore_failed` 를 보고한다 |
+| 29 | **AGY 는 도구 단위 통제 수단이 없다** (2026-08-23 확인). `agy --help` 의 도구 관련 플래그는 `--dangerously-skip-permissions`(전부 자동 승인) 하나뿐, `mcp_config.json` 은 서버별 `command/args/env/disabled` 만, `antigravity-cli/settings.json` 에는 도구 정책 키가 없다(`trustedWorkspaces` 뿐). 통제 단위는 `agy mcp disable <name>` 뿐. **risk=high 런타임의 deny 목록이 AGY 에서는 강제되지 않는다** |
+| 30 | Drive `create_file` 은 **이름으로 형식을 추론한다**. `type` 을 안 주면 `.md` 가 Google Docs 로 변환되어 원본이 아니게 된다. 스냅샷은 항상 `type: "text"` 로 올린다. `parentPath` 는 필요한 폴더를 알아서 만든다 |
+| 31 | Drive 는 **한 폴더에 동명 파일을 허용한다.** update 실패 시 create 로 폴백하는 코드는 일시적 실패 한 번에 조용히 중복 파일을 만든다 |
 
 ---
 
@@ -216,15 +219,17 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
    (notion / apify / xcodebuildmcp / unity), `resolved_no_package` 2 (stripe / netdata).
    `publisher: "community"` 는 레지스트리 소유자와 절대 일치할 수 없다 — 카탈로그 데이터 결함
 5. 중복 claude.ai Google 커넥터 정리 (D11)
-6. Drive를 `/AI-Harness-snapshots/v3.0.0/` 스냅샷으로 강등 + `sync-harness-to-drive.mjs` 처리
-   (현재 삭제 패스 없음, 제외 목록 하드코딩, update 실패 시 create 폴백으로 동명 파일 생성).
-   **제외 목록은 매니페스트의 `never_sync` 를 읽어야 한다.** 검사기가 매니페스트 쪽은 강제하지만
-   `.mjs` 가 자체 목록을 쓰는 것까지는 아직 막지 않는다
+6. ~~Drive 스냅샷 강등~~ — **구현 완료** (`Publish-HarnessSnapshot.ps1` + `harness-drive-snapshot.mjs`).
+   **아직 한 번도 발행하지 않았다.** DryRun 은 통과: 76개 파일 / 약 1.6MB / never_sync 위반 0.
+   실제 발행은 외부로 올리는 일이라 확인 필요:
+   `.\scripts\Publish-HarnessSnapshot.ps1 -Label v3.0.0`
+   구 `sync-harness-to-drive.mjs` 는 Layer B(`AI-Tools\google-workspace-mcp\`)에 남아 있다.
+   **대체됐으므로 래퍼 `.cmd` 와 함께 지운다** (§M8-3b). 그 전까지는 쓰지 말 것
 7. `schemas/` 추가: runtime-manifest / runtime-index / client-descriptor / change-plan
    (계획 파일 스키마도 이제 대상이다)
 8. 레거시 `C:\AI-Tools` 삭제 (모든 CLI 재시작 후). 진단이 `manual` 단계로 제시하며 자동 삭제하지 않는다
 9. `POLICY_INDEX.compat.json` (기계가 읽는 계약은 YAML 금지 — PS 5.1에 파서 없음)
-10. AGY 도구 통제 메커니즘 검증 (§7-2)
+10. ~~AGY 도구 통제 메커니즘 검증~~ — **조사 완료. 수단이 없다**(§5-29). 남은 것은 조사가 아니라 결정(§7-7)
 11. (선택) `.claude-plugin/marketplace.json`
 
 ---
@@ -237,8 +242,10 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 | 2 | **Codex 등록** — 지금 미등록. orca 가 설정을 소유해 다시 지워질 수 있음(§5-10). risk=high 라 `-IAcceptRisk` 필요. argv 순서는 help 로만 확인했고 실제 등록은 안 해 봤다(§5-24) | 계획에 `선택` 단계로 들어 있음 (`-IncludeOptional` 필요) |
 | ~~3~~ | ~~하네스 저장소 ACL 제한~~ | **2026-08-23 적용 완료.** 저널 `install-20260823-085210Z.jsonl` 에 이전 SDDL |
 | ~~4~~ | ~~레지스트리 확정 8건 카탈로그 반영~~ | **2026-08-23 반영 완료** (`f775743`) |
-| 5 | **AGY 도구 통제 메커니즘** — 미검증. Gemini CLI 의 `excludeTools` 를 적용하면 안 됨(§5-16) | 조사 필요 |
+| ~~5~~ | ~~AGY 도구 통제 메커니즘 검증~~ | **2026-08-23 조사 완료. 수단 없음**(§5-29) |
 | 6 | 레거시 `C:\AI-Tools` 삭제 시점 | `manual` 단계로 제시됨. 자동 실행 안 함 |
+| 7 | **AGY 에 google-workspace 를 계속 둘 것인가** — AGY 는 도구 단위 차단이 불가능하고(§5-29), 이 PC 의 agy 는 `--dangerously-skip-permissions` 로 뜬다. 즉 `delete_email`(영구 삭제, 1회 1000건) 이 무방비로 자동 승인된다. 선택지: (a) 그대로 둔다 (b) `agy mcp disable google-workspace` 로 필요할 때만 켠다 (c) 등록을 뺀다 (d) AGY 전용 프로필을 만들어 서비스 범위를 줄인다 | 진단이 WARN 으로 매번 보고한다 |
+| 8 | **Drive 스냅샷 첫 발행** — 외부로 76개 파일을 올린다. DryRun 통과 | `-Label v3.0.0` 으로 즉시 가능 |
 
 ---
 
