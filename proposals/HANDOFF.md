@@ -19,7 +19,7 @@
 |---|---|
 | 하네스 로컬 | `C:\AI-Harness` |
 | 원격 | `https://github.com/hacker943410-debug/ai-harness` (**Private**) |
-| 현재 HEAD | `831e3e9` (working tree clean) |
+| 현재 HEAD | `87372cc` + 이 문서 갱신 커밋 |
 | 기준점 태그 | `v2.2.0` = `9e142bf` (롤백 지점) |
 | 도구 루트 (Layer B) | `%LOCALAPPDATA%\AI-Tools` = `C:\Users\hacke\AppData\Local\AI-Tools` |
 | 레거시 도구 루트 | `C:\AI-Tools` (**아직 존재**, ACL은 제한 완료, 삭제 대기) |
@@ -28,6 +28,10 @@
 ### 커밋 이력
 
 ```
+87372cc  fix: 등록 경로의 결함 4건 — 실제 적용 중 드러남
+390817e  docs: HANDOFF — ACL 제한과 레지스트리 8건 반영 완료 표시
+f775743  fix: ACL 조작을 DACL 전용으로, 카탈로그 서식 보존, 레지스트리 확정 8건 반영
+93e1b55  docs: HANDOFF 를 M7b 완료 상태로 갱신
 831e3e9  M7b(3/3): 카탈로그 통합, 레지스트리 해석기, 저장소 검사 확장, 수명주기 문서
 4359d6d  M7b(2/2): 클라이언트 정합 + 인증 연결/해제, 하네스 저장소 권한 결함 발견
 3e42f64  M7b(1/2): 통합 적용 스크립트 — 변경 계획 파일 + 3-way diff + 롤백 저널
@@ -129,28 +133,22 @@ runtimes.json : state=verified  installed=3.4.4  install_dir=google-workspace-mc
                 (레거시 디렉터리명을 -Adopt 로 채택한 상태)
 clients.json  : 아직 없음 (Register 를 실행하지 않았으므로)
 
-Sync-HarnessClients.ps1 결과 (2026-08-23):
-  google-workspace x agy     drift          command:CHANGE, args:ADD
-  google-workspace x claude  drift          command:CHANGE, args:ADD, env 3건 ADD
-  google-workspace x codex   unregistered
+Sync-HarnessClients.ps1 결과 (2026-08-23 적용 후):
+  google-workspace x agy     ok
+  google-workspace x claude  ok
+  google-workspace x codex   unregistered   (선택 단계, 미승인)
+
+Test-HarnessRuntime: transport_ok / tool_count=82 / auth_state=authorized / verified
+clients.json 원장 생성됨 (agy, claude 2건)
 ```
 
-**드리프트 1건 (미해결, 사용자 확인 대기):**
-매니페스트는 `services = drive,gmail,calendar,docs,sheets,slides` 인데
-`%LOCALAPPDATA%\AI-Tools\google-workspace-mcp\google-workspace-mcp.cmd` 래퍼는 `...,contacts` 를 설정한다.
-claude 와 agy 의 등록이 그 래퍼를 가리키므로 **실제로는 contacts 가 켜져 있다**.
+**§4 드리프트 — 2026-08-23 해소.**
+래퍼 `.cmd` 가 매니페스트에 없는 `contacts` 를 켜고 있었고 claude·agy 등록이 그것을 가리켰다.
+지금은 둘 다 `.bin` shim + 명시적 env 를 가리키며 도구 수가 82개(6종)로 확인됐다.
+**래퍼 파일 자체는 아직 남아 있다.** 아무도 가리키지 않지만 지우려면 §7-7 참고.
 
-M7b 에서 이 드리프트를 **자동으로 탐지하도록** 만들었다(3-way diff).
-`Sync-HarnessClients.ps1` 이 매번 잡아낸다. 적용 명령도 이미 생성된다:
-
-```powershell
-.\scripts\Sync-HarnessClients.ps1 -SavePlan .\sync.json
-.\scripts\Install-Harness.ps1 -Plan .\sync.json -DryRun
-.\scripts\Install-Harness.ps1 -Plan .\sync.json          # 살아있는 등록을 바꾼다 — 확인 필요
-```
-
-적용하면 등록이 래퍼 대신 `.bin` shim + 명시적 env 를 가리키게 되어 드리프트가 사라진다.
-**아직 적용하지 않았다.** 살아있는 CLI 등록을 바꾸는 일이고, 적용 시 claude/agy 재시작이 필요하다.
+적용은 순탄하지 않았다. 그 과정에서 등록 경로의 결함 4건이 드러났고(§5-24~27)
+`87372cc` 에서 고쳤다. **claude 등록이 한 번 사라졌다가 복구됐다.**
 
 **하네스 저장소 권한 (신규 발견, 2026-08-23 해결):**
 `C:\AI-Harness` 자체가 `Authenticated Users [Modify]` 를 허용하고 있었다.
@@ -190,6 +188,11 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 | 21 | 카탈로그 `registry_lookup` 53건 중 **34건은 `discovery_only` 이고 `publisher` 가 비어 있다.** 정책상 설치 불가 항목이므로 좌표 확정 대상이 아니다. 실제 대상은 19건 |
 | 22 | `tokens.json` 은 평면 Google OAuth 토큰 객체다 (`access_token` / `refresh_token` / `expiry_date` / `token_type` / `scope` / `created_at` / `refresh_token_expires_in`). `refresh_token` 을 `https://oauth2.googleapis.com/revoke` 로 취소하면 부여 전체가 취소된다 |
 | 23 | `[Environment]::UserInteractive` 로 비대화형을 감지할 수 있다. 대화형 확인을 받을 수 없는 세션에서 조용히 적용하는 것을 막는 데 쓴다 |
+| 24 | **claude 의 `-e` 는 commander 가변 인자(`<env...>`)다.** 뒤따르는 토큰을 계속 먹어서 `-e A=1 <이름> --` 순서면 이름까지 환경변수로 삼킨다(`Invalid environment variable format: google-workspace`). **`{server_name}` 이 `{env_flags}` 앞에 와야 하고 `--` 로 끊어야 한다.** codex 의 `--env <KEY=VALUE>` 는 값 1개만 받아 해당 없음(help 확인) |
+| 25 | **네이티브 명령의 stderr 를 `2>&1` 로 합치면 PS 5.1 은 각 줄을 ErrorRecord 로 감싼다.** 호출자의 `ErrorActionPreference='Stop'` 이면 그 자리에서 죽는다. "그런 서버 없다"는 조회의 정상 답인데 예외가 됐고, 그래서 **이미 등록된 경우에만 동작하는 등록 스크립트**였다. 네이티브 호출을 감싸는 함수에서 함수 스코프로 `Continue` 를 건다 |
+| 26 | claude 는 환경변수를 `Environment:` **다음 줄들에 들여쓰기로** 출력한다. 그 줄의 꼬리만 읽으면 항상 비어 보여 선언한 키가 전부 ADD 로 나오고, **올바르게 등록해도 드리프트가 사라지지 않는다** |
+| 27 | agy 의 `mcp list` 는 명령과 인자를 **한 칸에 붙여서** 준다(`...\x.cmd start`). 마지막 칸을 통째로 command 로 쓰면 영원히 CHANGE 다. 경로에 공백이 있을 수 있으므로 **"실제로 존재하는 가장 긴 접두사"** 를 명령으로 본다 |
+| 28 | upsert 가 아닌 클라이언트의 재등록은 remove -> add 다. **add 가 실패하면 고치려던 등록이 아예 없어진다.** 실제로 claude 에서 일어났다. 지금은 실패 시 이전 등록을 복원하고 `restored` / `restore_failed` 를 보고한다 |
 
 ---
 
@@ -202,10 +205,12 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 
 ### M8 이후 (우선순위 순)
 
-1. **§4 드리프트 적용** — `Sync-HarnessClients.ps1 -SavePlan` → `Install-Harness.ps1`.
-   등록이 래퍼 대신 `.bin` shim + 명시적 env 를 가리키게 된다. **살아있는 등록 변경 → 확인 필요**
+1. ~~§4 드리프트 적용~~ — 2026-08-23 완료. agy·claude 모두 `ok`
 2. ~~하네스 저장소 ACL 제한~~ — 2026-08-23 적용 완료
 3. ~~레지스트리 확정 8건 반영~~ — 2026-08-23 반영 완료. `registry_lookup` 53 → 45 건
+3b. **래퍼 `.cmd` 삭제** — `%LOCALAPPDATA%\AI-Tools\google-workspace-mcp\google-workspace-mcp.cmd`
+   (와 `google-workspace-auth.cmd`). 이제 아무도 가리키지 않지만, 사람이 직접 쓰던 것일 수 있어
+   자동 삭제하지 않는다. 지우기 전에 claude·agy 재시작 후 정합이 계속 `ok` 인지 확인할 것
 4. **해석 못한 11건 처리** — `not_found` 5(chrome-devtools, azure, azure-devops, searxng,
    markitdown, google-cloud, google-analytics, semgrep 중 일부), `publisher_mismatch` 4
    (notion / apify / xcodebuildmcp / unity), `resolved_no_package` 2 (stripe / netdata).
@@ -228,8 +233,8 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 
 | # | 내용 | 준비 상태 |
 |---|---|---|
-| 1 | **claude / agy 등록 드리프트 적용** — 등록이 래퍼를 가리켜 선언에 없는 `contacts` 가 켜져 있다. 재등록하면 해소. 적용 후 두 CLI 재시작 필요 | 계획·명령 준비 완료. 실행만 남음 |
-| 2 | **Codex 등록** — 지금 미등록. orca 가 설정을 소유해 다시 지워질 수 있음(§5-10). risk=high 라 `-IAcceptRisk` 필요 | 계획에 `선택` 단계로 들어 있음 (`-IncludeOptional` 필요) |
+| ~~1~~ | ~~claude / agy 등록 드리프트~~ | **2026-08-23 적용 완료.** 둘 다 `ok`. **claude·agy 재시작해야 새 등록으로 동작한다** |
+| 2 | **Codex 등록** — 지금 미등록. orca 가 설정을 소유해 다시 지워질 수 있음(§5-10). risk=high 라 `-IAcceptRisk` 필요. argv 순서는 help 로만 확인했고 실제 등록은 안 해 봤다(§5-24) | 계획에 `선택` 단계로 들어 있음 (`-IncludeOptional` 필요) |
 | ~~3~~ | ~~하네스 저장소 ACL 제한~~ | **2026-08-23 적용 완료.** 저널 `install-20260823-085210Z.jsonl` 에 이전 SDDL |
 | ~~4~~ | ~~레지스트리 확정 8건 카탈로그 반영~~ | **2026-08-23 반영 완료** (`f775743`) |
 | 5 | **AGY 도구 통제 메커니즘** — 미검증. Gemini CLI 의 `excludeTools` 를 적용하면 안 됨(§5-16) | 조사 필요 |
