@@ -173,7 +173,7 @@ foreach ($e in $targets) {
     $row = [ordered]@{
         id = $e.id; name = $e.name; publisher = $e.publisher; query = $query
         status = 'not_found'; registry_name = $null; version = $null
-        package_registry = $null; package = $null; transport = $null
+        package_registry = $null; package = $null; transport = $null; url = $null
         candidates = @(); note = ''
     }
 
@@ -236,20 +236,27 @@ foreach ($e in $targets) {
             $results.Add([pscustomobject]$row); continue
         }
         $lmeta = $latest._meta.'io.modelcontextprotocol.registry/official'
-        $lpkg = @($latest.server.packages) | Select-Object -First 1
+        # packages 배열이 있어도 identifier 가 비어 있을 수 있다. 존재가 아니라 값으로 판정한다.
+        $lpkg = @($latest.server.packages) | Where-Object { $_.identifier } | Select-Object -First 1
+        $lremote = @($latest.server.remotes) | Where-Object { $_.url } | Select-Object -First 1
         $row.registry_name = $latest.server.name
         $row.version = $latest.server.version
         $row.package = $(if ($lpkg) { $lpkg.identifier } else { $null })
         $row.package_registry = $(if ($lpkg) { $lpkg.registryType } else { $null })
-        $row.transport = $(if ($lpkg -and $lpkg.transport) { $lpkg.transport.type } else { $null })
+        $row.transport = $(if ($lpkg -and $lpkg.transport) { $lpkg.transport.type } elseif ($lremote) { $lremote.type } else { $null })
+        $row.url = $(if ($lremote) { [string]$lremote.url } else { $null })
         if ([string]$lmeta.status -ne 'active') {
             $row.status = 'not_active'
             $row.note = "정본의 상태가 active 가 아닙니다: $($lmeta.status)"
-        } elseif (-not $lpkg) {
-            $row.status = 'resolved_no_package'
-            $row.note = '레지스트리 항목에 설치 가능한 패키지가 없습니다(원격 서버이거나 소스 빌드).'
-        } else {
+        } elseif ($lpkg) {
             $row.status = 'resolved'
+        } elseif ($lremote) {
+            # 설치할 패키지가 없는 것이 결함이 아니다. 원격 서버는 원래 그렇다.
+            $row.status = 'resolved_remote'
+            $row.note = "원격 서버다. 설치하지 않고 URL 로 연결한다: $($lremote.url)"
+        } else {
+            $row.status = 'resolved_no_package'
+            $row.note = '레지스트리 항목에 설치 가능한 패키지도 원격 URL 도 없습니다(소스 빌드로 보인다).'
         }
     } elseif ($names.Count -gt 1) {
         $row.status = 'ambiguous'
@@ -289,8 +296,10 @@ foreach ($r in $results) {
 }
 Write-Output ''
 
-$resolved = @($results | Where-Object status -eq 'resolved')
-$unresolved = @($results | Where-Object status -ne 'resolved')
+# 카탈로그에 반영할 수 있는 것은 좌표가 확정된 것이다.
+# 패키지든 원격 URL 이든 "어디에 연결하는가"가 정해졌으면 확정이다.
+$resolved = @($results | Where-Object { $_.status -in @('resolved', 'resolved_remote') })
+$unresolved = @($results | Where-Object { $_.status -notin @('resolved', 'resolved_remote') })
 
 if ($SaveResolved) {
     Write-HarnessJson -Path $SaveResolved -Depth 10 -InputObject ([pscustomobject]@{
@@ -310,9 +319,13 @@ if ($SaveResolved) {
 
 if ($UpdateCatalog) {
     if ($resolved.Count -eq 0) { Write-Output '카탈로그에 반영할 확정 해석이 없습니다.'; exit 2 }
-    Write-Output "카탈로그에 반영할 항목 $($resolved.Count)건 (발행자 일치 + isLatest + active 만):"
+    Write-Output "카탈로그에 반영할 항목 $($resolved.Count)건 (발행자 일치 + 정본 active 만):"
     foreach ($r in $resolved) {
-        Write-Output ("  {0}  registry_lookup -> {1}  {2}@{3}" -f $r.id, $r.package_registry, $r.package, $r.version)
+        if ($r.status -eq 'resolved_remote') {
+            Write-Output ("  {0}  registry_lookup -> remote  {1}" -f $r.id, $r.url)
+        } else {
+            Write-Output ("  {0}  registry_lookup -> {1}  {2}@{3}" -f $r.id, $r.package_registry, $r.package, $r.version)
+        }
     }
     Write-Output ''
     Write-Output '카탈로그는 Layer A 다. 이 변경은 커밋되어 모든 PC 에 퍼진다.'
@@ -323,15 +336,23 @@ if ($UpdateCatalog) {
     }
     foreach ($r in $resolved) {
         $e = @($catalog.entries | Where-Object id -eq $r.id)[0]
-        $install = [ordered]@{
-            kind    = $(if ($r.package_registry -eq 'npm') { 'npm' } else { [string]$r.package_registry })
-            package = $r.package
-            version = $r.version
+        $install = [ordered]@{}
+        if ($r.status -eq 'resolved_remote') {
+            # 원격 서버는 설치하지 않는다. 버전은 레지스트리 항목의 버전일 뿐
+            # 설치 좌표가 아니므로 provenance 안에만 남긴다.
+            $install['kind'] = 'remote'
+            $install['url'] = $r.url
+            if ($r.transport) { $install['transport'] = $r.transport }
+        } else {
+            $install['kind'] = [string]$r.package_registry
+            $install['package'] = $r.package
+            $install['version'] = $r.version
         }
         # 없는 필드를 null 로 채우지 않는다. 카탈로그에 의미 없는 잡음이 쌓인다.
         if ($e.install.docs) { $install['docs'] = $e.install.docs }
         $install['registry'] = [ordered]@{
             name               = $r.registry_name
+            version            = $r.version
             base               = $RegistryBase
             resolved_at        = (Get-HarnessUtcStamp)
             publisher_verified = $true
