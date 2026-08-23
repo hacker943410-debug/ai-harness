@@ -279,3 +279,238 @@ function Expand-HarnessArgv {
     }
     return $out.ToArray()
 }
+
+# ---------------------------------------------------------------------------
+# 클라이언트 probe — 실제 상태를 읽는다
+# ---------------------------------------------------------------------------
+
+<#
+    등록 여부만 보는 probe 는 쓸모가 없다.
+    "등록돼 있다"와 "우리가 의도한 것이 등록돼 있다"는 다른 사건이고,
+    이 PC 에서 실제로 갈라진 적이 있다(래퍼 .cmd 가 매니페스트에 없는 서비스를 켬).
+    그래서 반드시 실제 command / args / env 를 읽어 온다.
+    읽을 수 없으면 OK 가 아니라 parseable=$false 다.
+#>
+function Invoke-HarnessClientCommand {
+    param(
+        [Parameter(Mandatory = $true)][string]$Exe,
+        [string[]]$Arguments = @()
+    )
+    $out = & $Exe @Arguments 2>&1
+    return [pscustomobject]@{ exit = $LASTEXITCODE; text = ($out | Out-String) }
+}
+
+function Read-HarnessClientRegistration {
+    param(
+        [Parameter(Mandatory = $true)]$Descriptor,
+        [Parameter(Mandatory = $true)][string]$ServerName
+    )
+    $exe = Get-HarnessNativeCommand $Descriptor.detect.command
+    $res = [ordered]@{
+        present = $false; command = $null; args = @()
+        env = [ordered]@{}; env_parseable = $false; parseable = $false
+    }
+    if (-not $exe) { return [pscustomobject]$res }
+
+    $sem = $Descriptor.probe_semantics
+    switch ($sem.parse.kind) {
+        'json_list' {
+            $r = Invoke-HarnessClientCommand -Exe $exe -Arguments @($sem.parse.list_argv)
+            if ($r.exit -ne 0) { return [pscustomobject]$res }
+            $list = $null
+            try { $list = $r.text | ConvertFrom-Json } catch { return [pscustomobject]$res }
+            $hit = @($list | Where-Object { $_.($sem.parse.name_field) -eq $ServerName })
+            if ($hit.Count -eq 0) { return [pscustomobject]$res }
+            $res.present = $true
+            $res.parseable = $true
+            $res.command = $hit[0].transport.command
+            $res.args = @($hit[0].transport.args)
+            if ($hit[0].transport.PSObject.Properties.Name -contains 'env' -and $hit[0].transport.env) {
+                foreach ($p in $hit[0].transport.env.PSObject.Properties) { $res.env[$p.Name] = [string]$p.Value }
+                $res.env_parseable = $true
+            }
+        }
+        'kv_text' {
+            $probeArgs = @($Descriptor.argv.probe) | ForEach-Object { $_.Replace('{server_name}', $ServerName) }
+            $r = Invoke-HarnessClientCommand -Exe $exe -Arguments $probeArgs
+            if ($r.exit -ne $sem.present_exit_code) { return [pscustomobject]$res }
+            $res.present = $true
+            foreach ($line in ($r.text -split "`r?`n")) {
+                if ($line -match ([regex]::Escape($sem.parse.command_key) + '\s*(.+)$')) {
+                    $res.command = $Matches[1].Trim(); $res.parseable = $true
+                } elseif ($line -match ([regex]::Escape($sem.parse.args_key) + '\s*(.*)$')) {
+                    $a = $Matches[1].Trim()
+                    if ($a) { $res.args = @($a -split '\s+') }
+                } elseif ($sem.parse.env_key -and $line -match ([regex]::Escape($sem.parse.env_key) + '\s*(.*)$')) {
+                    # 빈 값도 "환경변수가 없다"는 실제 답이다. 읽었다는 사실 자체를 기록한다.
+                    $res.env_parseable = $true
+                    foreach ($kv in (($Matches[1].Trim()) -split '[,\s]+')) {
+                        if ($kv -match '^([^=]+)=(.*)$') { $res.env[$Matches[1]] = $Matches[2] }
+                    }
+                }
+            }
+        }
+        'table_text' {
+            $r = Invoke-HarnessClientCommand -Exe $exe -Arguments @($Descriptor.argv.list)
+            foreach ($line in ($r.text -split "`r?`n")) {
+                if ($line -match "^\s*$([regex]::Escape($ServerName))\s+") {
+                    $res.present = $true
+                    $cols = $line -split '\s{2,}'
+                    if ($cols.Count -ge 2) { $res.command = $cols[-1].Trim(); $res.parseable = $true }
+                }
+            }
+        }
+        default { }
+    }
+    return [pscustomobject]$res
+}
+
+# ---------------------------------------------------------------------------
+# 3-way diff — 선언(Layer A) / 원장(Layer B) / 실제(클라이언트)
+# ---------------------------------------------------------------------------
+
+<#
+    세 출처가 모두 필요하다. 둘만 보면 원인을 못 짚는다.
+      선언 = runtimes/<id>.runtime.json    "무엇이어야 하는가"
+      원장 = <tools_root>/runtimes.json    "설치 시점에 무엇으로 확정됐는가"
+      실제 = 클라이언트 probe              "지금 무엇이 실행되는가"
+    선언 != 원장  -> 매니페스트가 설치 뒤에 바뀌었다. 재설치가 필요하다.
+    선언 != 실제  -> 등록이 낡았거나 제3자가 바꿨다. 재등록이 필요하다.
+    실제에만 있는 값 -> REMOVE. 우리가 선언하지 않은 것이 켜져 있다는 뜻이라 따로 확인받는다.
+#>
+function Get-HarnessRegistrationDiff {
+    param(
+        [Parameter(Mandatory = $true)][string]$HarnessRoot,
+        [Parameter(Mandatory = $true)][string]$ToolsRoot,
+        [Parameter(Mandatory = $true)][string]$RuntimeId,
+        [Parameter(Mandatory = $true)][string]$ClientId
+    )
+
+    $manifest = Get-HarnessRuntimeManifest -HarnessRoot $HarnessRoot -RuntimeId $RuntimeId
+    $descriptor = Get-HarnessClientDescriptor -HarnessRoot $HarnessRoot -ClientId $ClientId
+    $index = Read-HarnessRuntimeIndex -ToolsRoot $ToolsRoot
+    $entry = Get-HarnessIndexEntry -Index $index -RuntimeId $RuntimeId
+
+    $rows = [System.Collections.Generic.List[object]]::new()
+    $result = [ordered]@{
+        runtime_id = $RuntimeId; client_id = $ClientId
+        client_installed = [bool](Get-HarnessNativeCommand $descriptor.detect.command)
+        installed = [bool]$entry
+        actual_readable = $false
+        rows = @(); has_remove = $false; has_change = $false; ledger_drift = @()
+    }
+    if (-not $result.client_installed) { $result.rows = @(); return [pscustomobject]$result }
+
+    # --- 선언 ---------------------------------------------------------------
+    $params = Get-HarnessRuntimeParameters -Manifest $manifest
+    $runtimeDir = if ($entry) { Join-HarnessPath $ToolsRoot $entry.install_dir } else { Join-HarnessPath $ToolsRoot $RuntimeId $manifest.install.version }
+    $ctx = New-HarnessInterpolationContext -ToolsRoot $ToolsRoot -RuntimeDir $runtimeDir -Parameters $params
+    $declEnv = Resolve-HarnessServerEnv -Manifest $manifest -Context $ctx
+    $declArgs = @($manifest.server.args)
+    $declCommand = if ($entry) { Join-HarnessPath $ToolsRoot $entry.command_rel } else { $null }
+
+    # --- 원장 ---------------------------------------------------------------
+    $recCommand = if ($entry) { Join-HarnessPath $ToolsRoot $entry.command_rel } else { $null }
+    $recArgs = if ($entry) { @($entry.args) } else { @() }
+    $recEnv = [ordered]@{}
+    if ($entry -and $entry.env) { foreach ($p in $entry.env.PSObject.Properties) { $recEnv[$p.Name] = [string]$p.Value } }
+    if ($entry -and $entry.installed_version -ne $manifest.install.version) {
+        $result.ledger_drift += "installed_version=$($entry.installed_version) / 선언=$($manifest.install.version)"
+    }
+    foreach ($k in $declEnv.Keys) {
+        if ($recEnv.Contains($k) -and $recEnv[$k] -ne $declEnv[$k]) {
+            $result.ledger_drift += "env.$k 원장='$($recEnv[$k])' / 선언='$($declEnv[$k])'"
+        }
+    }
+
+    # --- 실제 ---------------------------------------------------------------
+    $actual = Read-HarnessClientRegistration -Descriptor $descriptor -ServerName $manifest.server_name
+    $result.actual_readable = [bool]$actual.parseable
+
+    # 표시는 있는 그대로, 판정은 정규화한 값으로 한다.
+    # 둘을 섞으면 "왜 다른지" 를 사람이 못 읽거나(정규화된 값만 보임),
+    # 대소문자 차이만으로 영구 CHANGE 가 난다(원본만 비교함).
+    function New-DiffRow {
+        param([string]$Field, $Declared, $Recorded, $Actual, [bool]$ActualKnown, $DeclaredKey, $ActualKey)
+        $d = if ($null -eq $Declared) { $null } else { [string]$Declared }
+        $a = if ($null -eq $Actual) { $null } else { [string]$Actual }
+        $dk = if ($null -ne $DeclaredKey) { [string]$DeclaredKey } else { $d }
+        $ak = if ($null -ne $ActualKey) { [string]$ActualKey } else { $a }
+        $verdict =
+            if (-not $ActualKnown) { 'UNKNOWN' }
+            elseif ([string]::IsNullOrEmpty($dk) -and -not [string]::IsNullOrEmpty($ak)) { 'REMOVE' }
+            elseif (-not [string]::IsNullOrEmpty($dk) -and [string]::IsNullOrEmpty($ak)) { 'ADD' }
+            elseif ($dk -eq $ak) { 'SAME' }
+            else { 'CHANGE' }
+        return [pscustomobject]@{
+            field = $Field; declared = $d
+            recorded = $(if ($null -eq $Recorded) { $null } else { [string]$Recorded })
+            actual = $a; verdict = $verdict
+        }
+    }
+
+    # 경로 비교는 대소문자·구분자 차이를 흡수해야 한다. 그렇지 않으면 영구 CHANGE 가 된다.
+    $normDecl = if ($declCommand) { ([IO.Path]::GetFullPath($declCommand)).ToLowerInvariant() } else { $null }
+    $normAct = $null
+    if ($actual.command) {
+        try { $normAct = ([IO.Path]::GetFullPath($actual.command)).ToLowerInvariant() } catch { $normAct = $actual.command.ToLowerInvariant() }
+    }
+    $rows.Add((New-DiffRow -Field 'command' -Declared $declCommand -Recorded $recCommand -Actual $actual.command `
+        -ActualKnown $actual.parseable -DeclaredKey $normDecl -ActualKey $normAct))
+    $rows.Add((New-DiffRow -Field 'args' -Declared ($declArgs -join ' ') -Recorded ($recArgs -join ' ') -Actual (@($actual.args) -join ' ') -ActualKnown $actual.parseable))
+
+    $envKeys = @($declEnv.Keys) + @($actual.env.Keys) | Select-Object -Unique
+    foreach ($k in $envKeys) {
+        $dv = if ($declEnv.Contains($k)) { $declEnv[$k] } else { $null }
+        $rv = if ($recEnv.Contains($k)) { $recEnv[$k] } else { $null }
+        $av = if ($actual.env.Contains($k)) { $actual.env[$k] } else { $null }
+        $rows.Add((New-DiffRow -Field "env.$k" -Declared $dv -Recorded $rv -Actual $av -ActualKnown $actual.env_parseable))
+    }
+
+    $result.rows = @($rows)
+    $result.has_remove = @($rows | Where-Object verdict -eq 'REMOVE').Count -gt 0
+    $result.has_change = @($rows | Where-Object { $_.verdict -in @('ADD', 'CHANGE', 'REMOVE') }).Count -gt 0
+    return [pscustomobject]$result
+}
+
+# ---------------------------------------------------------------------------
+# 실행 중인 클라이언트 세션
+# ---------------------------------------------------------------------------
+
+<#
+    살아있는 CLI 세션이 있는 동안 등록을 바꾸면, 그 세션은 옛 등록으로 계속 돈다.
+    "적용했다"와 "적용됐다"가 갈라지는 전형적인 지점이다.
+    프로세스 이름만으로는 못 잡는다. claude / codex 는 node.exe 로 뜨기 때문에
+    CommandLine 을 봐야 한다. 디스크립터가 process_match 를 주면 그것을 쓴다.
+#>
+function Get-HarnessRunningClientProcess {
+    param(
+        [Parameter(Mandatory = $true)][string]$HarnessRoot,
+        [string[]]$ClientIds
+    )
+    if (-not $ClientIds) { $ClientIds = Get-HarnessClientIds -HarnessRoot $HarnessRoot }
+    $procs = @()
+    try { $procs = @(Get-CimInstance Win32_Process -ErrorAction Stop | Select-Object ProcessId, Name, CommandLine) }
+    catch { return @() }
+
+    $hits = [System.Collections.Generic.List[object]]::new()
+    foreach ($cid in $ClientIds) {
+        $d = $null
+        try { $d = Get-HarnessClientDescriptor -HarnessRoot $HarnessRoot -ClientId $cid } catch { continue }
+        $pattern = if ($d.detect.PSObject.Properties.Name -contains 'process_match' -and $d.detect.process_match) {
+            [string]$d.detect.process_match
+        } else {
+            '[\\/]' + [regex]::Escape($d.detect.command) + '(\.exe|\.cmd|\.js|\.ps1)?("|\s|$)'
+        }
+        foreach ($p in $procs) {
+            if (-not $p.CommandLine) { continue }
+            if ($p.CommandLine -match $pattern) {
+                $hits.Add([pscustomobject]@{
+                    client = $cid; pid_ = $p.ProcessId; name = $p.Name
+                    command_line = $p.CommandLine.Substring(0, [Math]::Min(160, $p.CommandLine.Length))
+                })
+            }
+        }
+    }
+    return @($hits)
+}

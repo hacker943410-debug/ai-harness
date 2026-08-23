@@ -59,59 +59,9 @@ if ($manifest.risk -eq 'high' -and -not $IAcceptRisk -and -not $Force) {
     }
 }
 
-function Invoke-ClientCommand {
-    param([string]$Exe, [string[]]$Args)
-    # $Exe 는 반드시 Get-HarnessNativeCommand 로 해석된 .cmd/.exe 여야 한다.
-    # claude/codex 는 PATH 에서 .ps1 로 먼저 잡히고, .ps1 은 ExecutionPolicy 에 걸린다.
-    $out = & $Exe @Args 2>&1
-    return [pscustomobject]@{ exit = $LASTEXITCODE; text = ($out | Out-String) }
-}
-
-function Read-Registration {
-    param($Descriptor, [string]$ServerName)
-    # 반환: @{ present; command; args; parseable }
-    $exe = Get-HarnessNativeCommand $Descriptor.detect.command
-    $sem = $Descriptor.probe_semantics
-    $res = [ordered]@{ present = $false; command = $null; args = @(); parseable = $false }
-
-    switch ($sem.parse.kind) {
-        'json_list' {
-            $r = Invoke-ClientCommand -Exe $exe -Args @($sem.parse.list_argv)
-            if ($r.exit -ne 0) { return [pscustomobject]$res }
-            try { $list = $r.text | ConvertFrom-Json } catch { return [pscustomobject]$res }
-            $hit = @($list | Where-Object { $_.($sem.parse.name_field) -eq $ServerName })
-            if ($hit.Count -eq 0) { return [pscustomobject]$res }
-            $res.present = $true
-            $res.parseable = $true
-            $res.command = $hit[0].transport.command
-            $res.args = @($hit[0].transport.args)
-        }
-        'kv_text' {
-            $r = Invoke-ClientCommand -Exe $exe -Args (@($Descriptor.argv.probe) | ForEach-Object { $_.Replace('{server_name}', $ServerName) })
-            if ($r.exit -ne $sem.present_exit_code) { return [pscustomobject]$res }
-            $res.present = $true
-            foreach ($line in ($r.text -split "`r?`n")) {
-                if ($line -match [regex]::Escape($sem.parse.command_key) + '\s*(.+)$') { $res.command = $Matches[1].Trim(); $res.parseable = $true }
-                elseif ($line -match [regex]::Escape($sem.parse.args_key) + '\s*(.*)$') {
-                    $a = $Matches[1].Trim()
-                    if ($a) { $res.args = @($a -split '\s+') }
-                }
-            }
-        }
-        'table_text' {
-            $r = Invoke-ClientCommand -Exe $exe -Args @($Descriptor.argv.list)
-            foreach ($line in ($r.text -split "`r?`n")) {
-                if ($line -match "^\s*$([regex]::Escape($ServerName))\s+") {
-                    $res.present = $true
-                    $cols = $line -split '\s{2,}'
-                    if ($cols.Count -ge 2) { $res.command = $cols[-1].Trim(); $res.parseable = $true }
-                }
-            }
-        }
-        default { }
-    }
-    return [pscustomobject]$res
-}
+# probe / 실행 헬퍼는 _Harness.Runtime.ps1 에 있다.
+# Install-Harness.ps1 의 3-way diff 와 같은 구현을 써야 한다.
+# 두 벌로 두면 "적용 전에 본 상태"와 "적용 후에 확인한 상태"의 판정 기준이 갈라진다.
 
 function Register-One {
     param([string]$ClientId)
@@ -134,7 +84,7 @@ function Register-One {
     $scope = if ($Scope) { $Scope } elseif ($d.supports.default_scope) { $d.supports.default_scope } else { '' }
     $values = @{ server_name = $manifest.server_name; command = $command; scope = $scope }
 
-    $before = Read-Registration -Descriptor $d -ServerName $manifest.server_name
+    $before = Read-HarnessClientRegistration -Descriptor $d -ServerName $manifest.server_name
     $actualFp = $null
     if ($before.present -and $before.parseable -and $before.command) {
         $actualFp = Get-HarnessCommandFingerprint -Command $before.command -Arguments @($before.args) -Env $null -MachineKey $machineKey
@@ -161,14 +111,14 @@ function Register-One {
     # upsert 가 아니면 먼저 제거한다. 경로만 다른 재등록은 remove+add 로 안전하게 처리된다.
     if ($before.present -and -not $d.register_is_upsert) {
         $rmArgs = Expand-HarnessArgv -Template @($d.argv.remove) -Values $values
-        Invoke-ClientCommand -Exe $exe -Args $rmArgs | Out-Null
+        Invoke-HarnessClientCommand -Exe $exe -Arguments $rmArgs | Out-Null
     }
 
     $addArgs = Expand-HarnessArgv -Template @($d.argv.register) -Values $values `
         -RuntimeArgs $desiredArgs -EnvPairs $desiredEnv -EnvFlagTemplate @($d.env_flag_template)
-    $add = Invoke-ClientCommand -Exe $exe -Args $addArgs
+    $add = Invoke-HarnessClientCommand -Exe $exe -Arguments $addArgs
 
-    $after = Read-Registration -Descriptor $d -ServerName $manifest.server_name
+    $after = Read-HarnessClientRegistration -Descriptor $d -ServerName $manifest.server_name
     if (-not $after.present) {
         return [pscustomobject]@{ client = $ClientId; status = 'failed'; detail = ($add.text -split "`r?`n" | Select-Object -First 2) -join ' ' }
     }

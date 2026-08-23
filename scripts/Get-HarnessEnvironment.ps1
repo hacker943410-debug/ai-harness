@@ -9,6 +9,12 @@
     사용:
         .\Get-HarnessEnvironment.ps1
         .\Get-HarnessEnvironment.ps1 -Json > env.json
+        .\Get-HarnessEnvironment.ps1 -SavePlan .\plan.json      # Install-Harness.ps1 이 소비할 계획 파일
+
+    계획 파일의 각 단계는 사람이 읽는 설명(action/current/proposed)과
+    기계가 실행하는 명세(kind/payload)를 함께 담는다.
+    사용자는 이 파일을 열어 enabled 를 false 로 바꾸는 것만으로 단계를 뺄 수 있고,
+    Install-Harness.ps1 은 재탐지하지 않고 이 파일만 소비한다.
 
     종료 코드: 0 진행 가능 / 2 제한적으로 가능 / 3 차단 요소 있음
 #>
@@ -16,6 +22,7 @@
 param(
     [string]$HarnessRoot,
     [string]$ToolsRoot,
+    [string]$SavePlan,
     [switch]$Json,
     [switch]$Detailed
 )
@@ -36,11 +43,67 @@ function Add-Finding {
     param([string]$Area, [string]$Item, $Value, [string]$Status = 'OK', [string]$Note = '')
     $findings.Add([pscustomobject]@{ area = $Area; item = $Item; value = $Value; status = $Status; note = $Note })
 }
+<#
+    계획 단계 하나.
+      step_id    안정적인 식별자. 사용자가 계획 파일에서 단계를 지목하는 열쇠다.
+      kind       dir-create | acl-set | env-set | file-write | exec | manual
+                 manual 은 스크립트가 절대 자동 실행하지 않는다(사람이 판단해야 하는 것).
+      enabled    사용자가 false 로 바꾸면 그 단계와 그것에 의존하는 단계가 모두 빠진다.
+      depends_on 계획 안에 없는 id 는 "이미 충족됨"으로 본다.
+      payload    kind 별 실행 명세. 문자열을 다시 파싱하지 않도록 구조화해서 담는다.
+      undo       exec 는 되돌리는 방법을 스스로 알 수 없다. 여기에 명시하지 않으면
+                 롤백 시 "수동 확인 필요"로 남는다. 없는 것을 있다고 하지 않는다.
+#>
 function Add-Plan {
-    param([string]$Action, [string]$Target, $Current, $Proposed, [string]$Risk = 'low', [string]$Note = '')
-    $plan.Add([pscustomobject]@{ action = $Action; target = $Target; current = $Current; proposed = $Proposed; risk = $Risk; note = $Note })
+    param(
+        [Parameter(Mandatory = $true)][string]$StepId,
+        [Parameter(Mandatory = $true)][ValidateSet('dir-create', 'acl-set', 'env-set', 'file-write', 'exec', 'manual')][string]$Kind,
+        [Parameter(Mandatory = $true)][string]$Action,
+        [Parameter(Mandatory = $true)][string]$Target,
+        $Current, $Proposed,
+        [string]$Risk = 'low',
+        [string]$Note = '',
+        [bool]$Optional = $false,
+        [string[]]$DependsOn = @(),
+        $Payload = $null,
+        $Undo = $null,
+        [string]$CommandLine = ''
+    )
+    $plan.Add([pscustomobject]@{
+        step_id      = $StepId
+        kind         = $Kind
+        action       = $Action
+        target       = $Target
+        current      = $Current
+        proposed     = $Proposed
+        risk         = $Risk
+        note         = $Note
+        optional     = $Optional
+        enabled      = $true
+        depends_on   = @($DependsOn)
+        command_line = $CommandLine
+        payload      = $Payload
+        undo         = $Undo
+    })
 }
 function Test-NonAscii { param([string]$s) return ($s -and ($s -match '[^\x00-\x7F]')) }
+
+# exec 단계는 자식 powershell 로 돌린다. 인프로세스 호출은 하위 스크립트의 exit 와
+# ErrorActionPreference 가 적용자에게 새어 들어온다. 명령줄이 곧 실행되는 것과 같아야
+# 사용자가 본 것과 실행된 것이 일치한다.
+$psExe = (Get-Process -Id $PID).Path
+if (-not $psExe) { $psExe = 'powershell.exe' }
+function New-ScriptExec {
+    param([string]$ScriptName, [string[]]$ScriptArgs)
+    $script = Join-HarnessPath $root 'scripts' $ScriptName
+    $argv = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $script) + @($ScriptArgs)
+    $quoted = $argv | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } }
+    return [pscustomobject]@{
+        file         = $psExe
+        arguments    = @($argv)
+        command_line = "$psExe $($quoted -join ' ')"
+    }
+}
 
 # ===========================================================================
 # 1. 호스트
@@ -148,15 +211,36 @@ foreach ($cr in ($candidateRoots | Select-Object -Unique)) {
         $(if ($trust.trusted) { 'OK' } else { 'WARN' }) `
         $(if ($isLegacy -and -not $trust.trusted) { 'C:\ 바로 아래 폴더는 Authenticated Users 쓰기 권한을 상속받는다. 다른 로컬 사용자가 MCP 실행 파일을 교체할 수 있다.' } else { '' })
     if (-not $trust.trusted) {
-        Add-Plan 'ACL 제한' $cr ($trust.offenders -join '; ') '소유자 / SYSTEM / Administrators 만' 'medium' `
-            '다른 로컬 사용자가 MCP 실행 파일을 교체할 수 있는 상태를 없앤다.'
+        Add-Plan -StepId "toolsroot.acl:$cr" -Kind 'acl-set' -Action 'ACL 제한' -Target $cr `
+            -Current ($trust.offenders -join '; ') -Proposed '소유자 / SYSTEM / Administrators 만' -Risk 'medium' `
+            -Note '다른 로컬 사용자가 MCP 실행 파일을 교체할 수 있는 상태를 없앤다.' `
+            -Payload ([pscustomobject]@{ path = $cr; disable_inheritance = $true })
     }
     if ($isLegacy -and $resolvedTools -ne $cr) {
-        Add-Plan '레거시 정리' $cr '존재' '재등록 후 삭제 권장' 'low' 'AI 클라이언트를 모두 재시작한 뒤 삭제한다.'
+        # 삭제는 자동화하지 않는다. 모든 CLI 가 재시작됐는지는 스크립트가 판정할 수 없다.
+        Add-Plan -StepId "legacy.cleanup:$cr" -Kind 'manual' -Action '레거시 정리' -Target $cr `
+            -Current '존재' -Proposed '재등록 후 삭제 권장' -Risk 'low' -Optional $true `
+            -Note 'AI 클라이언트를 모두 재시작한 뒤 사람이 삭제한다. 자동 삭제하지 않는다.' `
+            -Payload ([pscustomobject]@{ instructions = "Remove-Item -Recurse -Force '$cr'" })
     }
 }
 if (-not (Test-Path -LiteralPath $resolvedTools)) {
-    Add-Plan '생성' $resolvedTools '없음' '디렉터리 생성 + ACL 제한' 'low' ''
+    Add-Plan -StepId 'toolsroot.create' -Kind 'dir-create' -Action '도구 루트 생성' -Target $resolvedTools `
+        -Current '없음' -Proposed '디렉터리 생성 + ACL 제한' -Risk 'low' `
+        -Payload ([pscustomobject]@{ path = $resolvedTools; restrict_acl = $true })
+}
+
+# 도구 루트를 기본값이 아닌 곳으로 지정했다면, 그 선택이 다음 세션에도 남아야 한다.
+# 사용자 환경변수가 유일하게 이 결정을 기억하는 자리다.
+if ($ToolsRoot) {
+    $envCurrent = [Environment]::GetEnvironmentVariable('AI_HARNESS_TOOLS_ROOT', 'User')
+    if ($envCurrent -ne $resolvedTools) {
+        Add-Plan -StepId 'toolsroot.env' -Kind 'env-set' -Action '도구 루트 환경변수 고정' -Target 'AI_HARNESS_TOOLS_ROOT (User)' `
+            -Current $(if ($envCurrent) { $envCurrent } else { '(미설정)' }) -Proposed $resolvedTools -Risk 'medium' `
+            -Note '사용자 환경변수를 바꾼다. 새로 여는 프로세스에만 반영되며, 이미 떠 있는 세션은 옛 값을 계속 쓴다.' `
+            -DependsOn @('toolsroot.create') `
+            -Payload ([pscustomobject]@{ name = 'AI_HARNESS_TOOLS_ROOT'; scope = 'User'; value = $resolvedTools })
+    }
 }
 
 # ===========================================================================
@@ -173,7 +257,15 @@ try {
         Add-Finding 'harness' 'git 저장소' '예' 'OK'
         Add-Finding 'harness' 'core.hooksPath' $(if ($hooks) { $hooks } else { '(미설정)' }) $(if ($hooks -eq '.githooks') { 'OK' } else { 'WARN' })
         if ($hooks -ne '.githooks') {
-            Add-Plan 'git 설정' "$root (core.hooksPath)" $(if ($hooks) { $hooks } else { '미설정' }) '.githooks' 'low' '비밀값 pre-commit 가드를 활성화한다.'
+            $gitExe = Get-HarnessNativeCommand 'git'
+            $setArgv = @('-C', $root, 'config', 'core.hooksPath', '.githooks')
+            $undoArgv = if ($hooks) { @('-C', $root, 'config', 'core.hooksPath', $hooks) } else { @('-C', $root, 'config', '--unset', 'core.hooksPath') }
+            Add-Plan -StepId 'harness.hookspath' -Kind 'exec' -Action 'git 설정' -Target "$root (core.hooksPath)" `
+                -Current $(if ($hooks) { $hooks } else { '미설정' }) -Proposed '.githooks' -Risk 'low' `
+                -Note '비밀값 pre-commit 가드를 활성화한다.' `
+                -CommandLine "git $($setArgv -join ' ')" `
+                -Payload ([pscustomobject]@{ file = $gitExe; arguments = $setArgv }) `
+                -Undo ([pscustomobject]@{ kind = 'exec'; file = $gitExe; arguments = $undoArgv; command_line = "git $($undoArgv -join ' ')" })
         }
     } else {
         Add-Finding 'harness' 'git 저장소' '아니오' 'WARN' 'git 저장소가 아니면 비밀값 가드를 강제할 수 없다 (UNENFORCED).'
@@ -194,12 +286,20 @@ foreach ($rid in $runtimeIds) {
             $(if ($e.state -eq 'verified') { 'OK' } else { 'INFO' }) `
             $(if ($e.installed_version -ne $m.install.version) { "선언 v$($m.install.version) 과 불일치" } else { '' })
         if ($e.installed_version -ne $m.install.version) {
-            Add-Plan '런타임 재설치' $rid "v$($e.installed_version)" "v$($m.install.version)" 'medium' ''
+            $x = New-ScriptExec 'Install-HarnessRuntime.ps1' @('-RuntimeId', $rid, '-ToolsRoot', $resolvedTools, '-Reinstall')
+            Add-Plan -StepId "runtime.install:$rid" -Kind 'exec' -Action '런타임 재설치' -Target $rid `
+                -Current "v$($e.installed_version)" -Proposed "v$($m.install.version)" -Risk 'medium' `
+                -Note '버전별 디렉터리로 설치되므로 이전 버전은 남는다. 롤백은 재다운로드 없이 포인터 전환이다.' `
+                -CommandLine $x.command_line -Payload ([pscustomobject]@{ file = $x.file; arguments = $x.arguments })
         }
     } else {
         Add-Finding 'runtime' "$rid" '미설치' 'INFO' "$($m.display_name)"
-        Add-Plan '런타임 설치(선택)' $rid '미설치' "v$($m.install.version) 를 $resolvedTools 에" 'low' `
-            '이 능력이 필요할 때만 설치하면 된다. 설치하지 않아도 하네스는 정상 동작한다.'
+        $x = New-ScriptExec 'Install-HarnessRuntime.ps1' @('-RuntimeId', $rid, '-ToolsRoot', $resolvedTools, '-Adopt', '-EnsureOnly')
+        Add-Plan -StepId "runtime.install:$rid" -Kind 'exec' -Action '런타임 설치' -Target $rid `
+            -Current '미설치' -Proposed "v$($m.install.version) 를 $resolvedTools 에" -Risk 'low' -Optional $true `
+            -DependsOn @('toolsroot.create') `
+            -Note '이 능력이 필요할 때만 설치하면 된다. 설치하지 않아도 하네스는 정상 동작한다.' `
+            -CommandLine $x.command_line -Payload ([pscustomobject]@{ file = $x.file; arguments = $x.arguments })
     }
     # 자격증명 — 존재 여부만. 내용은 절대 읽지 않는다.
     if ($m.credentials -and $m.credentials.storage) {
@@ -221,10 +321,11 @@ foreach ($rid in $runtimeIds) {
 $clientIds = Get-HarnessClientIds -HarnessRoot $root
 foreach ($cid in $clientIds) {
     $d = Get-HarnessClientDescriptor -HarnessRoot $root -ClientId $cid
-    $exe = $d.detect.command
-    $cmd = Get-Command $exe -ErrorAction SilentlyContinue
-    if (-not $cmd) {
-        Add-Finding 'client' $d.display_name '미설치' 'INFO' "$exe 을 PATH 에서 찾을 수 없다. 이 클라이언트는 건너뛴다."
+    # PATH 에서 먼저 잡히는 것은 .ps1 shim 이고, .ps1 은 ExecutionPolicy 의 지배를 받는다.
+    # Restricted 인 PC 에서 진단 자체가 PSSecurityException 으로 죽지 않게 .cmd/.exe 로 해석한다.
+    $exe = Get-HarnessNativeCommand $d.detect.command
+    if (-not $exe) {
+        Add-Finding 'client' $d.display_name '미설치' 'INFO' "$($d.detect.command) 을 PATH 에서 찾을 수 없다. 이 클라이언트는 건너뛴다."
         continue
     }
     # 설정 파일 경로를 가정하지 않는다. CLI 에게 묻는다.
@@ -235,7 +336,7 @@ foreach ($cid in $clientIds) {
         $m = Get-HarnessRuntimeManifest -HarnessRoot $root -RuntimeId $rid
         if ($out -match [regex]::Escape($m.server_name)) { $names += $m.server_name }
     }
-    Add-Finding 'client' $d.display_name "설치됨 ($($cmd.Source))" 'OK' `
+    Add-Finding 'client' $d.display_name "설치됨 ($exe)" 'OK' `
         $(if ($names.Count) { "이미 등록된 하네스 서버: $($names -join ', ')" } else { '하네스 서버 미등록' })
 
     # 원장이 "등록됨"이라 기록했는데 클라이언트에는 없는 경우 = 등록이 지워졌다는 뜻이다.
@@ -245,13 +346,65 @@ foreach ($cid in $clientIds) {
         $m = Get-HarnessRuntimeManifest -HarnessRoot $root -RuntimeId $rid
         $recorded = @($ledger.registrations | Where-Object { $_.client -eq $cid -and $_.runtime_id -eq $rid }).Count -gt 0
         $actual = ($names -contains $m.server_name)
+
+        $reason = $null      # $null 이면 제안할 것이 없다
+        $current = '미등록'
+        $stepRisk = 'medium'
+        $isOptional = $true
+
         if ($recorded -and -not $actual) {
             Add-Finding 'client' "$($d.display_name) / $rid" '원장에는 등록, 실제로는 없음' 'WARN' `
                 '등록이 외부 요인으로 사라졌다. 재등록이 필요하다.'
-            Add-Plan '재등록' "$cid <- $rid" '없음' '등록' 'medium' '원장과 실제 상태가 갈라져 있다.'
+            $reason = '원장과 실제 상태가 갈라져 있다. 등록이 외부 요인으로 사라졌다.'
+            $current = '없음(원장에는 있음)'
+            $isOptional = $false
         } elseif (-not $actual) {
-            Add-Plan '등록(선택)' "$cid <- $rid" '미등록' '등록' 'medium' `
-                "risk=$($m.risk) 런타임이다. 등록하면 이 클라이언트의 모든 프로젝트에서 도구가 보인다."
+            $reason = "risk=$($m.risk) 런타임이다. 등록하면 이 클라이언트의 모든 프로젝트에서 도구가 보인다."
+        } else {
+            # 등록돼 있다는 사실만으로는 부족하다. 의도한 것이 등록됐는지까지 본다.
+            $diff = Get-HarnessRegistrationDiff -HarnessRoot $root -ToolsRoot $resolvedTools -RuntimeId $rid -ClientId $cid
+            $bad = @($diff.rows | Where-Object { $_.verdict -in @('ADD', 'CHANGE', 'REMOVE') })
+            if ($bad.Count) {
+                $summary = ($bad | ForEach-Object { "$($_.field):$($_.verdict)" }) -join ', '
+                $extra = @($bad | Where-Object verdict -eq 'REMOVE' |
+                    ForEach-Object { "선언하지 않은 값이 켜져 있다: $($_.field)=$($_.actual)" }) -join ' '
+                Add-Finding 'client' "$($d.display_name) / $rid 등록 내용" $summary 'WARN' `
+                    ('등록은 있으나 선언과 다르다. ' + $extra).Trim()
+                $reason = "선언과 실제가 다르다 ($summary). 재등록하면 선언대로 맞춰진다."
+                $current = '등록됨(내용 불일치)'
+                $isOptional = $false
+                if ($diff.has_remove) { $stepRisk = 'high' }
+            }
+            if ($diff.ledger_drift.Count) {
+                Add-Finding 'client' "$($d.display_name) / $rid 원장" ($diff.ledger_drift -join '; ') 'WARN' `
+                    '원장이 선언과 다르다. 매니페스트가 설치 이후에 바뀌었다는 뜻이며, 런타임 재설치가 필요하다.'
+            }
+        }
+
+        if ($reason) {
+            $regArgs = @('-RuntimeId', $rid, '-Client', $cid, '-ToolsRoot', $resolvedTools, '-Force')
+            if ($m.risk -eq 'high') { $regArgs += '-IAcceptRisk' }
+            $x = New-ScriptExec 'Register-HarnessRuntimeClient.ps1' $regArgs
+            $scope = if ($d.supports.default_scope) { $d.supports.default_scope } else { '' }
+            $rmArgv = Expand-HarnessArgv -Template @($d.argv.remove) -Values @{ server_name = $m.server_name; scope = $scope }
+            $note = $reason
+            if ($m.risk -eq 'high') {
+                $note += "  [risk=high — 명령에 -IAcceptRisk 가 들어 있다. 차단 도구: $(@($m.tool_policy.deny) -join ', ')]"
+            }
+            Add-Plan -StepId "client.register:$cid`:$rid" -Kind 'exec' -Action '클라이언트 등록' -Target "$cid <- $rid" `
+                -Current $current -Proposed "$($m.server_name) 를 scope=$scope 로 등록" -Risk $stepRisk `
+                -Optional $isOptional -DependsOn @("runtime.install:$rid") -Note $note `
+                -CommandLine $x.command_line `
+                -Payload ([pscustomobject]@{
+                    file = $x.file; arguments = $x.arguments
+                    # 적용 직전에 선언/원장/실제를 다시 대조할 수 있게 하는 힌트.
+                    # 적용자가 런타임별 코드를 갖지 않도록 데이터로 넘긴다.
+                    diff = [pscustomobject]@{ kind = 'registration'; runtime_id = $rid; client_id = $cid }
+                }) `
+                -Undo ([pscustomobject]@{
+                    kind = 'exec'; file = (Get-HarnessNativeCommand $d.detect.command); arguments = @($rmArgv)
+                    command_line = "$($d.detect.command) $($rmArgv -join ' ')"
+                })
         }
     }
 
@@ -283,12 +436,23 @@ $warns = @($findings | Where-Object status -eq 'WARN')
 $overall = if ($blocks.Count) { 'BLOCKED' } elseif ($warns.Count) { 'READY_WITH_WARNINGS' } else { 'READY' }
 
 $report = [pscustomobject]@{
-    overall      = $overall
-    checked_at   = (Get-HarnessUtcStamp)
-    harness_root = $root
-    tools_root   = $resolvedTools
-    findings     = @($findings)
-    plan         = @($plan)
+    schema_version = '1.0'
+    kind           = 'harness-change-plan'
+    overall        = $overall
+    checked_at     = (Get-HarnessUtcStamp)
+    harness_root   = $root
+    tools_root     = $resolvedTools
+    blocks         = @($blocks | ForEach-Object { [pscustomobject]@{ item = $_.item; note = $_.note } })
+    findings       = @($findings)
+    plan           = @($plan)
+}
+
+if ($SavePlan) {
+    Write-HarnessJson -Path $SavePlan -InputObject $report -Depth 10
+    Write-Output "계획 파일을 저장했습니다: $SavePlan"
+    Write-Output '내용을 확인하고, 빼고 싶은 단계는 enabled 를 false 로 바꾼 뒤 적용하세요:'
+    Write-Output "  .\scripts\Install-Harness.ps1 -Plan '$SavePlan' -DryRun"
+    Write-Output ''
 }
 
 if ($Json) {
@@ -312,13 +476,19 @@ if ($Json) {
         $i = 0
         foreach ($p in $plan) {
             $i++
-            Write-Output ("  {0}. [{1}] {2}" -f $i, $p.risk, $p.action)
+            $tag = if ($p.kind -eq 'manual') { '수동' } elseif ($p.optional) { '선택' } else { '권장' }
+            Write-Output ("  {0}. [{1}/{2}] {3}   ({4})" -f $i, $p.risk, $tag, $p.action, $p.step_id)
             Write-Output ("       대상: {0}" -f $p.target)
             Write-Output ("       현재: {0}  ->  제안: {1}" -f $p.current, $p.proposed)
+            if ($p.command_line) { Write-Output ("       명령: {0}" -f $p.command_line) }
             if ($p.note) { Write-Output ("       {0}" -f $p.note) }
         }
         Write-Output ''
-        Write-Output '적용하려면: .\scripts\Install-Harness.ps1 -WhatIf   (먼저 실행될 명령을 확인)'
+        Write-Output '적용 절차 (진단 -> 계획 파일 -> 확인 -> 적용):'
+        Write-Output '  1) .\scripts\Get-HarnessEnvironment.ps1 -SavePlan .\plan.json'
+        Write-Output '  2) plan.json 을 열어 빼고 싶은 단계의 enabled 를 false 로'
+        Write-Output '  3) .\scripts\Install-Harness.ps1 -Plan .\plan.json -DryRun   (실행될 명령만 출력)'
+        Write-Output '  4) .\scripts\Install-Harness.ps1 -Plan .\plan.json'
     } else {
         Write-Output '제안할 변경이 없습니다. 이 PC 는 이미 구성되어 있습니다.'
     }
