@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([string]$ToolsRoot)
 
 # 공용 Google Workspace MCP 런타임의 위치를 해석한다. 읽기 전용이며 아무것도 설치하지 않는다.
@@ -9,6 +9,8 @@ param([string]$ToolsRoot)
 #   3. AI_HARNESS_TOOLS_ROOT        (프로세스 → User)
 #   4. 플랫폼 기본값  %LOCALAPPDATA%\AI-Tools
 #   5. 레거시        C:\AI-Tools     ← 해석은 되지만 drift 로 보고한다
+
+. (Join-Path $PSScriptRoot '_Harness.Common.ps1')
 
 $rel = 'google-workspace-mcp\google-workspace-mcp.cmd'
 $candidates = New-Object System.Collections.Generic.List[object]
@@ -57,9 +59,9 @@ foreach ($lr in $legacyRoots) {
 
 # 자격증명 파일의 "존재"는 인증 여부가 아니다. 토큰은 만료되거나 폐기될 수 있다.
 # 실제 인증 판정은 read-only API 호출을 수행하는 검증 단계만 할 수 있다.
-$profileRoot = Join-Path $env:USERPROFILE '.config\google-workspace-mcp\profiles\default'
-$authFiles = (Test-Path -LiteralPath (Join-Path $profileRoot 'credentials.json')) -and
-             (Test-Path -LiteralPath (Join-Path $profileRoot 'tokens.json'))
+$profileRoot = Join-HarnessPath (Get-HarnessHome) '.config' 'google-workspace-mcp' 'profiles' 'default'
+$authFiles = (Test-Path -LiteralPath (Join-HarnessPath $profileRoot 'credentials.json')) -and
+             (Test-Path -LiteralPath (Join-HarnessPath $profileRoot 'tokens.json'))
 
 [pscustomobject]@{
     found              = $true
