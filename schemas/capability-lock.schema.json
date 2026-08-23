@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.ai-harness/schemas/capability-lock.schema.json",
+  "title": "AI Harness project capability lock",
+  "type": "object",
+  "required": ["schema_version", "project_root", "capabilities"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "project_root": {"type": "string"},
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "id", "source", "scope", "status", "recorded_at"],
+        "properties": {
+          "type": {"enum": ["mcp", "skill"]},
+          "id": {"type": "string", "minLength": 1},
+          "source": {"type": "string", "minLength": 1},
+          "version": {"type": ["string", "null"]},
+          "content_hash": {"type": ["string", "null"]},
+          "scope": {"const": "project"},
+          "reason": {"type": ["string", "null"]},
+          "status": {"enum": ["planned", "installed", "configured", "verified", "disabled", "failed"]},
+          "config_path": {"type": ["string", "null"]},
+          "recorded_at": {"type": "string"}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}

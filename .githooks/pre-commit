@@ -1,0 +1,83 @@
+#!/bin/sh
+# AI Harness — pre-commit secret guard
+#
+# 활성화: git config core.hooksPath .githooks
+# 저장소에 추적되므로 클론과 함께 배포된다.
+#
+# 이 훅은 마지막 방어선이 아니라 첫 번째 방어선이다.
+# --no-verify 로 우회할 수 있으므로 CI 의 secret-guard 가 동일 검사를 반복해야 한다.
+# (제안서 §8-4 / S4 3단 게이트)
+#
+# 설계 원칙: "이름"이 아니라 "값"을 잡는다.
+#   문서가 secret 키 이름을 설명하는 것은 정상이고 차단하면 안 된다.
+#   실제로 위험한 것은 값이 들어 있는 경우다.
+#   (실제 오탐 사례: 클라이언트 디스크립터 스키마의 "client_id": "claude" —
+#    이건 AI 클라이언트 식별자이지 OAuth client_id 가 아니다.)
+
+# ---- 1) 경로 차단: 애초에 저장소에 있으면 안 되는 파일 ----
+BLOCKED_PATH='(^|/)(credentials\.json|tokens\.json|runtimes\.json|clients\.json|tools-root|tools-root\.id)$|(^|/)client_secret[^/]*\.json$|(^|/)service-account[^/]*\.json$|(^|/)\.env(\.|$)|\.(pem|p12|pfx|key)$|(^|/)id_(rsa|ed25519)$|(^|/)node_modules/'
+
+# ---- 2) 값 차단: 어떤 파일 형식이든, 실제 secret 값의 형태 ----
+#    문서(.md)에도 적용한다. 값이 붙어 있으면 문서라도 유출이다.
+#
+#    ⚠ 이 패턴은 '-' 로 시작하므로 grep 에 반드시 `--` 를 붙여 전달한다.
+#      붙이지 않으면 grep 이 옵션으로 해석해 에러(exit 2)를 내고,
+#      `if ... grep -Eq` 는 그것을 "일치 없음"으로 받아 검사가 조용히 무력화된다.
+#      실제로 이 저장소의 첫 커밋에서 그 상태가 한 번 발생했다.
+SECRET_VALUE='-----BEGIN [A-Z ]*PRIVATE KEY-----|\bya29\.[A-Za-z0-9_-]{20,}|\b1//[A-Za-z0-9_-]{30,}|\bgh[pousr]_[A-Za-z0-9]{20,}|\bsk-[A-Za-z0-9]{20,}|\bAIza[A-Za-z0-9_-]{30,}|\bxox[baprs]-[A-Za-z0-9-]{10,}'
+
+# ---- 3) 키+값 차단: 데이터 파일에 한해 secret 키에 값이 붙은 경우 ----
+#    .md 는 제외한다. 문서는 키 이름을 인용할 권리가 있다.
+DATA_FILE='\.(json|toml|ya?ml|xml|ini|cfg|conf|ps1|psm1|psd1|sh|cmd|bat|js|mjs|cjs|ts|py|env)$'
+SECRET_KV='"(private_key|client_secret|refresh_token|access_token)"[[:space:]]*:[[:space:]]*"[^"]'
+
+tmp="$(mktemp 2>/dev/null || printf '%s' "${TMPDIR:-/tmp}/harness-precommit.$$")"
+git diff --cached --name-only --diff-filter=ACM > "$tmp"
+
+rc=0
+# IFS= read -r 는 공백이 포함된 경로를 올바르게 처리한다.
+# (이 저장소의 정책 파일명에는 공백과 한글이 들어 있다.)
+while IFS= read -r f; do
+    [ -n "$f" ] || continue
+
+    if printf '%s' "$f" | grep -Eq -- "$BLOCKED_PATH"; then
+        printf 'BLOCKED  path        : %s\n' "$f" >&2
+        rc=1
+        continue
+    fi
+
+    blob="$(git show ":$f" 2>/dev/null)" || continue
+
+    printf '%s' "$blob" | grep -Eq -- "$SECRET_VALUE"
+    st=$?
+    case "$st" in
+        0) printf 'BLOCKED  secret value : %s\n' "$f" >&2; rc=1; continue ;;
+        1) : ;;
+        *) printf 'GUARD ERROR : secret-value scan failed on %s (grep exit %s)\n' "$f" "$st" >&2; rc=1; continue ;;
+    esac
+
+    if printf '%s' "$f" | grep -Eq -- "$DATA_FILE"; then
+        printf '%s' "$blob" | grep -Eq -- "$SECRET_KV"
+        st=$?
+        case "$st" in
+            0) printf 'BLOCKED  secret key+value : %s\n' "$f" >&2; rc=1 ;;
+            1) : ;;
+            *) printf 'GUARD ERROR : secret-kv scan failed on %s (grep exit %s)\n' "$f" "$st" >&2; rc=1 ;;
+        esac
+    fi
+done < "$tmp"
+
+rm -f "$tmp"
+
+if [ "$rc" -ne 0 ]; then
+    printf '\n' >&2
+    printf 'Commit rejected by the AI Harness secret guard (.githooks/pre-commit).\n' >&2
+    printf 'Secrets and machine state belong to the machine layer, never to git.\n' >&2
+    printf '  credentials / tokens          -> %%USERPROFILE%%\\.config\\<runtime>\\profiles\\<profile>\n' >&2
+    printf '  runtimes.json / clients.json  -> <tools_root>\n' >&2
+    printf '\n' >&2
+    printf 'If this is a false positive, fix the pattern in .githooks/pre-commit.\n' >&2
+    printf 'Do NOT bypass with --no-verify; CI runs the same check.\n' >&2
+fi
+
+exit "$rc"

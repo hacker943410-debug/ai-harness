@@ -1,0 +1,50 @@
+# AI Harness — Layer A (git) 는 텍스트 전용이다.
+# 비밀값·머신 상태·절대경로가 담긴 것은 어떤 것도 추적하지 않는다.
+#
+# 이 목록은 runtimes/*.runtime.json 의 credentials.never_sync 합집합과 일치해야 한다.
+# (v3.0 에서 schemas/never-sync.generated.json 으로 단일화 예정 — 제안서 §5.2 불변식 2)
+#
+# ⚠ 주의: 이 파일의 패턴을 프로젝트 저장소로 그대로 복사하지 말 것.
+#    특히 `.ai/` 는 프로젝트에서는 반드시 커밋되어야 한다 (제안서 §8-3).
+
+# ---- OAuth / 자격증명 (never_sync) ----
+credentials.json
+tokens.json
+client_secret*.json
+*.credentials.json
+service-account*.json
+
+# ---- 일반 비밀값 ----
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+id_rsa
+id_ed25519
+
+# ---- Layer B: 머신 상태 (절대 추적 금지) ----
+runtimes.json
+clients.json
+tools-root
+tools-root.id
+.harness-root.id
+/logs/
+
+# ---- Layer C: 하네스 저장소 안에서는 .ai 가 존재할 이유가 없다 ----
+.ai/
+
+# ---- 빌드 산출물 / 도구 ----
+node_modules/
+package-lock.json
+*.log
+*.tmp
+
+# ---- OS / 편집기 ----
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/

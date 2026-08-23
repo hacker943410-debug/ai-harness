@@ -1,0 +1,201 @@
+schema_version: "1.0"
+harness_version: "2.2"
+policy_count: 26
+
+paths:
+  project_init: "PROJECT_INIT.md"
+  core: "CORE.md"
+  router: "ROUTER.md"
+  policy_index: "POLICY_INDEX.yaml"
+  doctor: "HARNESS_DOCTOR.md"
+  policies_dir: "policies"
+  capability_workflow: "workflows/CAPABILITY_ACQUISITION.md"
+  mcp_catalog: "catalogs/mcp-catalog.json"
+  skill_catalog: "catalogs/skill-catalog.json"
+  capability_schema: "schemas/capability-lock.schema.json"
+  patch_notes: "PATCH_NOTES.md"
+
+runtime:
+  always_loaded:
+    - CORE.md
+    - ROUTER.md
+    - POLICY_INDEX.yaml
+  preload_all_policies: false
+  use_jit_policy_loading: true
+  fast_health_check: true
+  policy_load_trace: "record_only"
+  default_target_active_policies: "2-5"
+  note: "2-5는 일반적인 목표이며 위험/복잡도에 따른 강제 상한이 아니다."
+
+policies:
+  - id: P01
+    file: "01_코드베이스 지도 및 탐색 체계 설계서.md"
+    purpose: "Codebase Knowledge System의 Map Schema, Indexer, MCP, Freshness, Validator를 설계한다."
+    triggers: [code_map_bootstrap, indexer, mcp_code_map, map_schema, map_validator, codebase_architecture]
+    normal_coding: false
+
+  - id: P02
+    file: "02_적응형 멀티에이전트 하네스 설계서.md"
+    purpose: "Agent 역할, Task Packet, 위임, Context 격리, Capability 기반 모델 선택 구조를 정의한다."
+    triggers: [multi_agent_architecture, delegation_design, role_design, model_routing_architecture, agent_orchestration]
+    normal_coding: false
+
+  - id: P03
+    file: "03_상황별 지침 라우팅 및 컨텍스트 제어 지침.md"
+    purpose: "Task·Phase·Risk 기반 JIT Policy 선택과 충돌 해결의 상세 규칙을 정의한다."
+    triggers: [router_change, router_debug, policy_conflict, routing_design, routing_evaluation]
+    normal_coding: false
+    runtime_replacement: "ROUTER.md"
+
+  - id: P04
+    file: "04_코드 변경 범위·영향·차이 제어 지침.md"
+    purpose: "변경 전 허용 범위, Protected Area, Diff Budget과 Change Contract를 고정한다."
+    triggers: [code_change, multi_file_change, refactor, shared_code_change, risky_edit]
+
+  - id: P05
+    file: "05_장기 작업 상태 압축·체크포인트·인수인계 지침.md"
+    purpose: "장기 작업의 Context 압축, Checkpoint, Agent/Session Handoff를 관리한다."
+    triggers: [long_session, context_pressure, handoff, session_resume, agent_handoff]
+
+  - id: P06
+    file: "06_작업 완료·테스트·회귀·검증 판정 지침.md"
+    purpose: "Verification Plan, Evidence, 완료 상태와 과장 없는 성공 판정을 정의한다."
+    triggers: [implementation_complete, bug_fix, verification, regression_check, release_check]
+
+  - id: P07
+    file: "07_모호한 요구사항 정량화·예시화·확정 지침.md"
+    purpose: "모호한 요구를 수치·예시·선택지로 구체화하고 필요한 경우 Grill한다."
+    triggers: [ambiguous_requirement, vague_quantity, unclear_scope, unclear_behavior, calibration_needed]
+
+  - id: P08
+    file: "08_AI 실수 학습 및 재발 방지 지침.md"
+    purpose: "실패를 분류하고 Root Cause와 재사용 가능한 Lesson을 만든다."
+    triggers: [failure, user_correction, regression, repeated_mistake, root_cause_learning]
+
+  - id: P09
+    file: "09_일반인 중심 설명·예시·수치 기반 소통 지침.md"
+    purpose: "전문 내용을 일반인이 이해할 수 있는 말·예시·수치로 설명한다."
+    triggers: [plain_language, user_explanation, report, handoff_explanation, non_expert_audience]
+
+  - id: P10
+    file: "10_자연어 요구사항 정규화 및 명세 잠금 지침.md"
+    purpose: "자연어 요구를 Canonical Spec, Scope, Success Criteria로 고정한다."
+    triggers: [feature_spec, nontrivial_requirement, scope_lock, success_criteria, requirement_change]
+
+  - id: P11
+    file: "11_사실·추론·가정·불확실성 구분 지침.md"
+    purpose: "FACT·INFERENCE·ASSUMPTION·UNKNOWN·CONFLICT·STALE를 구분한다."
+    triggers: [uncertainty, incomplete_evidence, assumption, external_fact, conflicting_evidence]
+
+  - id: P12
+    file: "12_주관적 디자인 표현 보정 및 디자인 기준 확정 지침.md"
+    purpose: "예쁘게·깔끔하게 같은 주관적 디자인 표현을 레퍼런스와 시각 속성으로 보정한다."
+    triggers: [ui_design, subjective_design, visual_calibration, style_reference, design_revision]
+
+  - id: P13
+    file: "13_경험·교훈의 규칙·검증·자동화 승격 지침.md"
+    purpose: "Lesson을 Rule, Checklist, Regression Test, Validator, CI Guard로 승격·폐기한다."
+    triggers: [lesson_promotion, repeated_failure, automation_candidate, validator_candidate, rule_retirement]
+
+  - id: P14
+    file: "14_사용자 의도 보존 및 결정권 보호 지침.md"
+    purpose: "사용자의 WHAT·WHY·BOUNDARY와 금지사항을 AI 임의 변경으로부터 보호한다."
+    triggers: [intent_conflict, negative_requirement, user_override, scope_authority, requirement_interpretation]
+
+  - id: P15
+    file: "15_의존성 및 외부 계약 관리 지침.md"
+    purpose: "Package·SDK·외부 API·버전·Lockfile·External Contract 변경을 통제한다."
+    triggers: [new_dependency, dependency_upgrade, sdk, external_api, lockfile, provider_contract]
+
+  - id: P16
+    file: "16_마이그레이션 및 롤백 관리 지침.md"
+    purpose: "Schema·Data·Config·State·Infra Migration, 호환성, Rollback/Recovery를 통제한다."
+    triggers: [schema_change, data_migration, backfill, persisted_state, destructive_change, infrastructure_migration]
+
+  - id: P17
+    file: "17_보안 및 권한 경계 관리 지침.md"
+    purpose: "Authentication·Authorization·Tenant·Ownership·Secret·IAM·Production Security Boundary를 통제한다."
+    triggers: [authentication, authorization, permission, secret, iam, tenant, production_access]
+
+  - id: P18
+    file: "18_설계 결정 기록 및 의사결정 기억 지침.md"
+    purpose: "장기적으로 중요한 Architecture/Business/Technical Decision과 근거·대안·Revisit 조건을 기록한다."
+    triggers: [architecture_decision, durable_decision, business_rule_decision, tradeoff, adr, revisit_decision]
+
+  - id: P19
+    file: "19_AI 하네스 평가 및 지속 개선 지침.md"
+    purpose: "Harness의 품질·비용·Routing·Context·Model·Policy·Validator 효과를 측정하고 개선한다."
+    triggers: [harness_change, harness_evaluation, benchmark, policy_effectiveness, router_metrics, model_metrics]
+    normal_coding: false
+
+  - id: P20
+    file: "20_프로젝트 로드맵 및 마일스톤 관리 지침.md"
+    purpose: "Project Goal→Phase→Milestone→Feature 계층과 장기 Exit Criteria를 관리한다."
+    triggers: [project_start, roadmap, milestone, multi_phase_project, release_planning]
+
+  - id: P21
+    file: "21_현재 작업 계획 및 실행 추적 지침.md"
+    purpose: "현재 Task의 Goal·Why·Success Criteria·Execution Steps·Exit Condition을 관리한다."
+    triggers: [nontrivial_task, multi_step_task, implementation_plan, bug_plan, feature_plan]
+
+  - id: P22
+    file: "22_작업 의존성·선행조건·병렬 실행 관리 지침.md"
+    purpose: "Task DAG, 선행조건, READY/BLOCKED, 병렬 실행, Critical Path를 관리한다."
+    triggers: [task_dependency, parallel_work, multi_agent_execution, critical_path, fan_in, fan_out]
+
+  - id: P23
+    file: "23_작업 이탈·범위 확장·사이드퀘스트 차단 지침.md"
+    purpose: "실행 중 Scope Drift, 불필요한 확장, Side Quest를 탐지·차단한다."
+    triggers: [scope_drift, unexpected_file, unrelated_work, boundary_crossing, side_quest]
+
+  - id: P24
+    file: "24_프로젝트 진행상태 및 완료근거 관리 지침.md"
+    purpose: "Project Progress Ledger, Current State, 완료 Evidence, Blocker, Next Step을 유지한다."
+    triggers: [project_progress, current_state, milestone_progress, long_project, resume_project]
+
+  - id: P25
+    file: "25_계획 이탈 판정 및 재계획 관리 지침.md"
+    purpose: "새 Evidence가 기존 Plan을 무효화할 때 Deviation을 판정하고 Scope/Risk/Verification을 재계획한다."
+    triggers: [plan_invalidated, false_assumption, new_required_dependency, replan, material_deviation]
+
+  - id: P26
+    file: "26_코드베이스 운영체계 실행 지침.md"
+    purpose: "Coding Agent가 Feature→Map→Source→Impact/Test→최소 수정 순으로 코드를 탐색·수정한다."
+    triggers: [code_navigation, bug_fix, feature_change, code_implementation, root_cause_trace, shared_code_change]
+
+candidate_bundles:
+  QUICK_CODE_CHANGE: [P04, P06, P26]
+  BUG_FIX: [P04, P06, P11, P21, P26]
+  FEATURE: [P04, P06, P10, P21, P26]
+  DESIGN: [P07, P10, P12, P14]
+  EXTERNAL_CONTRACT: [P04, P06, P15, P26]
+  CAPABILITY_ACQUISITION: [P06, P15, P23]
+  CAPABILITY_WITH_AUTH: [P06, P15, P17, P23]
+  MIGRATION: [P04, P06, P16, P26]
+  SECURITY_CHANGE: [P04, P06, P17, P26]
+  LONG_PROJECT: [P20, P21, P24]
+  PARALLEL_WORK: [P02, P21, P22]
+  REPLAN: [P11, P21, P23, P25]
+  FAILURE_LEARNING: [P08, P13]
+  HARNESS_CHANGE: [P02, P03, P18, P19]
+
+boundary_escalation:
+  DATABASE: [P16]
+  AUTHORIZATION: [P17]
+  SECRET: [P17]
+  TENANT: [P17]
+  EXTERNAL_SERVICE: [P15]
+  NEW_DEPENDENCY: [P15]
+  TOOL_CAPABILITY_GAP: [P15]
+  MCP_DISCOVERY: [P15, P17]
+  SKILL_DISCOVERY: [P15]
+  PROJECT_TOOL_INSTALL: [P06, P15, P23]
+  REMOTE_MCP_AUTH: [P15, P17]
+  TOOL_VERSION_DRIFT: [P11, P15, P25]
+  TOOL_INSTALL_FAILED: [P08, P15]
+  PRODUCTION_CAPABILITY: [P15, P17]
+  ARCHITECTURE_DECISION: [P18]
+  SCOPE_DRIFT: [P23]
+  PLAN_INVALIDATED: [P25]
+  MULTI_AGENT: [P02, P22]
+  REPEATED_FAILURE: [P08, P13]

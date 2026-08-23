@@ -1,0 +1,31 @@
+# AI Harness — 줄바꿈 정규화
+#
+# 저장소에는 LF 로 저장하고, 체크아웃 시 아래 규칙으로 변환한다.
+# 이게 없으면 클론마다 "수정됨"으로 표시되는 유령 diff 가 영구히 남는다.
+# (현재 트리: 루트 파일과 스크립트는 LF, 정책 26 개는 CRLF, 일부는 내부 혼재)
+#
+# ⚠ .gitattributes 로 UTF-8 BOM 을 "부여"할 수는 없다.
+#    working-tree-encoding=UTF-8 은 무의미하다 (UTF-8 은 git 의 내부 표현).
+#    BOM 은 파일 내용이므로 BOM 을 포함해 커밋하면 보존된다.
+#    .ps1 의 BOM 강제는 CI 의 원시 바이트 검사로 한다 (제안서 §8-6).
+
+* text=auto eol=lf
+
+*.ps1  text eol=crlf
+*.psd1 text eol=crlf
+*.psm1 text eol=crlf
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+
+*.sh   text eol=lf
+*.md   text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
+
+# 바이너리로 취급
+*.png binary
+*.jpg binary
+*.gif binary
+*.pdf binary
+*.zip binary

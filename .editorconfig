@@ -1,0 +1,26 @@
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+# Windows PowerShell 5.1 은 BOM 이 없으면 ANSI 코드페이지로 디코딩한다.
+# 한글 문자열을 안전하게 담으려면 BOM 이 필요하다 (제안서 §8-6).
+[*.{ps1,psm1,psd1}]
+charset = utf-8-bom
+end_of_line = crlf
+indent_size = 4
+
+[*.{cmd,bat}]
+end_of_line = crlf
+
+# JSON 은 BOM 없이. JSON.parse 와 npm 이 선행 U+FEFF 를 거부한다.
+[*.json]
+charset = utf-8
+
+[*.md]
+trim_trailing_whitespace = false

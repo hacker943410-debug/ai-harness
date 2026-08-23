@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "capability_id": "google-workspace-local",
+  "server_name": "google-workspace",
+  "scope": "pc_user",
+  "package": "@dguido/google-workspace-mcp",
+  "version": "3.4.4",
+  "default_tools_root": "C:\\AI-Tools",
+  "runtime_subdirectory": "google-workspace-mcp",
+  "launcher": "google-workspace-mcp.cmd",
+  "locator_environment_variable": "AI_HARNESS_GOOGLE_MCP_COMMAND",
+  "oauth_profile": "default",
+  "secret_storage": "%USERPROFILE%\\.config\\google-workspace-mcp\\profiles\\default",
+  "services": ["drive", "gmail", "calendar", "docs", "sheets", "slides", "contacts"],
+  "never_sync": ["credentials.json", "tokens.json", "client_secret*.json"]
+}
