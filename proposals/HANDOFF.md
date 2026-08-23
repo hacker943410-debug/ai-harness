@@ -20,7 +20,7 @@ claude·agy 등록 드리프트 해소). 남은 것은 **사용자 결정 4건**
 |---|---|
 | 하네스 로컬 | `C:\AI-Harness` |
 | 원격 | `https://github.com/hacker943410-debug/ai-harness` (**Private**) |
-| 현재 HEAD | `48df5dd` + 이 문서 갱신 커밋 |
+| 현재 HEAD | `4d9238c` + 이 문서 갱신 커밋 |
 | 기준점 태그 | `v2.2.0` = `9e142bf` (롤백 지점) |
 | 도구 루트 (Layer B) | `%LOCALAPPDATA%\AI-Tools` = `C:\Users\hacke\AppData\Local\AI-Tools` |
 | 레거시 도구 루트 | `C:\AI-Tools` (**아직 존재**, ACL은 제한 완료, 삭제 대기) |
@@ -105,7 +105,9 @@ scripts/Register-HarnessRuntimeClient.ps1 등록 (되읽어 확인)
 scripts/Test-HarnessRuntime.ps1          전송 검증 + 인증 검증 분리
 scripts/Test-HarnessRepo.ps1             저장소 자체 검사 (11개 규칙군)
 scripts/Resolve-HarnessMcpRegistry.ps1   registry_lookup 해석 (발행자 일치 강제)
+scripts/Publish-HarnessSnapshot.ps1      Drive 불변 스냅샷 (추적 파일만, 라벨 1회)
 scripts/harness-mcp-probe.mjs            MCP 프로브
+scripts/harness-drive-snapshot.mjs       스냅샷 업로드 (런타임 디렉터리로 복사해 실행)
 
 workflows/SHARED_RUNTIME.md              ★ 런타임 수명주기 (install->auth->verify->sync->restart)
 workflows/HARNESS_INSTALL.md             PC 환경별 최초 설치 가이드
@@ -124,6 +126,19 @@ proposals/HARNESS_V3_PROPOSAL.md         설계 근거 (v1.1)
 계획을 만드는 스크립트는 여럿이어도 **적용하는 스크립트는 하나**다.
 둘이 되는 순간 확인 절차를 우회하는 길이 생긴다.
 단계의 스키마는 `_Harness.Runtime.ps1` 의 `New-HarnessPlanStep` 이 유일하게 정의한다.
+
+### 제약 고지 (설계 규칙 — 사용자가 명시적으로 요구한 것)
+
+**하네스가 강제할 수 없는 것은 최초 설치 시점에 선택지와 함께 제시한다.**
+등록한 뒤에 뜨는 경고는 사용자가 *이미 노출된 상태에서* 읽는다. 그건 정보이지 선택이 아니다.
+
+- 제약은 `settings/clients/<id>.client.json` 의 `limitations` 에 **데이터로** 선언한다.
+  새 제약 추가에 스크립트를 고쳐야 하면 설계 실패다
+- 각 제약은 `what` / `why`(확인된 근거) / `consequence` / `options` 를 갖는다
+- **선택지 없는 고지는 통보다.** `options` 는 2개 이상, 각각 `how`(실행할 명령)와 `effect`,
+  `recommended` 는 정확히 1개 — `Test-HarnessRepo.ps1` 이 강제한다
+- `severity: high` 는 `Install-Harness.ps1` 이 `APPLY` 전에 `LIMITS` 동의를 따로 받는다.
+  거부하면 아무것도 적용되지 않는다
 
 ---
 
@@ -245,7 +260,7 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 | ~~4~~ | ~~레지스트리 확정 8건 카탈로그 반영~~ | **2026-08-23 반영 완료** (`f775743`) |
 | ~~5~~ | ~~AGY 도구 통제 메커니즘 검증~~ | **2026-08-23 조사 완료. 수단 없음**(§5-29) |
 | 6 | 레거시 `C:\AI-Tools` 삭제 시점 | `manual` 단계로 제시됨. 자동 실행 안 함 |
-| 7 | **AGY 에 google-workspace 를 계속 둘 것인가** — AGY 는 도구 단위 차단이 불가능하고(§5-29), 이 PC 의 agy 는 `--dangerously-skip-permissions` 로 뜬다. 즉 `delete_email`(영구 삭제, 1회 1000건) 이 무방비로 자동 승인된다. 선택지: (a) 그대로 둔다 (b) `agy mcp disable google-workspace` 로 필요할 때만 켠다 (c) 등록을 뺀다 (d) AGY 전용 프로필을 만들어 서비스 범위를 줄인다 | 진단이 WARN 으로 매번 보고한다 |
+| 7 | **AGY 에 google-workspace 를 계속 둘 것인가** — AGY 는 도구 단위 차단이 불가능하고(§5-29), 이 PC 의 agy 는 `--dangerously-skip-permissions` 로 뜬다. 즉 `delete_email`(영구 삭제, 1회 1000건) 이 무방비로 자동 승인된다 | **선택지가 이제 도구 안에 있다.** `Get-HarnessEnvironment.ps1` 의 "기술적으로 불가능한 것" 블록이 4개 선택지를 명령까지 붙여 제시한다(권장: `agy mcp disable google-workspace` 로 평소엔 꺼 두기). 지금은 등록만 돼 있고 어느 선택지도 적용하지 않은 상태다 |
 | 8 | **Drive 스냅샷 첫 발행** — 외부로 76개 파일을 올린다. DryRun 통과 | `-Label v3.0.0` 으로 즉시 가능 |
 
 ---
