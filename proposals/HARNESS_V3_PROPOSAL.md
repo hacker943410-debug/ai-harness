@@ -760,6 +760,8 @@ runtimes.json 의 command_rel 이 활성 버전을 가리킨다
   "detect": { "command": "claude" },
   "verified_on": "2026-08-23",
   "adapter_kind": "argv_cli",
+  "config_home_env": null,
+  "config_path_is_authoritative": false,
   "supports": { "scopes": ["local","project","user"], "env_flag": "-e", "drift_detection": true },
   "tool_policy_support": {
     "deny_reduces_context": "server_only",
@@ -782,6 +784,11 @@ runtimes.json 의 command_rel 이 활성 버전을 가리킨다
 
 **`adapter_kind`가 탈출구다.** `argv_cli`(공식 CLI 명령으로 등록)로 표현할 수 있는 클라이언트는 이 파일 하나로 끝난다. 그러나 **모든 클라이언트가 그렇지는 않다.** 대화형 UI만 제공하거나, 등록이 OAuth 브라우저 흐름을 시작하거나, 설정 파일이 주석 보존을 요구하거나, CLI 버전마다 인자가 달라지는 경우에는 `adapter_kind`를 새로 정의하고 그 kind의 코드를 구현해야 한다.
 따라서 목표는 "모든 클라이언트가 파일 1개"가 아니라 **"일반적인 CLI는 파일 1개, 표현 불가능한 것만 새 adapter kind"** 다.
+
+**`config_path_is_authoritative: false` 는 타협이 아니라 규칙이다 (v1.1 실측 반영).**
+설정 파일 경로를 **절대 가정하지 않는다.** 상태의 유일한 권위는 CLI 자신의 probe 명령이다.
+근거: 이 PC에서 Codex 의 `CODEX_HOME` 이 프로세스 범위로 `%APPDATA%\orca\codex-accounts\<uuid>\home` 으로 재정의돼 있었다(다계정 래퍼). `~/.codex/config.toml` 을 읽는 검사는 **영원히 틀린 답**을 준다. `codex mcp list --json` 만이 맞았다.
+`config_home_env`(예: `"CODEX_HOME"`)는 사용자에게 실제 위치를 *안내*할 때만 쓰고, 판정에는 쓰지 않는다.
 
 **`tool_policy_support`가 §8-4를 실행 가능하게 만든다.** Layer A의 매니페스트는 *의도*(이 도구는 위험하다)만 선언하고, 각 클라이언트의 네이티브 메커니즘으로 **번역**하는 책임은 디스크립터가 진다. 세 CLI의 실제 능력이 서로 다르기 때문에 이 분리가 필수다(§12-K).
 
