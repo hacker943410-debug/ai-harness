@@ -20,7 +20,7 @@ claude·agy 등록 드리프트 해소). 남은 것은 **사용자 결정 4건**
 |---|---|
 | 하네스 로컬 | `C:\AI-Harness` |
 | 원격 | `https://github.com/hacker943410-debug/ai-harness` (**Private**) |
-| 현재 HEAD | `80b1fb8` + 이 커밋 |
+| 현재 HEAD | `30f64a6` + 이 커밋 |
 | 기준점 태그 | `v2.2.0` = `9e142bf` (롤백 지점) |
 | 도구 루트 (Layer B) | `%LOCALAPPDATA%\AI-Tools` = `C:\Users\hacke\AppData\Local\AI-Tools` |
 | 레거시 도구 루트 | `C:\AI-Tools` (**아직 존재**, ACL은 제한 완료, 삭제 대기) |
@@ -213,6 +213,10 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 | 30 | Drive `create_file` 은 **이름으로 형식을 추론한다**. `type` 을 안 주면 `.md` 가 Google Docs 로 변환되어 원본이 아니게 된다. 스냅샷은 항상 `type: "text"` 로 올린다. `parentPath` 는 필요한 폴더를 알아서 만든다 |
 | 31 | Drive 는 **한 폴더에 동명 파일을 허용한다.** update 실패 시 create 로 폴백하는 코드는 일시적 실패 한 번에 조용히 중복 파일을 만든다 |
 | 32 | **등록돼 있다 ≠ 켜져 있다.** `agy mcp disable` 로 끈 서버도 `mcp list` 에는 남고 `STATUS` 칸만 `disabled` 가 된다. 이 구분을 안 보면 완화를 적용해도 진단이 같은 경고를 계속 내고, 사용자는 경고를 무시하도록 훈련된다. 상태 칸은 **위치가 아니라 선언된 표식(`disabled_markers`)으로 찾는다** — 열 순서가 바뀌면 조용히 틀리기 때문 |
+| 33 | **레지스트리 검색의 `isLatest` 는 사실이 아니다.** 페이지가 잘리고 정렬도 보장되지 않는다. 실측: `search=chrome-devtools&limit=20` 결과 20건 중 19건이 ChromeDevTools 항목인데 `isLatest=true` 가 하나도 없었다(진짜 최신은 1.7.0). **검색은 이름만 고르는 데 쓰고, 버전·패키지는 `GET /v0/servers/{name}/versions/latest` 정본에서 받는다** (이름의 `/` 는 `%2F`) |
+| 34 | 레지스트리 검색은 **표시 이름과 매칭되지 않는다.** `"Chrome DevTools MCP"` → 0건, `"chrome-devtools"` → 5건. 카탈로그의 `query` 는 사람이 읽는 이름이므로 `id` / `id-mcp` / 슬러그도 함께 던져야 한다 |
+| 35 | 사칭 항목이 **진짜와 같은 버전 번호를 쓴다.** `io.github.Async23/chrome-devtools-mcp` 와 진짜가 둘 다 `1.7.0`. 버전·이름·최신 여부 무엇으로도 구분할 수 없고 **발행자 대조만이 방어다** |
+| 36 | 원격 서버는 `packages` 가 비어 있고 `remotes` 에 URL 이 있다. `packages` 배열이 존재해도 `identifier` 가 비어 있을 수 있으므로 **존재가 아니라 값으로 판정한다.** 패키지 없음은 결함이 아니라 원격 서버의 정상 형태다 |
 
 ---
 
@@ -231,7 +235,17 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 3b. **래퍼 `.cmd` 삭제** — `%LOCALAPPDATA%\AI-Tools\google-workspace-mcp\google-workspace-mcp.cmd`
    (와 `google-workspace-auth.cmd`). 이제 아무도 가리키지 않지만, 사람이 직접 쓰던 것일 수 있어
    자동 삭제하지 않는다. 지우기 전에 claude·agy 재시작 후 정합이 계속 `ok` 인지 확인할 것
-4. **해석 못한 11건 처리** — `not_found` 5(chrome-devtools, azure, azure-devops, searxng,
+4. ~~카탈로그 registry_lookup 해석~~ — **완료. 조회할 것이 0건이다.**
+   `registry_lookup` 53 → 39 이고 그 39건은 전부 조회 대상이 아니다
+   (35건 `discovery_only`, 4건 `registry_absent` 기록됨).
+   확정된 좌표: npm 13 / remote 4 / oci 1 / pypi 1 / nuget 1, 모두 provenance 포함.
+   **남은 것은 조회가 아니라 판단이다:**
+   - `azure` 가 프리릴리스 `3.0.0-beta.37` 로 확정됐다. 검사기가 WARN 을 낸다.
+     정식 버전을 쓸지 그대로 둘지 결정 필요
+   - `notion` / `azure-devops` / `markitdown` / `unity` 는 발행자의 공식 서버가
+     레지스트리에 없다. 좌표를 원한다면 공식 문서·저장소에서 찾아 손으로 넣어야 한다
+   - `searxng` 는 발행자를 특정할 수 없어 `discovery_only` 로 내렸다
+ — `not_found` 5(chrome-devtools, azure, azure-devops, searxng,
    markitdown, google-cloud, google-analytics, semgrep 중 일부), `publisher_mismatch` 4
    (notion / apify / xcodebuildmcp / unity), `resolved_no_package` 2 (stripe / netdata).
    `publisher: "community"` 는 레지스트리 소유자와 절대 일치할 수 없다 — 카탈로그 데이터 결함
