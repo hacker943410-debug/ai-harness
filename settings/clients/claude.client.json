@@ -21,9 +21,10 @@
     "json_probe": false
   },
 
+  "$argv_note": "-e 는 commander 의 가변 인자(<env...>)다. 뒤따르는 토큰을 계속 환경변수로 먹기 때문에 {server_name} 이 {env_flags} 앞에 와야 하고, 가변 인자는 -- 로 끊어야 한다. 반대로 두면 'Invalid environment variable format: <서버이름>' 으로 실패한다(실측). CLI 자신의 예시도 같은 순서다: claude mcp add my-server -e KEY=v -- npx my-mcp-server",
   "argv": {
     "probe":    ["mcp", "get", "{server_name}"],
-    "register": ["mcp", "add", "-s", "{scope}", "{env_flags}", "{server_name}", "--", "{command}", "{args}"],
+    "register": ["mcp", "add", "-s", "{scope}", "{server_name}", "{env_flags}", "--", "{command}", "{args}"],
     "remove":   ["mcp", "remove", "{server_name}", "-s", "{scope}"],
     "list":     ["mcp", "list"]
   },

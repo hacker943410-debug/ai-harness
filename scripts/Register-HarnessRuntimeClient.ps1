@@ -108,10 +108,15 @@ function Register-One {
         return [pscustomobject]@{ client = $ClientId; status = 'skipped'; detail = 'ShouldProcess 거부' }
     }
 
-    # upsert 가 아니면 먼저 제거한다. 경로만 다른 재등록은 remove+add 로 안전하게 처리된다.
+    # upsert 가 아니면 먼저 제거한다. 경로만 다른 재등록은 remove+add 로 처리한다.
+    # 그런데 add 가 실패하면 클라이언트에는 아무것도 남지 않는다.
+    # 고치려던 등록을 아예 없애 버리는 것이고, 실제로 한 번 그렇게 됐다.
+    # 그래서 지우기 전에 이전 등록을 복원할 수 있을 만큼 붙잡아 둔다.
+    $removed = $false
     if ($before.present -and -not $d.register_is_upsert) {
         $rmArgs = Expand-HarnessArgv -Template @($d.argv.remove) -Values $values
         Invoke-HarnessClientCommand -Exe $exe -Arguments $rmArgs | Out-Null
+        $removed = $true
     }
 
     $addArgs = Expand-HarnessArgv -Template @($d.argv.register) -Values $values `
@@ -120,7 +125,22 @@ function Register-One {
 
     $after = Read-HarnessClientRegistration -Descriptor $d -ServerName $manifest.server_name
     if (-not $after.present) {
-        return [pscustomobject]@{ client = $ClientId; status = 'failed'; detail = ($add.text -split "`r?`n" | Select-Object -First 2) -join ' ' }
+        $detail = ($add.text -split "`r?`n" | Where-Object { $_.Trim() } | Select-Object -First 2) -join ' '
+        $restored = 'not_attempted'
+        if ($removed -and $before.parseable -and $before.command) {
+            # 원래대로 되돌린다. 실패한 채로 두면 사용자는 고치려다 잃는다.
+            $restoreValues = @{ server_name = $manifest.server_name; command = $before.command; scope = $scope }
+            $restoreArgs = Expand-HarnessArgv -Template @($d.argv.register) -Values $restoreValues `
+                -RuntimeArgs @($before.args) -EnvPairs $before.env -EnvFlagTemplate @($d.env_flag_template)
+            Invoke-HarnessClientCommand -Exe $exe -Arguments $restoreArgs | Out-Null
+            $back = Read-HarnessClientRegistration -Descriptor $d -ServerName $manifest.server_name
+            $restored = if ($back.present) { 'restored' } else { 'restore_failed' }
+        }
+        return [pscustomobject]@{
+            client = $ClientId; status = 'failed'
+            detail = "$detail  [이전 등록: $restored]"
+            restored = $restored
+        }
     }
 
     return [pscustomobject]@{

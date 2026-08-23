@@ -21,6 +21,7 @@
     "json_probe": true
   },
 
+  "$argv_note": "help 원문: 'codex mcp add [OPTIONS] <NAME> (--url <URL> | -- <COMMAND>...)'. --env 는 <KEY=VALUE> 로 값 1개만 받는다(가변 인자가 아니다). 따라서 claude 와 달리 {env_flags} 가 {server_name} 앞에 와도 이름을 삼키지 않는다. 다만 이 순서로 실제 등록을 성공시킨 적은 아직 없다 — help 로만 확인했다.",
   "argv": {
     "probe":    ["mcp", "get", "{server_name}"],
     "register": ["mcp", "add", "{env_flags}", "{server_name}", "--", "{command}", "{args}"],

@@ -291,13 +291,45 @@ function Expand-HarnessArgv {
     그래서 반드시 실제 command / args / env 를 읽어 온다.
     읽을 수 없으면 OK 가 아니라 parseable=$false 다.
 #>
+<#
+    네이티브 명령의 stderr 를 2>&1 로 합치면 PS 5.1 은 각 줄을 ErrorRecord 로 감싼다
+    (NativeCommandError). 호출자의 ErrorActionPreference 가 Stop 이면 그 순간 스크립트가 죽는다.
+
+    "그런 서버 없다" 는 조회의 정상적인 답이지 예외가 아니다.
+    실제로 이것 때문에 claude 에 서버가 없을 때 등록이 불가능했다.
+    등록돼 있을 때만 동작하는 등록 스크립트였던 셈이다.
+#>
 function Invoke-HarnessClientCommand {
     param(
         [Parameter(Mandatory = $true)][string]$Exe,
         [string[]]$Arguments = @()
     )
+    $ErrorActionPreference = 'Continue'   # 함수 스코프. 호출자에게 영향 없다
     $out = & $Exe @Arguments 2>&1
     return [pscustomobject]@{ exit = $LASTEXITCODE; text = ($out | Out-String) }
+}
+
+<#
+    표 형식 probe 는 "명령 + 인자"를 한 칸에 붙여서 준다.
+      google-workspace  stdio  enabled  C:\...\google-workspace-mcp.cmd start
+    공백으로 그냥 자르면 경로에 공백이 있는 PC 에서 틀린다.
+    그래서 "실제로 존재하는 가장 긴 접두사"를 명령으로 본다.
+    이것을 안 하면 command 에 ' start' 가 붙은 채로 비교되어 영원히 CHANGE 가 나고,
+    정합 스크립트가 매번 재등록을 제안하게 된다.
+#>
+function Split-HarnessCommandAndArgs {
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text)
+    $toks = @(($Text -split '\s+') | Where-Object { $_ })
+    if ($toks.Count -eq 0) { return [pscustomobject]@{ command = $null; args = @() } }
+    for ($n = $toks.Count; $n -ge 1; $n--) {
+        $cand = ($toks[0..($n - 1)] -join ' ')
+        if (Test-Path -LiteralPath $cand) {
+            $rest = if ($n -lt $toks.Count) { @($toks[$n..($toks.Count - 1)]) } else { @() }
+            return [pscustomobject]@{ command = $cand; args = $rest }
+        }
+    }
+    $rest = if ($toks.Count -gt 1) { @($toks[1..($toks.Count - 1)]) } else { @() }
+    return [pscustomobject]@{ command = $toks[0]; args = $rest }
 }
 
 function Read-HarnessClientRegistration {
@@ -335,7 +367,16 @@ function Read-HarnessClientRegistration {
             $r = Invoke-HarnessClientCommand -Exe $exe -Arguments $probeArgs
             if ($r.exit -ne $sem.present_exit_code) { return [pscustomobject]$res }
             $res.present = $true
+
+            # 환경변수는 "Environment:" 줄 뒤에 들여쓴 KEY=value 로 이어진다.
+            # 그 줄의 꼬리만 읽으면 항상 비어 보이고, 선언한 키가 전부 ADD 로 나온다.
+            # 즉 아무리 올바르게 등록해도 드리프트가 사라지지 않는다.
+            $inEnv = $false
             foreach ($line in ($r.text -split "`r?`n")) {
+                if ($inEnv) {
+                    if ($line -match '^\s+([^=\s]+)=(.*)$') { $res.env[$Matches[1]] = $Matches[2].Trim(); continue }
+                    $inEnv = $false   # 들여쓰기 블록이 끝났다
+                }
                 if ($line -match ([regex]::Escape($sem.parse.command_key) + '\s*(.+)$')) {
                     $res.command = $Matches[1].Trim(); $res.parseable = $true
                 } elseif ($line -match ([regex]::Escape($sem.parse.args_key) + '\s*(.*)$')) {
@@ -344,6 +385,7 @@ function Read-HarnessClientRegistration {
                 } elseif ($sem.parse.env_key -and $line -match ([regex]::Escape($sem.parse.env_key) + '\s*(.*)$')) {
                     # 빈 값도 "환경변수가 없다"는 실제 답이다. 읽었다는 사실 자체를 기록한다.
                     $res.env_parseable = $true
+                    $inEnv = $true
                     foreach ($kv in (($Matches[1].Trim()) -split '[,\s]+')) {
                         if ($kv -match '^([^=]+)=(.*)$') { $res.env[$Matches[1]] = $Matches[2] }
                     }
@@ -356,7 +398,12 @@ function Read-HarnessClientRegistration {
                 if ($line -match "^\s*$([regex]::Escape($ServerName))\s+") {
                     $res.present = $true
                     $cols = $line -split '\s{2,}'
-                    if ($cols.Count -ge 2) { $res.command = $cols[-1].Trim(); $res.parseable = $true }
+                    if ($cols.Count -ge 2) {
+                        $split = Split-HarnessCommandAndArgs -Text $cols[-1].Trim()
+                        $res.command = $split.command
+                        $res.args = @($split.args)
+                        $res.parseable = [bool]$split.command
+                    }
                 }
             }
         }

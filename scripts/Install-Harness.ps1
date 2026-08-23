@@ -100,6 +100,9 @@ function Invoke-HarnessExec {
         [Parameter(Mandatory = $true)][string]$File,
         [string[]]$Arguments = @()
     )
+    # 2>&1 로 합친 stderr 는 PS 5.1 에서 ErrorRecord 가 된다. Stop 이면 여기서 죽는다.
+    # 우리는 exit code 로 성공/실패를 판정한다. 출력은 판정 근거가 아니라 기록이다.
+    $ErrorActionPreference = 'Continue'   # 함수 스코프
     $out = & $File @Arguments 2>&1
     return [pscustomobject]@{ exit = $LASTEXITCODE; text = ($out | Out-String).TrimEnd() }
 }
