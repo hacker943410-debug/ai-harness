@@ -50,6 +50,52 @@ $root = (Resolve-Path -LiteralPath $HarnessRoot).Path
 $catalogPath = Join-HarnessPath $root 'catalogs' 'mcp-catalog.json'
 $catalog = Read-HarnessJson -Path $catalogPath
 
+<#
+    카탈로그는 항목 1개가 1줄이다. 일부러 그렇게 두었다.
+    65개 항목을 ConvertTo-Json 기본 서식으로 펼치면 한 항목만 바뀌어도
+    diff 가 수백 줄이 되어 리뷰에서 무엇이 바뀌었는지 안 보이게 된다.
+    그래서 헤더/policy 만 펼치고 entries 는 한 줄씩 압축해서 쓴다.
+#>
+function Write-HarnessCatalog {
+    param([Parameter(Mandatory = $true)][string]$Path, [Parameter(Mandatory = $true)]$Catalog)
+
+    # PS 5.1 의 ConvertTo-Json 은 < > ' & 를 \u00xx 로 이스케이프한다.
+    # JSON 문자열 안에서 이 넷은 그대로 써도 되고, 이스케이프되면 사람이 못 읽는다.
+    function Restore-Readable { param([string]$s)
+        $map = [ordered]@{ '3c' = '<'; '3e' = '>'; '27' = [string][char]39; '26' = '&' }
+        foreach ($code in $map.Keys) { $s = $s.Replace(('\u00' + $code), [string]$map[$code]) }
+        return $s
+    }
+
+    $sb = New-Object System.Text.StringBuilder
+    [void]$sb.AppendLine('{')
+    [void]$sb.AppendLine('  "schema_version": ' + (Restore-Readable ($Catalog.schema_version | ConvertTo-Json -Compress)) + ',')
+    [void]$sb.AppendLine('  "updated_at": ' + (Restore-Readable ($Catalog.updated_at | ConvertTo-Json -Compress)) + ',')
+    [void]$sb.AppendLine('  "discovery_sources": ' + (Restore-Readable (@($Catalog.discovery_sources) | ConvertTo-Json -Compress)) + ',')
+
+    $policyLines = @((Restore-Readable ($Catalog.policy | ConvertTo-Json -Depth 6)) -split "`r?`n")
+    for ($i = 0; $i -lt $policyLines.Count; $i++) {
+        $prefix = if ($i -eq 0) { '  "policy": ' } else { '  ' }
+        $suffix = if ($i -eq $policyLines.Count - 1) { ',' } else { '' }
+        [void]$sb.AppendLine($prefix + $policyLines[$i].TrimEnd() + $suffix)
+    }
+
+    [void]$sb.AppendLine('  "entries": [')
+    $items = @($Catalog.entries)
+    for ($i = 0; $i -lt $items.Count; $i++) {
+        $line = Restore-Readable ($items[$i] | ConvertTo-Json -Depth 8 -Compress)
+        $comma = if ($i -lt $items.Count - 1) { ',' } else { '' }
+        [void]$sb.AppendLine('    ' + $line + $comma)
+    }
+    [void]$sb.AppendLine('  ]')
+    [void]$sb.AppendLine('}')
+
+    $text = $sb.ToString()
+    # 쓰기 전에 반드시 다시 파싱해 본다. 손으로 만든 JSON 은 손으로 깨진다.
+    $null = $text | ConvertFrom-Json
+    Write-HarnessText -Path $Path -Text $text
+}
+
 $targets = @($catalog.entries | Where-Object { $_.install.kind -eq 'registry_lookup' })
 
 # discovery_only 는 정책상 설치할 수 없는 항목이다(discovery_only_is_not_installable).
@@ -206,21 +252,23 @@ if ($UpdateCatalog) {
     }
     foreach ($r in $resolved) {
         $e = @($catalog.entries | Where-Object id -eq $r.id)[0]
-        $e.install = [pscustomobject]@{
-            kind     = $(if ($r.package_registry -eq 'npm') { 'npm' } else { [string]$r.package_registry })
-            package  = $r.package
-            version  = $r.version
-            docs     = $(if ($e.install.docs) { $e.install.docs } else { $null })
-            registry = [pscustomobject]@{
-                name        = $r.registry_name
-                base        = $RegistryBase
-                resolved_at = (Get-HarnessUtcStamp)
-                publisher_verified = $true
-            }
+        $install = [ordered]@{
+            kind    = $(if ($r.package_registry -eq 'npm') { 'npm' } else { [string]$r.package_registry })
+            package = $r.package
+            version = $r.version
         }
+        # 없는 필드를 null 로 채우지 않는다. 카탈로그에 의미 없는 잡음이 쌓인다.
+        if ($e.install.docs) { $install['docs'] = $e.install.docs }
+        $install['registry'] = [ordered]@{
+            name               = $r.registry_name
+            base               = $RegistryBase
+            resolved_at        = (Get-HarnessUtcStamp)
+            publisher_verified = $true
+        }
+        $e.install = [pscustomobject]$install
     }
     $catalog.updated_at = (Get-HarnessUtcStamp)
-    Write-HarnessJson -Path $catalogPath -InputObject $catalog -Depth 12
+    Write-HarnessCatalog -Path $catalogPath -Catalog $catalog
     Write-Output "카탈로그를 갱신했습니다: $catalogPath"
     Write-Output '커밋 전에 .\scripts\Test-HarnessRepo.ps1 을 돌리세요.'
 }

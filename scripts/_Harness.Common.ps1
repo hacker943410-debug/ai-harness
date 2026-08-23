@@ -210,6 +210,82 @@ function Get-HarnessUtcStamp { return [DateTimeOffset]::UtcNow.ToString('o') }
     관리자 권한 없는 다른 로컬 사용자가 MCP 실행 파일을 교체할 수 있다.
     실제로 이 하네스의 초기 구성이 그 상태였다.
 #>
+<#
+    Get-Acl / Set-Acl 을 쓰지 않는 이유.
+
+    둘은 보안 기술자를 Owner + Group + DACL + (경우에 따라) SACL 로 다룬다.
+    SACL 은 SeSecurityPrivilege 를 요구하고, 그 권한은 관리자로 승격해야 얻는다.
+    그래서 관리자 권한 없이 Set-Acl 을 부르면 이렇게 죽는다.
+        The process does not possess the 'SeSecurityPrivilege' privilege
+    실측으로 C:\AI-Harness 에서 확인했다. 같은 작업을 Access 섹션만으로 하면 성공한다.
+
+    우리가 바꾸려는 것은 DACL 뿐이다. 소유자도 감사 정책도 건드리지 않는다.
+    그러니 처음부터 Access 섹션만 읽고 Access 섹션만 쓴다.
+#>
+$script:HarnessAclAccessSection = [Security.AccessControl.AccessControlSections]::Access
+
+function Get-HarnessDacl {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    $item = Get-Item -LiteralPath $Path -Force
+    return $item.GetAccessControl($script:HarnessAclAccessSection)
+}
+
+function Set-HarnessDacl {
+    param([Parameter(Mandatory = $true)][string]$Path, [Parameter(Mandatory = $true)]$Security)
+    $item = Get-Item -LiteralPath $Path -Force
+    $item.SetAccessControl($Security)
+}
+
+function Get-HarnessDaclSddl {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return $null }
+    try { return (Get-HarnessDacl -Path $Path).GetSecurityDescriptorSddlForm($script:HarnessAclAccessSection) }
+    catch { return $null }
+}
+
+function Restore-HarnessDaclSddl {
+    param([Parameter(Mandatory = $true)][string]$Path, [Parameter(Mandatory = $true)][string]$Sddl)
+    $sec = Get-HarnessDacl -Path $Path
+    $sec.SetSecurityDescriptorSddlForm($Sddl, $script:HarnessAclAccessSection)
+    Set-HarnessDacl -Path $Path -Security $sec
+}
+
+<#
+    소유자 / SYSTEM / Administrators 외에는 접근할 수 없게 만든다.
+    상속을 먼저 끊지 않으면 상위(예: C:\ 의 Authenticated Users: Modify)에서 다시 흘러 들어온다.
+    상속 ACE 는 그 자리에서 지울 수 없으므로 SetAccessRuleProtection(true, true) 로
+    현재 값을 복사해 내린 뒤 명시 ACE 를 지운다.
+#>
+function Set-HarnessRestrictedDacl {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $isDir = Test-Path -LiteralPath $Path -PathType Container
+    $me = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $keep = @('S-1-5-18', 'S-1-5-32-544', $me)
+
+    $sec = Get-HarnessDacl -Path $Path
+    $sec.SetAccessRuleProtection($true, $true)
+    Set-HarnessDacl -Path $Path -Security $sec
+
+    $sec = Get-HarnessDacl -Path $Path
+    foreach ($ace in @($sec.Access)) {
+        if ($ace.IsInherited) { continue }
+        $sid = $null
+        try { $sid = $ace.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value } catch { }
+        if ($sid -and ($keep -contains $sid -or $sid.StartsWith('S-1-5-80'))) { continue }
+        [void]$sec.RemoveAccessRuleSpecific($ace)
+    }
+    # 상속 플래그는 디렉터리에만 유효하다. 파일에 주면 예외가 난다.
+    $inherit = if ($isDir) { 'ContainerInherit,ObjectInherit' } else { 'None' }
+    foreach ($sidStr in $keep) {
+        $rule = New-Object Security.AccessControl.FileSystemAccessRule(
+            (New-Object Security.Principal.SecurityIdentifier($sidStr)),
+            'FullControl', $inherit, 'None', 'Allow')
+        $sec.AddAccessRule($rule)
+    }
+    Set-HarnessDacl -Path $Path -Security $sec
+}
+
 function Test-HarnessPathTrust {
     param([Parameter(Mandatory = $true)][string]$Path)
 
@@ -222,7 +298,7 @@ function Test-HarnessPathTrust {
     if (-not $script:HarnessIsWindows) { return [pscustomobject]$result }   # 비Windows 는 미구현
 
     try {
-        $acl = Get-Acl -LiteralPath $Path
+        $acl = Get-HarnessDacl -Path $Path
         $allowedSids = @('S-1-5-18', 'S-1-5-32-544')
         $me = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
         $writeRights = 'Write|Modify|FullControl|TakeOwnership|ChangePermissions'

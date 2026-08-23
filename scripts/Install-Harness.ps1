@@ -91,51 +91,9 @@ function Get-HarnessJournalBackupDir {
 # 변경 원시 연산 — 각각 before 상태를 반환한다
 # ---------------------------------------------------------------------------
 
-function Get-HarnessAclSddl {
-    param([Parameter(Mandatory = $true)][string]$Path)
-    if (-not (Test-Path -LiteralPath $Path)) { return $null }
-    try { return (Get-Acl -LiteralPath $Path).Sddl } catch { return $null }
-}
-
-<#
-    소유자 / SYSTEM / Administrators 외에는 쓸 수 없게 만든다.
-    상속을 먼저 끊지 않으면 상위(예: C:\ 의 Authenticated Users: Modify)에서
-    다시 흘러 들어온다. 상속 ACE 는 그 자리에서 제거할 수 없으므로
-    SetAccessRuleProtection(true, true) 로 복사해 내린 뒤 명시 ACE 를 지운다.
-#>
-function Set-HarnessRestrictedAcl {
-    param([Parameter(Mandatory = $true)][string]$Path)
-
-    $acl = Get-Acl -LiteralPath $Path
-    $acl.SetAccessRuleProtection($true, $true)
-    Set-Acl -LiteralPath $Path -AclObject $acl
-
-    $acl = Get-Acl -LiteralPath $Path
-    $me = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-    $keep = @('S-1-5-18', 'S-1-5-32-544', $me)
-    foreach ($ace in @($acl.Access)) {
-        if ($ace.IsInherited) { continue }
-        $sid = $null
-        try { $sid = $ace.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value } catch { }
-        if ($sid -and ($keep -contains $sid -or $sid.StartsWith('S-1-5-80'))) { continue }
-        [void]$acl.RemoveAccessRule($ace)
-    }
-    foreach ($sidStr in $keep) {
-        $rule = New-Object Security.AccessControl.FileSystemAccessRule(
-            (New-Object Security.Principal.SecurityIdentifier($sidStr)),
-            'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow')
-        $acl.AddAccessRule($rule)
-    }
-    Set-Acl -LiteralPath $Path -AclObject $acl
-}
-
-function Restore-HarnessAclSddl {
-    param([Parameter(Mandatory = $true)][string]$Path, [Parameter(Mandatory = $true)][string]$Sddl)
-    $acl = Get-Acl -LiteralPath $Path
-    # DACL 만 되돌린다. 소유자 복원은 별도 권한을 요구하고, 우리는 소유자를 바꾸지 않았다.
-    $acl.SetSecurityDescriptorSddlForm($Sddl, [Security.AccessControl.AccessControlSections]::Access)
-    Set-Acl -LiteralPath $Path -AclObject $acl
-}
+# ACL 조작은 _Harness.Common.ps1 의 DACL 전용 헬퍼를 쓴다.
+# Get-Acl / Set-Acl 은 SACL 까지 다루려 해서 SeSecurityPrivilege 를 요구한다(관리자 승격 필요).
+# 우리가 바꾸는 것은 DACL 뿐이므로 그 섹션만 읽고 쓴다.
 
 function Invoke-HarnessExec {
     param(
@@ -200,7 +158,7 @@ function Invoke-HarnessRollback {
                 }
                 'acl-set' {
                     if (-not $b.before.sddl) { Write-Warning "  보류 $label — 이전 SDDL 이 없습니다"; continue }
-                    Restore-HarnessAclSddl -Path $b.target -Sddl $b.before.sddl
+                    Restore-HarnessDaclSddl -Path $b.target -Sddl $b.before.sddl
                     Write-Output "  되돌림 $label — DACL 복원"
                 }
                 'env-set' {
@@ -532,7 +490,7 @@ foreach ($s in $actions) {
 
     switch ($s.kind) {
         'dir-create' { $before = @{ existed = [bool](Test-Path -LiteralPath $s.payload.path) } }
-        'acl-set' { $before = @{ sddl = (Get-HarnessAclSddl -Path $s.payload.path) } }
+        'acl-set' { $before = @{ sddl = (Get-HarnessDaclSddl -Path $s.payload.path) } }
         'env-set' {
             $before = @{
                 name = $s.payload.name; scope = $s.payload.scope
@@ -564,10 +522,10 @@ foreach ($s in $actions) {
                 New-Item -ItemType Directory -Force -Path $s.payload.path | Out-Null
                 # New-Item 은 MAX_PATH 를 넘는 경로에서도 성공한 것처럼 보인다. 실제로 확인한다.
                 if (-not (Test-Path -LiteralPath $s.payload.path)) { throw "디렉터리가 만들어지지 않았습니다: $($s.payload.path)" }
-                if ($s.payload.restrict_acl) { Set-HarnessRestrictedAcl -Path $s.payload.path }
+                if ($s.payload.restrict_acl) { Set-HarnessRestrictedDacl -Path $s.payload.path }
             }
             'acl-set' {
-                Set-HarnessRestrictedAcl -Path $s.payload.path
+                Set-HarnessRestrictedDacl -Path $s.payload.path
                 $t = Test-HarnessPathTrust -Path $s.payload.path
                 if (-not $t.trusted) { throw "ACL 을 적용했지만 여전히 신뢰할 수 없습니다: $($t.offenders -join '; ')" }
             }
