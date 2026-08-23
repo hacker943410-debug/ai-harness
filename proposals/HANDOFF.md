@@ -9,7 +9,7 @@
 ## 0. 한 문장 요약
 
 `C:\AI-Harness`(AI Harness 2.2)를 **GitHub에서 받아 어느 PC에서든 설치·사용할 수 있는 3계층 구조**로 재편하는 중이다.
-M0~M6 완료, **M7 전반부 완료**, 후반부(통합 적용 스크립트·카탈로그 통합) 남음.
+**M0~M7b 구현 완료.** 남은 것은 이 PC 에 실제로 적용할지에 대한 **사용자 결정 6건**(§7)과 M8 이후 항목이다.
 
 ---
 
@@ -19,7 +19,7 @@ M0~M6 완료, **M7 전반부 완료**, 후반부(통합 적용 스크립트·카
 |---|---|
 | 하네스 로컬 | `C:\AI-Harness` |
 | 원격 | `https://github.com/hacker943410-debug/ai-harness` (**Private**) |
-| 현재 HEAD | `4bab32b` (working tree clean, origin/main 과 동기) |
+| 현재 HEAD | `831e3e9` (working tree clean) |
 | 기준점 태그 | `v2.2.0` = `9e142bf` (롤백 지점) |
 | 도구 루트 (Layer B) | `%LOCALAPPDATA%\AI-Tools` = `C:\Users\hacke\AppData\Local\AI-Tools` |
 | 레거시 도구 루트 | `C:\AI-Tools` (**아직 존재**, ACL은 제한 완료, 삭제 대기) |
@@ -28,6 +28,10 @@ M0~M6 완료, **M7 전반부 완료**, 후반부(통합 적용 스크립트·카
 ### 커밋 이력
 
 ```
+831e3e9  M7b(3/3): 카탈로그 통합, 레지스트리 해석기, 저장소 검사 확장, 수명주기 문서
+4359d6d  M7b(2/2): 클라이언트 정합 + 인증 연결/해제, 하네스 저장소 권한 결함 발견
+3e42f64  M7b(1/2): 통합 적용 스크립트 — 변경 계획 파일 + 3-way diff + 롤백 저널
+b935e86  docs: 세션 인수인계 문서 추가 (proposals/HANDOFF.md)
 4bab32b  docs: PC 환경별 최초 설치 가이드 추가
 e5af9c3  M7(1/2): 공용 런타임 계층 + 설치 전 환경 진단
 75d0e46  M6: 공통 헬퍼 도입, 경로/인코딩 결함 일괄 수정, 저장소 자체 검사기 추가
@@ -73,26 +77,48 @@ e5af9c3  M7(1/2): 공용 런타임 계층 + 설치 전 환경 진단
 | M5 | 도구 루트를 `%LOCALAPPDATA%\AI-Tools`로 이전 + ACL 제한, 3개 CLI 재등록, 실제 API로 검증 |
 | M6 | `_Harness.Common.ps1`, 경로/인코딩 결함 일괄 수정, `Test-HarnessRepo.ps1`(7개 lint 규칙) |
 | M7a | 런타임 매니페스트·클라이언트 디스크립터·5개 런타임 스크립트·환경 진단·설치 가이드 |
+| M7b | 통합 적용(계획 파일 + 3-way diff + 롤백 저널), 클라이언트 정합, 인증 연결/해제, 카탈로그 `shared_runtime` 통합, 레지스트리 해석기, 검사기 확장, 수명주기 문서 |
 
 ### 지금 존재하는 파일 (Layer A)
 
 ```
-runtimes/google-workspace.runtime.json   ← 버전 핀의 유일한 소스 (3.4.4)
+runtimes/google-workspace.runtime.json   ← 버전 핀의 유일한 소스 (3.4.4). credentials.revoke 포함
 runtimes/_TEMPLATE.runtime.json
 settings/clients/{claude,codex,agy}.client.json
+
 scripts/_Harness.Common.ps1              경로·인코딩·네이티브명령·ACL 헬퍼
-scripts/_Harness.Runtime.ps1             매니페스트/인덱스/지문/argv 전개
-scripts/Get-HarnessEnvironment.ps1       설치 전 환경 진단 (읽기 전용)
+scripts/_Harness.Runtime.ps1             매니페스트/인덱스/지문/argv + probe·3-way diff·
+                                         실행중 세션·계획 단계 팩토리
+scripts/Get-HarnessEnvironment.ps1       환경 진단 (읽기 전용). -SavePlan 으로 계획 파일 생성
+scripts/Install-Harness.ps1              ★ 유일한 적용 경로. 계획 소비 + 확인 + 롤백 저널
+scripts/Sync-HarnessClients.ps1          (런타임 x 클라이언트) 행렬. 읽기 전용 + 계획 생성
 scripts/Resolve-HarnessRuntime.ps1       읽기 전용 해석
 scripts/Install-HarnessRuntime.ps1       설치 / -Adopt 채택
+scripts/Connect-HarnessRuntimeAuth.ps1   인증 연결 (자격증명 원본 위치 검사 포함)
+scripts/Disconnect-HarnessRuntime.ps1    권한취소 -> 토큰삭제 -> 등록제거 -> state 되돌림
 scripts/Register-HarnessRuntimeClient.ps1 등록 (되읽어 확인)
 scripts/Test-HarnessRuntime.ps1          전송 검증 + 인증 검증 분리
-scripts/Test-HarnessRepo.ps1             저장소 자체 검사
+scripts/Test-HarnessRepo.ps1             저장소 자체 검사 (11개 규칙군)
+scripts/Resolve-HarnessMcpRegistry.ps1   registry_lookup 해석 (발행자 일치 강제)
 scripts/harness-mcp-probe.mjs            MCP 프로브
+
+workflows/SHARED_RUNTIME.md              ★ 런타임 수명주기 (install->auth->verify->sync->restart)
 workflows/HARNESS_INSTALL.md             PC 환경별 최초 설치 가이드
 workflows/GOOGLE_WORKSPACE_SETUP.md      새 사용자 Google 로그인 가이드
 proposals/HARNESS_V3_PROPOSAL.md         설계 근거 (v1.1)
 ```
+
+### 변경 적용 경로 (이 구조를 깨지 말 것)
+
+```
+  Get-HarnessEnvironment.ps1  ─┐
+                               ├─> 계획 파일(harness-change-plan v1.0) ─> Install-Harness.ps1
+  Sync-HarnessClients.ps1     ─┘        (사용자가 enabled 편집 가능)          확인 -> 적용 -> 저널
+```
+
+계획을 만드는 스크립트는 여럿이어도 **적용하는 스크립트는 하나**다.
+둘이 되는 순간 확인 절차를 우회하는 길이 생긴다.
+단계의 스키마는 `_Harness.Runtime.ps1` 의 `New-HarnessPlanStep` 이 유일하게 정의한다.
 
 ---
 
@@ -103,15 +129,33 @@ runtimes.json : state=verified  installed=3.4.4  install_dir=google-workspace-mc
                 (레거시 디렉터리명을 -Adopt 로 채택한 상태)
 clients.json  : 아직 없음 (Register 를 실행하지 않았으므로)
 
-claude  mcp get google-workspace  → exit 0  (등록됨, 래퍼 .cmd 를 가리킴)
-codex   mcp get google-workspace  → exit 1  (미등록)
-agy     mcp list                  → 등록됨
+Sync-HarnessClients.ps1 결과 (2026-08-23):
+  google-workspace x agy     drift          command:CHANGE, args:ADD
+  google-workspace x claude  drift          command:CHANGE, args:ADD, env 3건 ADD
+  google-workspace x codex   unregistered
 ```
 
-**드리프트 1건 (미해결):** 매니페스트는 `services = drive,gmail,calendar,docs,sheets,slides`인데
-`%LOCALAPPDATA%\AI-Tools\google-workspace-mcp\google-workspace-mcp.cmd` 래퍼는 `...,contacts`를 설정한다.
-현재 등록은 그 래퍼를 가리키므로 **실제로는 contacts가 켜져 있다**. M7 후반부에서 래퍼를 없애고
-`.bin` shim + 명시적 env로 재등록하면 해소된다.
+**드리프트 1건 (미해결, 사용자 확인 대기):**
+매니페스트는 `services = drive,gmail,calendar,docs,sheets,slides` 인데
+`%LOCALAPPDATA%\AI-Tools\google-workspace-mcp\google-workspace-mcp.cmd` 래퍼는 `...,contacts` 를 설정한다.
+claude 와 agy 의 등록이 그 래퍼를 가리키므로 **실제로는 contacts 가 켜져 있다**.
+
+M7b 에서 이 드리프트를 **자동으로 탐지하도록** 만들었다(3-way diff).
+`Sync-HarnessClients.ps1` 이 매번 잡아낸다. 적용 명령도 이미 생성된다:
+
+```powershell
+.\scripts\Sync-HarnessClients.ps1 -SavePlan .\sync.json
+.\scripts\Install-Harness.ps1 -Plan .\sync.json -DryRun
+.\scripts\Install-Harness.ps1 -Plan .\sync.json          # 살아있는 등록을 바꾼다 — 확인 필요
+```
+
+적용하면 등록이 래퍼 대신 `.bin` shim + 명시적 env 를 가리키게 되어 드리프트가 사라진다.
+**아직 적용하지 않았다.** 살아있는 CLI 등록을 바꾸는 일이고, 적용 시 claude/agy 재시작이 필요하다.
+
+**하네스 저장소 권한 (신규 발견, 미해결):**
+`C:\AI-Harness` 자체가 `Authenticated Users [Modify]` 를 상속받고 있다.
+M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 정책이 있는 곳은 열려 있었다.
+진단이 `harness.acl:C:\AI-Harness` 단계를 제안한다.
 
 ---
 
@@ -139,55 +183,57 @@ agy     mcp list                  → 등록됨
 | 16 | Gemini CLI: `excludeTools`/`includeTools`는 discovery 단계 제거. **AGY와는 별개 제품이고 설정 비호환**(`serverUrl` vs `httpUrl`) |
 | 17 | 도구 수: services 7종 = 88개 → 6종(contacts 제외) = **82개** |
 | 18 | claude.ai 내장 Gmail/Drive/Calendar 커넥터와 `google-workspace`가 **동시 연결** 중이며 이름이 같은 도구 15개가 서로 다른 계정으로 공존 |
+| 19 | **MCP 공식 레지스트리 검색은 타이포스쿼트를 먼저 준다.** `search=chrome-devtools` 결과 1등이 `io.github.Async23/chrome-devtools-mcp@1.7.0`(2026-08-16 등록), 진짜 `io.github.ChromeDevTools/chrome-devtools-mcp` 는 2등. **검색 1등을 그대로 핀하면 안 된다.** 레지스트리 이름의 소유자 구간이 카탈로그 `publisher` 와 일치할 때만 인정한다 |
+| 20 | `C:\AI-Harness` 자체가 `Authenticated Users [Modify]` 를 상속받고 있다 (§5-11 과 같은 원인, 하네스 루트는 M5 에서 빠졌음) |
+| 21 | 카탈로그 `registry_lookup` 53건 중 **34건은 `discovery_only` 이고 `publisher` 가 비어 있다.** 정책상 설치 불가 항목이므로 좌표 확정 대상이 아니다. 실제 대상은 19건 |
+| 22 | `tokens.json` 은 평면 Google OAuth 토큰 객체다 (`access_token` / `refresh_token` / `expiry_date` / `token_type` / `scope` / `created_at` / `refresh_token_expires_in`). `refresh_token` 을 `https://oauth2.googleapis.com/revoke` 로 취소하면 부여 전체가 취소된다 |
+| 23 | `[Environment]::UserInteractive` 로 비대화형을 감지할 수 있다. 대화형 확인을 받을 수 없는 세션에서 조용히 적용하는 것을 막는 데 쓴다 |
 
 ---
 
 ## 6. 남은 작업 (우선순위 순)
 
-### M7b — 통합 적용 + 카탈로그 통합
+### M7b — 완료 (2026-08-23)
 
-1. **`scripts/Install-Harness.ps1`**
-   - `-WhatIf`에 의존하지 말 것 (§5-13). **명시적 변경 계획 객체**를 만들어 렌더링
-     `{kind: env-set|file-write|dir-create|acl-set|exec, target, old, new, command_line}`
-   - 진단이 낸 계획 파일을 **인자로 받아** 소비 (재탐지로 사용자 편집을 무시하면 안 됨)
-   - **롤백 저널**: 각 변경 직전에 이전 상태를 append-only로 기록 → `-Rollback <journal>`
-   - 단계 간 **의존성**: 선행 단계를 거부하면 종속 단계는 아예 제시하지 않음
-   - 적용 직전 **실행 중 CLI 세션 재확인** 후 거부
-   - **3-way diff**(선언 vs 매니페스트 vs 실제)로 ADD/CHANGE/**REMOVE** 표시. REMOVE는 별도 확인
-2. **`scripts/Sync-HarnessClients.ps1`** — (런타임 × 클라이언트) 정합
-3. **`scripts/Connect-HarnessRuntimeAuth.ps1`** / **`Disconnect-HarnessRuntime.ps1`**
-   - Connect: 소스가 git 워크트리 안/tools_root 안/그룹쓰기 가능이면 거부
-   - Disconnect: Google 권한 취소 → 토큰 삭제 → 클라이언트 등록 제거 → state 되돌림
-4. **카탈로그 통합**
-   - `catalogs/mcp-catalog.json`의 `google-workspace-local` → `install.kind: "shared_runtime"`, `runtime_id`, `manifest` (package/version **제거**)
-   - `policy`에 `shared_runtime_requires_manifest` / `shared_runtime_dir` / `shared_runtime_version_source`
-   - `Install-ProjectMcp.ps1`에 `shared_runtime` 가드 (프로젝트별 설치 거부)
-   - `registry_lookup` 53건 → MCP 공식 레지스트리 API로 해석
-     `GET https://registry.modelcontextprotocol.io/v0.1/servers/{name}/versions/latest` (이름의 `/`는 `%2F`)
-5. **`workflows/SHARED_RUNTIME.md`** — 런타임 수명주기 (install → auth → verify → sync 순서 명시. 인증 변경 시 클라이언트 재시작 필요)
-6. **`Test-HarnessRepo.ps1` 확장** — 매니페스트 스키마, Layer A 절대경로 금지, never_sync 단일 소스
+1~6 모두 구현·검증됨. 요약은 §3, 파일 목록은 §3 하단, 구조는 "변경 적용 경로" 참고.
+남은 것은 **적용 결정**이지 구현이 아니다 (§7).
 
-### M8 이후
+### M8 이후 (우선순위 순)
 
-7. 래퍼 `.cmd` 제거 → `.bin` shim + 명시적 env로 재등록 (§4 드리프트 해소)
-8. 중복 claude.ai Google 커넥터 정리 (D11)
-9. Drive를 `/AI-Harness-snapshots/v3.0.0/` 스냅샷으로 강등 + `sync-harness-to-drive.mjs` 처리
-   (현재 삭제 패스 없음, 제외 목록 하드코딩, update 실패 시 create 폴백으로 동명 파일 생성)
-10. `schemas/` 추가: runtime-manifest / runtime-index / client-descriptor / never-sync.generated
-11. 레거시 `C:\AI-Tools` 삭제 (모든 CLI 재시작 후)
-12. `POLICY_INDEX.compat.json` (기계가 읽는 계약은 YAML 금지 — PS 5.1에 파서 없음)
-13. (선택) `.claude-plugin/marketplace.json`
+1. **§4 드리프트 적용** — `Sync-HarnessClients.ps1 -SavePlan` → `Install-Harness.ps1`.
+   등록이 래퍼 대신 `.bin` shim + 명시적 env 를 가리키게 된다. **살아있는 등록 변경 → 확인 필요**
+2. **하네스 저장소 ACL 제한** — `harness.acl:C:\AI-Harness` (§4). 진단이 이미 계획을 낸다
+3. **레지스트리 확정 8건 반영** — `Resolve-HarnessMcpRegistry.ps1 -UpdateCatalog`.
+   발행자 검증을 통과한 것만: context7 / supabase / dbhub / mongodb / terraform /
+   firecrawl / tavily / serena. **Layer A 변경이라 커밋되어 모든 PC 에 퍼진다 → 확인 필요**
+4. **해석 못한 11건 처리** — `not_found` 5(chrome-devtools, azure, azure-devops, searxng,
+   markitdown, google-cloud, google-analytics, semgrep 중 일부), `publisher_mismatch` 4
+   (notion / apify / xcodebuildmcp / unity), `resolved_no_package` 2 (stripe / netdata).
+   `publisher: "community"` 는 레지스트리 소유자와 절대 일치할 수 없다 — 카탈로그 데이터 결함
+5. 중복 claude.ai Google 커넥터 정리 (D11)
+6. Drive를 `/AI-Harness-snapshots/v3.0.0/` 스냅샷으로 강등 + `sync-harness-to-drive.mjs` 처리
+   (현재 삭제 패스 없음, 제외 목록 하드코딩, update 실패 시 create 폴백으로 동명 파일 생성).
+   **제외 목록은 매니페스트의 `never_sync` 를 읽어야 한다.** 검사기가 매니페스트 쪽은 강제하지만
+   `.mjs` 가 자체 목록을 쓰는 것까지는 아직 막지 않는다
+7. `schemas/` 추가: runtime-manifest / runtime-index / client-descriptor / change-plan
+   (계획 파일 스키마도 이제 대상이다)
+8. 레거시 `C:\AI-Tools` 삭제 (모든 CLI 재시작 후). 진단이 `manual` 단계로 제시하며 자동 삭제하지 않는다
+9. `POLICY_INDEX.compat.json` (기계가 읽는 계약은 YAML 금지 — PS 5.1에 파서 없음)
+10. AGY 도구 통제 메커니즘 검증 (§7-2)
+11. (선택) `.claude-plugin/marketplace.json`
 
 ---
 
 ## 7. 사용자 확인이 필요한 미결 사항
 
-| # | 내용 |
-|---|---|
-| 1 | **Codex 재등록** — 지금 미등록 상태. 다만 orca가 설정을 소유해 다시 지워질 수 있음(§5-10). `risk: high` 등록이므로 `-IAcceptRisk` 필요. **사용자 확인 후 진행할 것** |
-| 2 | **AGY 도구 통제 메커니즘** — 미검증. Gemini CLI의 `excludeTools`를 적용하면 안 됨 |
-| 3 | 래퍼 제거 시점 — 살아있는 CLI 등록을 바꾸는 작업이라 확인 필요 |
-| 4 | 레거시 `C:\AI-Tools` 삭제 시점 |
+| # | 내용 | 준비 상태 |
+|---|---|---|
+| 1 | **claude / agy 등록 드리프트 적용** — 등록이 래퍼를 가리켜 선언에 없는 `contacts` 가 켜져 있다. 재등록하면 해소. 적용 후 두 CLI 재시작 필요 | 계획·명령 준비 완료. 실행만 남음 |
+| 2 | **Codex 등록** — 지금 미등록. orca 가 설정을 소유해 다시 지워질 수 있음(§5-10). risk=high 라 `-IAcceptRisk` 필요 | 계획에 `선택` 단계로 들어 있음 (`-IncludeOptional` 필요) |
+| 3 | **하네스 저장소 ACL 제한** (§4) — `C:\AI-Harness` 가 다른 로컬 사용자에게 쓰기 허용 중 | 진단이 계획 단계 생성 |
+| 4 | **레지스트리 확정 8건 카탈로그 반영** — Layer A 변경이라 커밋되어 퍼진다 | `-UpdateCatalog` 로 즉시 가능 |
+| 5 | **AGY 도구 통제 메커니즘** — 미검증. Gemini CLI 의 `excludeTools` 를 적용하면 안 됨(§5-16) | 조사 필요 |
+| 6 | 레거시 `C:\AI-Tools` 삭제 시점 | `manual` 단계로 제시됨. 자동 실행 안 함 |
 
 ---
 
@@ -206,16 +252,29 @@ agy     mcp list                  → 등록됨
 ## 9. 이어서 시작하는 법
 
 ```powershell
-# 1. 현재 상태 확인
-powershell -NoProfile -ExecutionPolicy Bypass -File 'C:\AI-Harness\scripts\Get-HarnessEnvironment.ps1'
+# 1. 저장소 계약 (11개 규칙군)
 powershell -NoProfile -ExecutionPolicy Bypass -File 'C:\AI-Harness\scripts\Test-HarnessRepo.ps1'
+
+# 2. 이 PC 상태 — 읽기 전용. 아무것도 바꾸지 않는다
+powershell -NoProfile -ExecutionPolicy Bypass -File 'C:\AI-Harness\scripts\Get-HarnessEnvironment.ps1'
+powershell -NoProfile -ExecutionPolicy Bypass -File 'C:\AI-Harness\scripts\Sync-HarnessClients.ps1'
 powershell -NoProfile -ExecutionPolicy Bypass -File 'C:\AI-Harness\scripts\Resolve-HarnessRuntime.ps1' -All
 
-# 2. git 상태
-git -C C:\AI-Harness log --oneline -3
+# 3. git 상태
+git -C C:\AI-Harness log --oneline -5
 git -C C:\AI-Harness status --short
+```
+
+**바꾸기 전에는 반드시 계획 파일을 거친다.** 위 진단 명령 중 어느 것도 아무것도 바꾸지 않는다.
+
+```powershell
+powershell ... -File '...\Sync-HarnessClients.ps1'  -SavePlan .\plan.json    # 1) 계획
+notepad .\plan.json                                                          # 2) enabled 편집
+powershell ... -File '...\Install-Harness.ps1' -Plan .\plan.json -DryRun     # 3) 실행될 명령 확인
+powershell ... -File '...\Install-Harness.ps1' -Plan .\plan.json             # 4) 확인 후 적용
+powershell ... -File '...\Install-Harness.ps1' -Rollback <저널경로>           # 되돌리기
 ```
 
 다음 세션 첫 지시 예시:
 
-> `C:\AI-Harness\proposals\HANDOFF.md` 를 읽고 M7 후반부부터 이어서 진행해줘.
+> `C:\AI-Harness\proposals\HANDOFF.md` 를 읽고 §7 미결 사항부터 이어서 진행해줘.
