@@ -1,5 +1,9 @@
 # Google Workspace MCP — PC 공용 런타임
 
+> **처음 설정하는 사용자는 이 문서가 아니라 `workflows/GOOGLE_WORKSPACE_SETUP.md`를 먼저 읽는다.**
+> 그 문서가 Google Cloud 프로젝트 생성부터 OAuth 로그인, 클라이언트 등록, 검증까지의 전체 절차를 담고 있다.
+> 이 문서는 **이미 설정된 뒤의 운영 규칙**을 다룬다.
+
 ## 목적
 
 MCP를 지원하는 여러 AI 클라이언트가 동일한 로컬 Google Workspace 런타임과 OAuth profile을 재사용한다. 프로젝트마다 패키지와 OAuth 토큰을 다시 설치하지 않는다.
@@ -17,11 +21,13 @@ OAuth client secret과 refresh token은 Harness, 프로젝트, Git 저장소에 
 
 ## 최초 인증
 
-Google Cloud에서 Desktop app OAuth JSON을 발급한 뒤 다음을 한 번 실행한다.
+→ **`workflows/GOOGLE_WORKSPACE_SETUP.md`** 를 따른다. 자격증명은 사용자마다 각자 발급하며 공유하지 않는다.
 
-```powershell
-& 'C:\AI-Tools\google-workspace-mcp\Install-OAuthCredential.ps1' -DownloadedJson '<client-secret-json>' -Authenticate
-```
+요약: Google Cloud 프로젝트 → 필요한 API 활성화 → OAuth 동의 화면 → **Desktop app** 클라이언트 발급 →
+`credentials.json` 을 `%USERPROFILE%\.config\google-workspace-mcp\profiles\<profile>\` 에 배치(ACL 제한, 원본 삭제) →
+`auth --profile <profile>` 실행 → 클라이언트 등록 → **되읽어 확인** → 재시작 후 실제 읽기 작업으로 검증.
+
+⚠ OAuth 앱이 Testing 상태면 토큰이 7일 후 만료된다. 앱을 게시하거나 User Type 을 Internal 로 둔다.
 
 ## 클라이언트 연결
 
