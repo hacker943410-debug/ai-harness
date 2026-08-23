@@ -14,8 +14,12 @@
 claude·agy 등록 드리프트 해소 / AGY 노출 완화(`mcp disable`) /
 **v2.2 레거시 경로 은퇴 + 래퍼 삭제 (2026-08-23)**.
 
-남은 것은 **사용자 결정 3건**(§7 의 2·6·8)과 M8 잔여 항목(§6)이다.
-구현이 막힌 것은 없다. 전부 "할지 말지"의 문제다.
+**2026-08-23 추가 완료:** v2.2 레거시 경로 은퇴 + 래퍼 삭제 / `schemas/` / 미해결 좌표 5건 확정 /
+Codex 등록(세 클라이언트 `IN_SYNC`) / Drive 스냅샷 `v3.0.0` 발행.
+
+남은 것은 **2건뿐이다.**
+- 레거시 `C:\AI-Tools` 삭제 — 옛 agy 세션이 그 경로에서 MCP 서버를 띄운 채 살아 있다(§5-45)
+- 중복 claude.ai Google 커넥터 — 조사는 끝났고 선택만 남았다(§9.1 의 6번 표)
 
 ---
 
@@ -25,7 +29,7 @@ claude·agy 등록 드리프트 해소 / AGY 노출 완화(`mcp disable`) /
 |---|---|
 | 하네스 로컬 | `C:\AI-Harness` |
 | 원격 | `https://github.com/hacker943410-debug/ai-harness` (**Private**) |
-| 현재 HEAD | `6bd881c` + 이 커밋 (working tree clean, origin/main 동기) |
+| 현재 HEAD | `6d56aba` + 이 커밋 (working tree clean, origin/main 동기) |
 | 기준점 태그 | `v2.2.0` = `9e142bf` (롤백 지점) |
 | 도구 루트 (Layer B) | `%LOCALAPPDATA%\AI-Tools` = `C:\Users\hacke\AppData\Local\AI-Tools` |
 | 레거시 도구 루트 | `C:\AI-Tools` (**아직 존재**, ACL은 제한 완료, 삭제 대기) |
@@ -34,6 +38,9 @@ claude·agy 등록 드리프트 해소 / AGY 노출 완화(`mcp disable`) /
 ### 커밋 이력
 
 ```
+6d56aba feat: 미해결 좌표 5건 확정 — 레지스트리 밖 출처를 발행자 대조로 확인
+e739374 feat: schemas/ — 기계가 읽는 계약을 추가하고 매 검사에서 실제로 돌린다
+b88f96c docs: HANDOFF — 레거시 경로 은퇴·래퍼 삭제 완료, 실측 사실 4건 추가
 6bd881c refactor: v2.2 레거시 경로를 은퇴시킨다 — 새 경로를 만들고 옛 경로를 남기면 남은 쪽이 이긴다
 1fc2961 docs: HANDOFF 를 세션 종료 상태로 정리
 d5ce48d docs: HANDOFF — 레지스트리 해석 완료(조회 대상 0건)와 실측 사실 4건 추가
@@ -154,7 +161,7 @@ clients.json  : agy / claude 2건 (tool_policy_enforceable 포함)
 Sync-HarnessClients.ps1 결과 (2026-08-23 적용 후):
   google-workspace x agy     ok    꺼져 있음 (mcp disable — 권장 완화 적용)
   google-workspace x claude  ok
-  google-workspace x codex   unregistered   (선택 단계, 미승인)
+  google-workspace x codex   ok             (2026-08-23 등록. 이후 IN_SYNC)
 
 Test-HarnessRuntime: transport_ok / tool_count=82 / auth_state=authorized / verified
 clients.json 원장 생성됨 (agy, claude 2건)
@@ -240,6 +247,10 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 | 39 | `Install-Harness.ps1` 의 `env-set` 은 `payload.value = null` 로 **삭제**를 표현할 수 있다. JSON 왕복·사후 확인·롤백(이전 값 복원)이 모두 그대로 동작한다. 새 단계 종류를 만들 필요가 없었다 |
 | 40 | **PS 5.1 의 `Get-Content -Raw` 는 BOM 없는 UTF-8 을 ANSI(949)로 읽는다.** 계획 파일(BOM 없는 UTF-8)을 그렇게 읽으면 한글이 깨지면서 따옴표까지 망가져 `ConvertFrom-Json` 이 실패한다. 파일은 멀쩡한데 읽기가 틀린 것이다. `-Encoding UTF8` 을 주거나 하네스의 `Read-HarnessJson` 을 쓴다 |
 | 41 | **계획 파일 생산자가 둘인데 모양이 달랐다.** 스키마를 쓰다 발견했다. `Get-HarnessEnvironment` 는 계획 객체를 손으로 조립하며 `limitations` 를 넣었고, 팩토리 `New-HarnessChangePlan`(Sync 가 쓰는 것)에는 그 필드가 없었다. `overall` 어휘도 달랐다(READY/… vs IN_SYNC/…). 소비자가 `overall` 을 읽지 않아서 아무도 몰랐다. 지금은 팩토리가 유일한 정의이고 둘 다 그것을 쓴다. **적용자가 하나여도 생산자가 여럿이면 형식은 갈라진다** |
+| 42 | **레지스트리 밖 좌표는 발행자 대조로만 확정할 수 있다.** npm 패키지가 선언한 `repository`, PyPI 의 `project_urls.Source`, OpenUPM 의 저장소가 각각 근거가 된다. `unity` 를 찾다가 PyPI 에서 `unity-mcp-server` 를 만났는데 **발행자가 다르다(mzbswh vs CoplayDev)**. 이름만 보고 골랐으면 그것을 집었을 것이다 |
+| 43 | **codex 의 `--env`-먼저 argv 순서가 실제로 통했다.** §5-24 는 help 로만 확인한 상태였다. 실제 등록 후 되읽어 확인했고, 세 클라이언트가 처음으로 `IN_SYNC` 가 됐다. 다만 orca 가 설정을 소유하므로 지워질 수 있다(§5-10) — 작업 시작 시 정합 확인이 필요하다 |
+| 44 | **프리릴리스 판정이 SemVer 하이픈만 봤다.** PEP 440 은 하이픈 없이 붙여 쓴다(`0.0.1a4`, `1.0b2`, `2.0rc1`). `markitdown` 의 알파가 실제로 조용히 통과했다. 규칙을 넓혔다 |
+| 45 | **`agy mcp disable` 는 이미 떠 있는 세션에 아무 영향이 없다.** 레거시 경로 `C:\AI-Tools` 에서 **옛 래퍼(=`contacts` 포함 7종)로 뜬 MCP 서버가 아직 살아 있다** (cmd pid 24412 -> node pid 24112). 부모는 `--dangerously-skip-permissions` 로 뜬 agy 세션(pid 5996, Orca 터미널). 즉 "꺼 뒀다"는 **새 세션에 대한 이야기**이며, 그 세션이 살아 있는 동안 도구 통제 없는 노출이 계속된다. 이것 때문에 레거시 루트를 지울 수도 없다. **완화를 적용했으면 이미 떠 있는 세션도 세어야 한다** |
 
 ---
 
@@ -261,17 +272,17 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
    `registry_lookup` 53 → 39 이고 그 39건은 전부 조회 대상이 아니다
    (35건 `discovery_only`, 4건 `registry_absent` 기록됨).
    확정된 좌표: npm 13 / remote 4 / oci 1 / pypi 1 / nuget 1, 모두 provenance 포함.
-   **남은 것은 조회가 아니라 판단이다:**
-   - `azure` 가 프리릴리스 `3.0.0-beta.37` 로 확정됐다. 검사기가 WARN 을 낸다.
-     정식 버전을 쓸지 그대로 둘지 결정 필요
-   - `notion` / `azure-devops` / `markitdown` / `unity` 는 발행자의 공식 서버가
-     레지스트리에 없다. 좌표를 원한다면 공식 문서·저장소에서 찾아 손으로 넣어야 한다
+   **판단도 2026-08-23 끝났다:**
+   - `azure` — 프리릴리스 `3.0.0-beta.37` 대신 NuGet 의 최신 **안정** 버전 `2.0.5` 로 내렸다
+   - `notion` / `azure-devops` / `markitdown` / `unity` — 레지스트리 밖 출처에서 찾아 넣었다.
+     근거는 각 항목의 `provenance` 에 있다 (npm `repository` / PyPI `project_urls.Source` / OpenUPM)
+   - `markitdown` 은 상류에 정식 릴리스가 없어 알파(`0.0.1a4`)를 쓴다. 검사기가 WARN 을 내는 것이 맞다
    - `searxng` 는 발행자를 특정할 수 없어 `discovery_only` 로 내렸다
-5. 중복 claude.ai Google 커넥터 정리 (D11)
-6. ~~Drive 스냅샷 강등~~ — **구현 완료** (`Publish-HarnessSnapshot.ps1` + `harness-drive-snapshot.mjs`).
-   **아직 한 번도 발행하지 않았다.** DryRun 은 통과: 76개 파일 / 약 1.6MB / never_sync 위반 0.
-   실제 발행은 외부로 올리는 일이라 확인 필요:
-   `.\scripts\Publish-HarnessSnapshot.ps1 -Label v3.0.0`
+   - 남은 `registry_lookup` 35건은 전부 `discovery_only` 다. **미해결 좌표 0건.**
+5. 중복 claude.ai Google 커넥터 정리 (D11) — **조사 완료.** 겹치는 도구 15개 확정, 선택만 남음 (§9.1)
+6. ~~Drive 스냅샷 강등~~ — **완료. 2026-08-23 첫 발행까지 끝났다.**
+   `/AI-Harness-snapshots/v3.0.0` 에 79개 + `SNAPSHOT.json`, never_sync 위반 0.
+   폴더는 **불변**이며 갱신되지 않는다. 다음 스냅샷은 새 라벨로 만든다.
    구 `sync-harness-to-drive.mjs` 는 **삭제됐다** (2026-08-23, §M8-3b)
 7. ~~`schemas/` 추가~~ — **2026-08-23 완료.** runtime-manifest / runtime-index /
    client-descriptor / client-index / change-plan (+ 기존 capability-lock).
@@ -291,13 +302,13 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 | # | 내용 | 준비 상태 |
 |---|---|---|
 | ~~1~~ | ~~claude / agy 등록 드리프트~~ | **2026-08-23 적용 완료.** 둘 다 `ok`. 재시작 반영도 확인됨(claude 에 `contacts` 없음, 82개) |
-| 2 | **Codex 등록** — 지금 미등록. orca 가 설정을 소유해 다시 지워질 수 있음(§5-10). risk=high 라 `-IAcceptRisk` 필요. argv 순서는 help 로만 확인했고 실제 등록은 안 해 봤다(§5-24) | 계획에 `선택` 단계로 들어 있음 (`-IncludeOptional` 필요) |
+| ~~2~~ | ~~Codex 등록~~ | **2026-08-23 완료.** argv 순서가 실제로 통했다(§5-43). `codex mcp get` 으로 되읽어 확인. **orca 가 설정을 소유하므로 지워질 수 있다 — 작업 시작 시 `Sync-HarnessClients.ps1` 로 확인할 것** |
 | ~~3~~ | ~~하네스 저장소 ACL 제한~~ | **2026-08-23 적용 완료.** 저널 `install-20260823-085210Z.jsonl` 에 이전 SDDL |
 | ~~4~~ | ~~레지스트리 확정 8건 카탈로그 반영~~ | **2026-08-23 반영 완료** (`f775743`) |
 | ~~5~~ | ~~AGY 도구 통제 메커니즘 검증~~ | **2026-08-23 조사 완료. 수단 없음**(§5-29) |
-| 6 | 레거시 `C:\AI-Tools` 삭제 시점 | `manual` 단계로 제시됨. 자동 실행 안 함 |
+| 6 | 레거시 `C:\AI-Tools` 삭제 시점 | **막혀 있다.** 옛 agy 세션(pid 5996)이 그 경로의 MCP 서버를 물고 있다(§5-45). 그 세션을 끝내야 지울 수 있다 |
 | ~~7~~ | ~~AGY 에 google-workspace 를 계속 둘 것인가~~ | **2026-08-23 권장안 적용.** `agy mcp disable google-workspace` 실행 완료(`mcp list` STATUS=disabled, `mcp_config.json` disabled=true 로 되읽어 확인). 진단이 `OK 차단 불가 — 꺼 둠` 으로 바뀌었다. **쓸 때만 `agy mcp enable google-workspace`, 끝나면 다시 끈다** |
-| 8 | **Drive 스냅샷 첫 발행** — 외부로 76개 파일을 올린다. DryRun 통과 | `-Label v3.0.0` 으로 즉시 가능 |
+| ~~8~~ | ~~Drive 스냅샷 첫 발행~~ | **2026-08-23 완료.** `/AI-Harness-snapshots/v3.0.0` 에 80개. 되읽어 확인. 불변이라 다음은 새 라벨 |
 
 ---
 
@@ -351,14 +362,35 @@ powershell ... -File '...\Install-Harness.ps1' -Rollback <저널경로>         
 
 | # | 할 일 | 명령 | 성격 |
 |---|---|---|---|
-| 1 | **Drive 스냅샷 첫 발행** | `.\scripts\Publish-HarnessSnapshot.ps1 -Label v3.0.0` | 외부 업로드(추적 파일 72개). DryRun 통과함 |
+| ~~1~~ | ~~Drive 스냅샷 첫 발행~~ | — | **2026-08-23 완료.** `/AI-Harness-snapshots/v3.0.0` 에 80개(SNAPSHOT.json 포함). 되읽어 확인함. 불변이므로 다음은 새 라벨로 |
 | ~~2~~ | ~~래퍼 정리~~ | — | **2026-08-23 완료** (§4) |
-| 3 | **Codex 등록** | `Sync-HarnessClients.ps1 -SavePlan` → `Install-Harness.ps1 -IncludeOptional` | 살아있는 설정 변경. risk=high. orca 가 지울 수 있음(§5-10) |
-| 4 | **azure 프리릴리스 결정** | 카탈로그의 `3.0.0-beta.37` 을 정식으로 내릴지 | 검사기가 WARN 을 내는 상태 |
+| ~~3~~ | ~~Codex 등록~~ | — | **2026-08-23 완료.** 되읽어 확인. 세 클라이언트가 처음으로 `IN_SYNC` (§5-43) |
+| ~~4~~ | ~~azure 프리릴리스 결정~~ | — | **2026-08-23 완료.** 안정 버전 `2.0.5` 로 내림 |
 | ~~5~~ | ~~`schemas/` 추가~~ | — | **2026-08-23 완료** (§6-7) |
-| 6 | 중복 claude.ai Google 커넥터 정리 (D11) | — | 조사 필요 |
-| 7 | 레거시 `C:\AI-Tools` 삭제 | 진단이 `manual` 단계로 제시 | 모든 CLI 재시작 후 |
-| 8 | `notion` / `azure-devops` / `markitdown` / `unity` 좌표 | 공식 문서·저장소에서 손으로 | 레지스트리 밖 출처 필요 |
+| 6 | **중복 claude.ai Google 커넥터 정리 (D11)** | claude.ai 설정에서 커넥터 해제 또는 Claude Code 에서만 서버째 끄기 | **조사 완료, 결정 남음.** 이름이 겹치는 도구 15개를 확정했다 — 아래 표 |
+| 7 | **레거시 `C:\AI-Tools` 삭제** | 그 경로에서 뜬 프로세스를 먼저 끝내야 한다 | **막혀 있다.** 옛 agy 세션(pid 5996)이 레거시 래퍼로 MCP 서버를 띄운 채 살아 있다 (§5-45) |
+| ~~8~~ | ~~`notion` / `azure-devops` / `markitdown` / `unity` 좌표~~ | — | **2026-08-23 완료** (§5-42) |
+
+### 6번 — 이름이 겹치는 도구 15개 (2026-08-23 실측)
+
+`claude.ai` 내장 커넥터와 로컬 `google-workspace` 가 **같은 이름의 도구**를 갖는다.
+두 경로는 서로 다른 Google 계정에 연결돼 있다(§5-18).
+
+| 영역 | 겹치는 이름 |
+|---|---|
+| 캘린더 (6) | `list_calendars` `list_events` `get_event` `create_event` `update_event` `delete_event` |
+| 드라이브 (5) | `copy_file` `create_file` `update_file` `get_file_metadata` `share_file` |
+| Gmail (4) | `list_drafts` `list_labels` `update_label` `delete_label` |
+
+문제는 두 가지다.
+**첫째, 어느 계정에 쓰는지가 이름으로 구분되지 않는다.** `create_event` 는 두 곳에 있다.
+**둘째, 한쪽만 끄면 껐다고 착각한다.** 로컬 서버를 꺼도 claude.ai 커넥터는 그대로 살아 있다.
+
+선택지:
+- **Claude Code 에서만 claude.ai 커넥터를 끈다** (권장) — `/mcp` 토글.
+  claude.ai 웹·모바일에서는 그대로 쓰고, 터미널에서는 로컬 하나만 남는다. 토큰도 줄어든다
+- **claude.ai 쪽 커넥터를 계정에서 해제한다** — 가장 확실하지만 웹·모바일에서도 없어진다
+- **그대로 둔다** — 이름 충돌을 알고 쓴다. 잘못된 계정에 쓰는 사고는 사용자가 감수한다
 
 ### 재시작 — 2026-08-23 확인됨
 
