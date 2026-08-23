@@ -32,6 +32,7 @@ param(
     [string]$SaveResolved,
     [switch]$UpdateCatalog,
     [switch]$IncludeDiscoveryOnly,
+    [switch]$Recheck,
     [switch]$Yes,
     [int]$Limit = 20,
     [string]$RegistryBase = 'https://registry.modelcontextprotocol.io/v0'
@@ -107,6 +108,15 @@ if (-not $IncludeDiscoveryOnly -and -not $Id) {
     $targets = @($targets | Where-Object { $_.status -ne 'discovery_only' })
     $skippedDiscovery = $before - $targets.Count
 }
+
+# 이미 "레지스트리에 없다"를 확인한 항목은 매번 다시 물어볼 이유가 없다.
+# 계속 not_found 로 보고하면 진짜 문제가 그 안에 묻힌다.
+# 다시 확인하려면 -Recheck.
+$knownAbsent = @()
+if (-not $Recheck -and -not $Id) {
+    $knownAbsent = @($targets | Where-Object { $_.install.registry_absent })
+    $targets = @($targets | Where-Object { -not $_.install.registry_absent })
+}
 if ($Id) { $targets = @($catalog.entries | Where-Object { $_.id -eq $Id }) }
 if ($targets.Count -eq 0) { Write-Output '해석할 항목이 없습니다.'; exit 0 }
 
@@ -128,6 +138,34 @@ function Search-Registry {
     return (Invoke-RestMethod -Uri $uri -TimeoutSec 30)
 }
 
+<#
+    검색어 하나로 끝내면 안 된다. 레지스트리 검색은 표시 이름과 잘 매칭되지 않는다.
+    실측: "Chrome DevTools MCP" -> 0건, "chrome-devtools" -> 5건(진짜 항목 포함).
+    카탈로그의 query 는 사람이 읽는 이름이고, 레지스트리 이름은 슬러그다.
+    그래서 후보를 여러 개 던지고 결과를 합친다. 없는 것을 없다고 하려면
+    찾을 수 있는 방법을 다 써 본 뒤여야 한다.
+#>
+<#
+    이름을 확정한 뒤에는 검색 결과를 믿지 않고 정본을 다시 받는다.
+    검색은 페이지가 잘리고 정렬도 보장되지 않아 isLatest 가 사실과 다를 수 있다.
+    이름의 '/' 는 %2F 로 인코딩해야 한다.
+#>
+function Get-RegistryLatest {
+    param([Parameter(Mandatory = $true)][string]$Name)
+    $uri = "$RegistryBase/servers/$([uri]::EscapeDataString($Name))/versions/latest"
+    return (Invoke-RestMethod -Uri $uri -TimeoutSec 30)
+}
+
+function Get-QueryCandidate {
+    param($Entry)
+    $c = @()
+    if ($Entry.install.query) { $c += [string]$Entry.install.query }
+    $c += [string]$Entry.id
+    if ($Entry.id -notmatch '-mcp$') { $c += "$($Entry.id)-mcp" }
+    if ($Entry.name) { $c += ([string]$Entry.name).ToLowerInvariant().Replace(' ', '-') }
+    return @($c | Where-Object { $_ } | Select-Object -Unique)
+}
+
 $results = [System.Collections.Generic.List[object]]::new()
 
 foreach ($e in $targets) {
@@ -139,17 +177,25 @@ foreach ($e in $targets) {
         candidates = @(); note = ''
     }
 
-    $resp = $null
-    try { $resp = Search-Registry -Query $query }
-    catch {
+    $queries = Get-QueryCandidate -Entry $e
+    $row.query = ($queries -join ' | ')
+    $servers = @()
+    $failed = $null
+    foreach ($q in $queries) {
+        try { $servers += @((Search-Registry -Query $q).servers) }
+        catch { $failed = $_.Exception.Message }
+    }
+    if ($servers.Count -eq 0 -and $failed) {
         $row.status = 'lookup_failed'
-        $row.note = $_.Exception.Message
+        $row.note = $failed
         $results.Add([pscustomobject]$row)
         continue
     }
+    # 여러 질의의 결과를 합쳤으므로 같은 항목이 여러 번 들어온다.
+    $servers = @($servers | Group-Object { "$($_.server.name)@$($_.server.version)" } | ForEach-Object { $_.Group[0] })
 
     $cands = @()
-    foreach ($s in @($resp.servers)) {
+    foreach ($s in $servers) {
         $meta = $s._meta.'io.modelcontextprotocol.registry/official'
         $owner = Get-RegistryOwner -RegistryName $s.server.name
         $pkg = @($s.server.packages) | Select-Object -First 1
@@ -174,19 +220,40 @@ foreach ($e in $targets) {
         $results.Add([pscustomobject]$row); continue
     }
 
-    $good = @($cands | Where-Object { $_.publisher_match -and $_.is_latest -and $_.status -eq 'active' })
-    if ($good.Count -eq 1) {
-        $g = $good[0]
-        $row.status = if ($g.package) { 'resolved' } else { 'resolved_no_package' }
-        $row.registry_name = $g.registry_name
-        $row.version = $g.version
-        $row.package = $g.package
-        $row.package_registry = $g.package_registry
-        $row.transport = $g.transport
-        if (-not $g.package) { $row.note = '레지스트리 항목에 설치 가능한 패키지가 없습니다(원격 서버이거나 소스 빌드).' }
-    } elseif ($good.Count -gt 1) {
+    # 검색 결과에서는 **이름만** 고른다. 버전과 패키지는 정본에서 다시 받는다.
+    # 검색은 페이지가 잘리고 정렬도 보장되지 않아 isLatest 가 신뢰할 수 없다.
+    # 실측: chrome-devtools 검색 20건에 ChromeDevTools 의 isLatest=true 버전이 아예 없었다.
+    # 그대로 믿었으면 최신이 아닌 버전을 핀할 뻔했다.
+    $names = @($cands | Where-Object { $_.publisher_match -and $_.status -eq 'active' } |
+        ForEach-Object { $_.registry_name } | Select-Object -Unique)
+
+    if ($names.Count -eq 1) {
+        $latest = $null
+        try { $latest = Get-RegistryLatest -Name $names[0] }
+        catch {
+            $row.status = 'lookup_failed'
+            $row.note = "정본 조회 실패($($names[0])): $($_.Exception.Message)"
+            $results.Add([pscustomobject]$row); continue
+        }
+        $lmeta = $latest._meta.'io.modelcontextprotocol.registry/official'
+        $lpkg = @($latest.server.packages) | Select-Object -First 1
+        $row.registry_name = $latest.server.name
+        $row.version = $latest.server.version
+        $row.package = $(if ($lpkg) { $lpkg.identifier } else { $null })
+        $row.package_registry = $(if ($lpkg) { $lpkg.registryType } else { $null })
+        $row.transport = $(if ($lpkg -and $lpkg.transport) { $lpkg.transport.type } else { $null })
+        if ([string]$lmeta.status -ne 'active') {
+            $row.status = 'not_active'
+            $row.note = "정본의 상태가 active 가 아닙니다: $($lmeta.status)"
+        } elseif (-not $lpkg) {
+            $row.status = 'resolved_no_package'
+            $row.note = '레지스트리 항목에 설치 가능한 패키지가 없습니다(원격 서버이거나 소스 빌드).'
+        } else {
+            $row.status = 'resolved'
+        }
+    } elseif ($names.Count -gt 1) {
         $row.status = 'ambiguous'
-        $row.note = "발행자가 일치하는 후보가 $($good.Count)개입니다. 사람이 골라야 합니다."
+        $row.note = "발행자가 일치하는 서버가 $($names.Count)개입니다. 사람이 골라야 합니다: $($names -join ', ')"
     } else {
         $row.status = 'publisher_mismatch'
         $imp = @($cands | Where-Object { -not $_.publisher_match }) | Select-Object -First 3
@@ -206,6 +273,10 @@ Write-Output "MCP 레지스트리 해석 — 대상 $($results.Count)건"
 Write-Output "  레지스트리: $RegistryBase"
 if ($skippedDiscovery) {
     Write-Output "  건너뜀    : discovery_only $skippedDiscovery 건 (정책상 설치 불가. 보려면 -IncludeDiscoveryOnly)"
+}
+if ($knownAbsent.Count) {
+    Write-Output "  건너뜀    : 레지스트리 부재 확인됨 $($knownAbsent.Count) 건 — $(($knownAbsent | ForEach-Object { $_.id }) -join ', ')"
+    Write-Output '              (좌표를 확정하려면 레지스트리가 아닌 출처가 필요하다. 다시 확인하려면 -Recheck)'
 }
 Write-Output ''
 foreach ($g in $byStatus) { Write-Output ("  {0,-20} {1}" -f $g.Name, $g.Count) }

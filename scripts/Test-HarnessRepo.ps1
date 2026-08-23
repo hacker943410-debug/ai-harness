@@ -185,6 +185,11 @@ if (-not $Quick) {
         if ($t -match '"version"\s*:\s*"(latest|[^"]*[\*\^~][^"]*)"') {
             Add-Issue 'FAIL' 'UNPINNED_VERSION' "$($p.Name) 에 정확하지 않은 버전 핀: $($Matches[1])"
         }
+        # 레지스트리의 "최신"이 곧 "설치해도 되는 것"은 아니다.
+        # 프리릴리스가 핀돼 있으면 사람이 의도한 것인지 확인해야 한다. 막지는 않는다.
+        foreach ($pm in [regex]::Matches($t, '"version"\s*:\s*"([^"]*-(?:alpha|beta|rc|preview|dev|next)[^"]*)"')) {
+            Add-Issue 'WARN' 'PRERELEASE_VERSION' "$($p.Name) 에 프리릴리스 버전이 고정돼 있습니다: $($pm.Groups[1].Value). 의도한 것인지 확인하세요."
+        }
     }
 
     # -----------------------------------------------------------------------
