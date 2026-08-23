@@ -143,6 +143,15 @@ function Register-One {
         }
     }
 
+    # 등록에 성공했다고 안전해진 것은 아니다.
+    # 도구 단위 차단이 불가능한 클라이언트에서는 매니페스트의 deny 가 문서일 뿐이다.
+    # 조용히 넘기면 사용자는 목록이 지켜지고 있다고 믿게 된다.
+    if ($manifest.risk -eq 'high' -and -not ($d.tool_policy_support -and $d.tool_policy_support.deny)) {
+        Write-Warning ("$ClientId 는 도구 단위 차단을 지원하지 않습니다. " +
+                       "매니페스트의 deny 목록이 강제되지 않습니다: $(@($manifest.tool_policy.deny) -join ', '). " +
+                       '통제 단위는 서버 전체 on/off 뿐입니다.')
+    }
+
     return [pscustomobject]@{
         client = $ClientId
         status = 'registered'
@@ -160,6 +169,7 @@ $registry = Read-HarnessClientRegistry -ToolsRoot $tools
 $keep = @($registry.registrations | Where-Object { -not ($_.runtime_id -eq $RuntimeId -and $clientIds -contains $_.client) })
 foreach ($r in $results) {
     if ($r.status -in @('registered', 'already_registered')) {
+        $rd = Get-HarnessClientDescriptor -HarnessRoot $root -ClientId $r.client
         $keep += [pscustomobject]@{
             runtime_id    = $RuntimeId
             server_name   = $manifest.server_name
@@ -168,6 +178,8 @@ foreach ($r in $results) {
             tools_root_id = $machineKey
             risk          = $manifest.risk
             risk_accepted = [bool]($IAcceptRisk -or $Force)
+            # 원장이 "등록됨"만 기억하면, deny 목록이 지켜지는지는 아무도 모른다.
+            tool_policy_enforceable = [bool]($rd.tool_policy_support -and $rd.tool_policy_support.deny)
             status        = $r.status
             recorded_at   = (Get-HarnessUtcStamp)
         }

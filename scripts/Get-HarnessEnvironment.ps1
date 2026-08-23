@@ -384,8 +384,31 @@ foreach ($cid in $clientIds) {
             }
         }
     }
-    if ($d.tool_policy_support -and $d.tool_policy_support.status -eq 'unverified') {
+    # 도구 통제는 "있다/없다"보다 "지금 무엇이 노출돼 있는가"가 중요하다.
+    # 차단 수단이 없는 클라이언트에 risk=high 런타임을 올려 두면
+    # 매니페스트의 deny 목록은 문서일 뿐 강제되지 않는다.
+    $tps = $d.tool_policy_support
+    $canDeny = [bool]($tps -and $tps.deny)
+    $tpsStatus = if ($tps -and $tps.PSObject.Properties.Name -contains 'status') { [string]$tps.status } else { '' }
+    if ($tpsStatus -eq 'unverified') {
         Add-Finding 'client' "$($d.display_name) 도구 통제" '미검증' 'WARN' '위험 도구 차단/승인 메커니즘이 확인되지 않았다.'
+    } elseif (-not $canDeny) {
+        $exposed = @()
+        foreach ($rid in $runtimeIds) {
+            $mm = Get-HarnessRuntimeManifest -HarnessRoot $root -RuntimeId $rid
+            if ($mm.risk -ne 'high') { continue }
+            if ($names -notcontains $mm.server_name) { continue }
+            $exposed += "$rid(deny: $(@($mm.tool_policy.deny) -join ', '))"
+        }
+        if ($exposed.Count) {
+            Add-Finding 'client' "$($d.display_name) 도구 통제" '도구 단위 차단 불가' 'WARN' `
+                ("risk=high 런타임이 등록돼 있는데 이 클라이언트는 도구 단위로 막을 수 없다. " +
+                 "매니페스트의 deny 목록이 강제되지 않는다: $($exposed -join '; '). " +
+                 "통제 단위는 서버 전체 on/off 뿐이다.")
+        } else {
+            Add-Finding 'client' "$($d.display_name) 도구 통제" '도구 단위 차단 불가' 'INFO' `
+                'risk=high 런타임이 등록돼 있지 않아 지금은 노출이 없다.'
+        }
     }
 }
 

@@ -38,12 +38,19 @@
   "register_is_upsert": true,
   "flags_must_precede_name": true,
 
-  "$tool_policy_note": "미검증. Gemini CLI 의 excludeTools/includeTools 를 AGY 에 그대로 적용하면 안 된다. 별개 제품이고 원격 서버 키도 serverUrl 대 httpUrl 로 다르다.",
+  "$tool_policy_note": "2026-08-23 조사 완료. 도구 단위 통제 수단이 없다. agy --help 에 tool/exclude/include/allow/deny/approve 관련 플래그가 --dangerously-skip-permissions(전부 자동 승인) 하나뿐이고, ~/.gemini/config/mcp_config.json 은 서버별로 command/args/env/disabled 만 받으며, ~/.gemini/antigravity-cli/settings.json 에도 도구 정책 키가 없다. Gemini CLI 의 excludeTools/includeTools 를 여기 적용하면 안 된다 — 별개 제품이고 스키마가 다르다.",
   "tool_policy_support": {
     "deny": null,
     "approve": null,
-    "server_level_disable": null,
-    "status": "unverified"
+    "server_level_disable": {
+      "command": ["mcp", "disable", "{server_name}"],
+      "file": "~/.gemini/config/mcp_config.json",
+      "key": "mcpServers.{server_name}.disabled",
+      "reduces_context": true
+    },
+    "status": "verified_absent",
+    "verified_on": "2026-08-23",
+    "consequence": "risk=high 런타임을 AGY 에 등록하면 매니페스트의 tool_policy.deny 가 강제되지 않는다. 통제 단위는 서버 전체 on/off 뿐이다."
   },
 
   "notes": "mcp list 에 --json 이 없어 표 텍스트를 파싱한다. 형식이 바뀌면 drift 탐지가 조용히 깨질 수 있으므로 파싱 실패는 OK 가 아니라 UNKNOWN 으로 보고한다."
