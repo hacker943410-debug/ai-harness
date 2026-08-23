@@ -152,10 +152,12 @@ M7b 에서 이 드리프트를 **자동으로 탐지하도록** 만들었다(3-w
 적용하면 등록이 래퍼 대신 `.bin` shim + 명시적 env 를 가리키게 되어 드리프트가 사라진다.
 **아직 적용하지 않았다.** 살아있는 CLI 등록을 바꾸는 일이고, 적용 시 claude/agy 재시작이 필요하다.
 
-**하네스 저장소 권한 (신규 발견, 미해결):**
-`C:\AI-Harness` 자체가 `Authenticated Users [Modify]` 를 상속받고 있다.
+**하네스 저장소 권한 (신규 발견, 2026-08-23 해결):**
+`C:\AI-Harness` 자체가 `Authenticated Users [Modify]` 를 허용하고 있었다.
 M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 정책이 있는 곳은 열려 있었다.
-진단이 `harness.acl:C:\AI-Harness` 단계를 제안한다.
+지금은 `SYSTEM / Administrators / 소유자` FullControl 만 남았다.
+이전 SDDL: `D:PAI(A;OICIIO;SDGXGWGR;;;AU)(A;;0x1301bf;;;AU)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;0x1200a9;;;BU)`
+(저널 `<tools_root>\journal\install-20260823-085210Z.jsonl`)
 
 ---
 
@@ -202,10 +204,8 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 
 1. **§4 드리프트 적용** — `Sync-HarnessClients.ps1 -SavePlan` → `Install-Harness.ps1`.
    등록이 래퍼 대신 `.bin` shim + 명시적 env 를 가리키게 된다. **살아있는 등록 변경 → 확인 필요**
-2. **하네스 저장소 ACL 제한** — `harness.acl:C:\AI-Harness` (§4). 진단이 이미 계획을 낸다
-3. **레지스트리 확정 8건 반영** — `Resolve-HarnessMcpRegistry.ps1 -UpdateCatalog`.
-   발행자 검증을 통과한 것만: context7 / supabase / dbhub / mongodb / terraform /
-   firecrawl / tavily / serena. **Layer A 변경이라 커밋되어 모든 PC 에 퍼진다 → 확인 필요**
+2. ~~하네스 저장소 ACL 제한~~ — 2026-08-23 적용 완료
+3. ~~레지스트리 확정 8건 반영~~ — 2026-08-23 반영 완료. `registry_lookup` 53 → 45 건
 4. **해석 못한 11건 처리** — `not_found` 5(chrome-devtools, azure, azure-devops, searxng,
    markitdown, google-cloud, google-analytics, semgrep 중 일부), `publisher_mismatch` 4
    (notion / apify / xcodebuildmcp / unity), `resolved_no_package` 2 (stripe / netdata).
@@ -230,8 +230,8 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 |---|---|---|
 | 1 | **claude / agy 등록 드리프트 적용** — 등록이 래퍼를 가리켜 선언에 없는 `contacts` 가 켜져 있다. 재등록하면 해소. 적용 후 두 CLI 재시작 필요 | 계획·명령 준비 완료. 실행만 남음 |
 | 2 | **Codex 등록** — 지금 미등록. orca 가 설정을 소유해 다시 지워질 수 있음(§5-10). risk=high 라 `-IAcceptRisk` 필요 | 계획에 `선택` 단계로 들어 있음 (`-IncludeOptional` 필요) |
-| 3 | **하네스 저장소 ACL 제한** (§4) — `C:\AI-Harness` 가 다른 로컬 사용자에게 쓰기 허용 중 | 진단이 계획 단계 생성 |
-| 4 | **레지스트리 확정 8건 카탈로그 반영** — Layer A 변경이라 커밋되어 퍼진다 | `-UpdateCatalog` 로 즉시 가능 |
+| ~~3~~ | ~~하네스 저장소 ACL 제한~~ | **2026-08-23 적용 완료.** 저널 `install-20260823-085210Z.jsonl` 에 이전 SDDL |
+| ~~4~~ | ~~레지스트리 확정 8건 카탈로그 반영~~ | **2026-08-23 반영 완료** (`f775743`) |
 | 5 | **AGY 도구 통제 메커니즘** — 미검증. Gemini CLI 의 `excludeTools` 를 적용하면 안 됨(§5-16) | 조사 필요 |
 | 6 | 레거시 `C:\AI-Tools` 삭제 시점 | `manual` 단계로 제시됨. 자동 실행 안 함 |
 
