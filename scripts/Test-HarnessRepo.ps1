@@ -188,6 +188,91 @@ if (-not $Quick) {
     }
 
     # -----------------------------------------------------------------------
+    # 5b. 런타임 매니페스트 / 공용 런타임 계약
+    # -----------------------------------------------------------------------
+    $runtimeDir = Join-HarnessPath $root 'runtimes'
+    $manifests = @{}
+    foreach ($f in @(Get-ChildItem $runtimeDir -Filter '*.runtime.json' -File -ErrorAction SilentlyContinue |
+                     Where-Object { -not $_.Name.StartsWith('_') })) {
+        $rid = $f.Name -replace '\.runtime\.json$', ''
+        $m = $null
+        try { $m = Read-HarnessJson -Path $f.FullName } catch {
+            Add-Issue 'FAIL' 'MANIFEST_PARSE' "$($f.Name) 파싱 실패: $($_.Exception.Message)"; continue
+        }
+        $manifests[$rid] = $m
+
+        foreach ($req in @('schema_version', 'runtime_id', 'capability_id', 'server_name', 'risk', 'install', 'server')) {
+            if ($m.PSObject.Properties.Name -notcontains $req) {
+                Add-Issue 'FAIL' 'MANIFEST_FIELD_MISSING' "$($f.Name) 에 필수 필드가 없습니다: $req"
+            }
+        }
+        if ($m.runtime_id -ne $rid) {
+            Add-Issue 'FAIL' 'MANIFEST_ID_MISMATCH' "$($f.Name) 의 runtime_id='$($m.runtime_id)' 가 파일명과 다릅니다."
+        }
+
+        # Layer A 에 절대경로가 들어가면 다른 모든 PC 에서 틀린 값이 된다.
+        # 경로는 반드시 보간 토큰으로만 쓴다.
+        $raw = Read-HarnessText -Path $f.FullName
+        # 드라이브 문자는 앞에 다른 글자가 없어야 한다. 그렇지 않으면 "https:" 의 's:' 가 걸린다.
+        foreach ($mt in [regex]::Matches($raw, '"[^"]*(?:(?<![A-Za-z])[A-Za-z]:[\\/]|\\\\\\\\|(?<![\w$}])/(?:home|Users|usr|opt|var)/)[^"]*"')) {
+            Add-Issue 'FAIL' 'MANIFEST_ABSOLUTE_PATH' "$($f.Name) 에 절대경로: $($mt.Value)  (`${HOME} / `${TOOLS_ROOT} / `${RUNTIME_DIR} 를 쓰세요)"
+        }
+
+        # never_sync 는 매니페스트가 유일한 출처여야 한다.
+        # 동기화 스크립트가 제외 목록을 따로 하드코딩하면 두 목록이 갈라지고,
+        # 갈라지는 순간 비밀값이 올라간다.
+        if ($m.credentials) {
+            if (-not $m.credentials.never_sync) {
+                Add-Issue 'FAIL' 'NEVER_SYNC_MISSING' "$($f.Name) 에 credentials.never_sync 가 없습니다."
+            }
+            foreach ($n in (@($m.credentials.required_files) + @($m.credentials.auth_state_files))) {
+                if (@($m.credentials.never_sync) -notcontains $n) {
+                    Add-Issue 'FAIL' 'NEVER_SYNC_INCOMPLETE' "$($f.Name): '$n' 이 never_sync 에 없습니다."
+                }
+            }
+        }
+    }
+
+    # -----------------------------------------------------------------------
+    # 5c. 카탈로그의 shared_runtime 계약
+    # -----------------------------------------------------------------------
+    $catPath = Join-HarnessPath $root 'catalogs' 'mcp-catalog.json'
+    if (Test-Path -LiteralPath $catPath) {
+        $cat = Read-HarnessJson -Path $catPath
+        foreach ($e in @($cat.entries | Where-Object { $_.install.kind -eq 'shared_runtime' })) {
+            if (-not $e.install.runtime_id) {
+                Add-Issue 'FAIL' 'SHARED_RUNTIME_NO_ID' "$($e.id): shared_runtime 인데 runtime_id 가 없습니다."
+                continue
+            }
+            if (-not $manifests.ContainsKey([string]$e.install.runtime_id)) {
+                Add-Issue 'FAIL' 'SHARED_RUNTIME_NO_MANIFEST' "$($e.id): runtime_id='$($e.install.runtime_id)' 의 매니페스트가 없습니다."
+                continue
+            }
+            # 버전을 두 곳에 적으면 갈라진다. 정본은 매니페스트다.
+            foreach ($forbidden in @('package', 'version')) {
+                if ($e.install.PSObject.Properties.Name -contains $forbidden) {
+                    Add-Issue 'FAIL' 'SHARED_RUNTIME_DUP_PIN' "$($e.id): shared_runtime 항목에 install.$forbidden 이 있습니다. 정본은 매니페스트입니다."
+                }
+            }
+            $man = $manifests[[string]$e.install.runtime_id]
+            if ($man.capability_id -ne $e.id) {
+                Add-Issue 'FAIL' 'SHARED_RUNTIME_CAP_MISMATCH' "$($e.id): 매니페스트의 capability_id='$($man.capability_id)' 와 카탈로그 id 가 다릅니다."
+            }
+            if ($e.install.manifest -and -not (Test-Path -LiteralPath (Join-HarnessPath $root $e.install.manifest))) {
+                Add-Issue 'FAIL' 'SHARED_RUNTIME_MANIFEST_PATH' "$($e.id): install.manifest 가 가리키는 파일이 없습니다: $($e.install.manifest)"
+            }
+        }
+        # 선언된 런타임은 반드시 카탈로그에서 발견될 수 있어야 한다.
+        foreach ($rid in $manifests.Keys) {
+            $capId = [string]$manifests[$rid].capability_id
+            if (-not @($cat.entries | Where-Object { $_.id -eq $capId }).Count) {
+                Add-Issue 'FAIL' 'RUNTIME_NOT_IN_CATALOG' "런타임 '$rid' 의 capability_id='$capId' 가 카탈로그에 없습니다. 검색으로 찾을 수 없습니다."
+            }
+        }
+        Add-Issue 'INFO' 'SHARED_RUNTIME_OK' "공용 런타임 $($manifests.Count)개 / shared_runtime 카탈로그 항목 $(@($cat.entries | Where-Object { $_.install.kind -eq 'shared_runtime' }).Count)개"
+    }
+
+    # -----------------------------------------------------------------------
     # 6. git 기반 비밀값 검사
     # -----------------------------------------------------------------------
     # git 저장소가 아니면 PASS 가 아니라 UNENFORCED 다.

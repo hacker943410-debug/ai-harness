@@ -18,12 +18,28 @@ $ErrorActionPreference = 'Stop'
 $project = (Resolve-Path -LiteralPath $ProjectRoot).Path
 $catalogPath = Join-HarnessPath (Resolve-Path -LiteralPath $HarnessRoot).Path 'catalogs' 'mcp-catalog.json'
 $catalog = Read-HarnessJson -Path $catalogPath
-$matches = @($catalog.entries | Where-Object id -eq $Id)
-if ($matches.Count -ne 1) { throw "MCP '$Id' was not found uniquely in the catalog." }
-$entry = $matches[0]
+# $Matches 는 -match 가 채우는 자동 변수다. 같은 이름을 쓰면 나중에 조용히 덮인다.
+$hits = @($catalog.entries | Where-Object id -eq $Id)
+if ($hits.Count -ne 1) { throw "MCP '$Id' was not found uniquely in the catalog." }
+$entry = $hits[0]
 if ($entry.status -eq 'discovery_only') { throw "MCP '$Id' is discovery_only. Verify it in the official Registry before installation." }
 
 $kind = $entry.install.kind
+
+# 공용 런타임은 PC 에 하나만 둔다.
+# 프로젝트마다 설치하면 (1) 버전이 프로젝트 수만큼 갈라지고
+# (2) 각 사본이 같은 OAuth 토큰을 쓰게 되며 (3) 정본이 매니페스트인지
+# 프로젝트 lock 인지 아무도 모르게 된다. 여기서 막지 않으면 반드시 그렇게 된다.
+if ($kind -eq 'shared_runtime') {
+    $rid = $entry.install.runtime_id
+    throw ("MCP '$Id' 는 공용 런타임입니다(install.kind=shared_runtime). 프로젝트별로 설치하지 않습니다.`n" +
+           "  PC 에 설치 : .\scripts\Install-HarnessRuntime.ps1 -RuntimeId $rid`n" +
+           "  인증       : .\scripts\Connect-HarnessRuntimeAuth.ps1 -RuntimeId $rid`n" +
+           "  검증       : .\scripts\Test-HarnessRuntime.ps1 -RuntimeId $rid`n" +
+           "  클라이언트 : .\scripts\Sync-HarnessClients.ps1 -SavePlan .\sync.json`n" +
+           "  버전의 정본은 $($entry.install.manifest) 입니다.")
+}
+
 if ($kind -eq 'npm') {
     if (-not $Version) { throw "An exact -Version is required for local npm MCP installation." }
     if ($Version -eq 'latest' -or $Version.Contains('*') -or $Version.Contains('^') -or $Version.Contains('~')) {
@@ -31,11 +47,15 @@ if ($kind -eq 'npm') {
     }
     $packageSpec = "$($entry.install.package)@$Version"
     if ($PSCmdlet.ShouldProcess($project, "npm install --save-dev --save-exact $packageSpec")) {
-        if (-not (Test-Path -LiteralPath (Join-Path $project 'package.json'))) {
+        if (-not (Test-Path -LiteralPath (Join-HarnessPath $project 'package.json'))) {
             throw 'Project package.json is required for project-local npm MCP installation.'
         }
+        # npm 은 PATH 에서 .ps1 로 먼저 잡히고, .ps1 은 ExecutionPolicy 의 지배를 받는다.
+        # Restricted 인 PC 에서는 npm 이 실행되기도 전에 PSSecurityException 으로 죽는다.
+        $npmExe = Get-HarnessNativeCommand 'npm'
+        if (-not $npmExe) { throw 'npm not found on PATH.' }
         Push-Location -LiteralPath $project
-        try { & npm install --save-dev --save-exact $packageSpec } finally { Pop-Location }
+        try { & $npmExe install --save-dev --save-exact $packageSpec } finally { Pop-Location }
         if ($LASTEXITCODE -ne 0) { throw "npm exited with code $LASTEXITCODE." }
     } else { return }
 } elseif ($kind -eq 'remote') {
