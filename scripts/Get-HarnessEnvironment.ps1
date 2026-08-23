@@ -274,6 +274,22 @@ foreach ($rid in $runtimeIds) {
         Add-Finding 'runtime' "$rid 자격증명 파일" $(if ($have) { '있음' } else { '없음' }) 'INFO' `
             $(if (-not $have) { "최초 로그인이 필요하다: $($m.credentials.setup_guide)" } else { '존재는 인증을 뜻하지 않는다. 실제 호출로 검증해야 한다.' })
     }
+
+    # 옛 판이 남긴 위치 지정 환경변수. 어느 변수가 은퇴했는지는 매니페스트가 선언한다.
+    # 여기에 변수 이름을 박으면 런타임을 하나 추가할 때마다 이 스크립트를 고쳐야 한다.
+    foreach ($rv in @($m.retired_locators.environment_variables)) {
+        if (-not $rv) { continue }
+        $rvUser = [Environment]::GetEnvironmentVariable($rv, 'User')
+        if (-not $rvUser) { continue }
+        $rvStale = -not (Test-Path -LiteralPath $rvUser)
+        Add-Finding 'runtime' "$rid 은퇴한 위치 변수" "$rv = $rvUser" 'WARN' `
+            $(if ($rvStale) { '이 변수는 v3 해석 경로에 없고, 가리키는 경로도 이미 존재하지 않는다.' }
+              else { '이 변수는 v3 해석 경로에 없다. 남은 값은 옛 실행 파일을 가리키며, 그것을 정답으로 믿는 사람과 옛 스크립트를 만든다.' })
+        Add-Plan -StepId "runtime.retired_locator:$($rid):$rv" -Kind 'env-set' -Action '은퇴한 위치 변수 삭제' -Target "$rv (User)" `
+            -Current $rvUser -Proposed '(삭제)' -Risk 'medium' `
+            -Note '사용자 환경변수를 지운다. 새로 여는 프로세스에만 반영되며 이미 떠 있는 세션은 옛 값을 계속 쓴다. 이전 값은 롤백 저널에 남는다.' `
+            -Payload ([pscustomobject]@{ name = $rv; scope = 'User'; value = $null })
+    }
 }
 
 # ===========================================================================

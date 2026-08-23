@@ -74,8 +74,9 @@ AI_Harness_CLI_v2/
 - `PATCH_NOTES.md` → 버전별 변경 기록
 - `catalogs/*` → 필요할 때 검색하는 MCP/Skill Metadata
 - `workflows/CAPABILITY_ACQUISITION.md` → Capability가 부족할 때만 읽는 획득 절차
-- `workflows/GOOGLE_WORKSPACE_MCP.md` → 공용 Google MCP 자동 탐지·등록·권한 절차
-- `settings/google-workspace/` → 비밀값 없는 이식형 Google MCP manifest와 설정 template
+- `runtimes/*.runtime.json` → 공용 런타임 선언 (무엇을 어떤 버전으로. 설치 위치는 담지 않는다)
+- `settings/clients/*.client.json` → AI 클라이언트별 등록 방식과 제약 선언
+- `workflows/SHARED_RUNTIME.md` → 공용 런타임 수명주기 (install → auth → verify → sync → restart)
 - `workflows/GOOGLE_WORKSPACE_MCP.md` → PC 공용 Google Workspace MCP 연결·권한 절차
 - `policies/*.md` → 필요한 것만 JIT
 

@@ -1,7 +1,0 @@
-{
-  "mcpServers": {
-    "google-workspace": {
-      "command": "<RESOLVED_GOOGLE_WORKSPACE_MCP_COMMAND>"
-    }
-  }
-}

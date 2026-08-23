@@ -15,6 +15,9 @@
   "platforms_verified_on": "1970-01-01",
   "legacy_install_dirs": [],
 
+  "$retired_locators_note": "옛 판이 실행 경로를 사용자 환경변수에 박아 두었다면 그 이름을 여기 적는다. v3 는 런타임 인덱스로 해석하므로 그 변수를 읽지 않지만, 남은 값은 옛 실행 파일을 가리킨 채 사람과 되살아난 옛 스크립트를 오도한다. 진단이 찾아내 지우자고 제안한다. 새 런타임이라면 비워 둔다.",
+  "retired_locators": { "environment_variables": [] },
+
   "requires": { "node": ">=22", "npm": true },
 
   "$install_note": "버전은 여기에만 존재한다. 카탈로그에 다시 적지 않는다. latest / * / ^ / ~ 는 CI 가 거부한다.",

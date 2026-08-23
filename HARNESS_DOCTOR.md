@@ -96,7 +96,7 @@ Doctor 요청 시 아래 목록을 검사한다. 파일 존재·Metadata·참조
 35. Local Package MCP Version에 `latest`, wildcard, caret, tilde 범위가 남아 있지 않은가
 36. `.ai/mcp/desired.json`의 MCP ID가 중복되지 않고 Secret 실제 값이 없는가
 37. 설치 기록의 `verified` 상태가 실제 Smoke Test Evidence 없이 부여되지 않았는가
-38. `settings/google-workspace/manifest.json`이 유효하고 resolver가 공용 MCP command를 찾는가
+38. `runtimes/*.runtime.json`이 유효하고 `scripts/Resolve-HarnessRuntime.ps1`이 선언된 런타임의 command를 찾는가 (exit 4 = 미설치이며 오류가 아니다)
 39. Google OAuth credential/token이 Harness, 프로젝트 또는 Drive 동기화 설정 폴더에 복제되지 않았는가
 40. 현재 설치된 MCP 지원 AI 클라이언트에 `google-workspace`가 사용자/전역 범위로 등록되어 있는가
 

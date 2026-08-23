@@ -2,6 +2,27 @@
 
 이 문서는 AI Harness의 사용자 관점 변경사항과 검증 결과를 누적 기록한다. 최신 항목을 위에 추가한다.
 
+## 3.0 (진행 중) — 2026-08-23
+
+### 목표
+
+특정 PC에 맞춰진 구성을 **GitHub에서 받아 어느 PC에서든 설치·사용할 수 있는 3계층 구조**로 재편한다. 무엇을(Layer A, git) / 어디에·누구로(Layer B, 도구 루트) / 어떤 capability ID를(Layer C, 프로젝트)를 섞지 않는다. 설계 근거는 `proposals/HARNESS_V3_PROPOSAL.md`, 진행 상태는 `proposals/HANDOFF.md`에 있다.
+
+### 2.2 에서 은퇴한 것
+
+아래는 **삭제됐다.** 2.2 항목에 남아 있는 사용법을 따르지 않는다.
+
+- `scripts/Initialize-GoogleWorkspaceMcp.ps1` → `scripts/Install-HarnessRuntime.ps1` (설치) + `scripts/Connect-HarnessRuntimeAuth.ps1` (인증) + `scripts/Sync-HarnessClients.ps1` → `scripts/Install-Harness.ps1` (등록)
+- `scripts/Resolve-GoogleWorkspaceMcp.ps1` → `scripts/Resolve-HarnessRuntime.ps1` (런타임 종류에 무관)
+- `settings/google-workspace/manifest.json` + `mcp-server.template.json` → `runtimes/google-workspace.runtime.json` (버전·서버 정의의 단일 소스)
+- 사용자 환경변수 `AI_HARNESS_GOOGLE_MCP_COMMAND` → 도구 루트 + 런타임 인덱스의 상대 경로. **실행 경로를 환경변수에 박지 않는다.** 루트를 옮겨도 해석이 따라와야 하기 때문이다.
+
+은퇴한 환경변수는 값이 남아 있어도 아무도 읽지 않지만, 옛 실행 파일을 가리킨 채 사람과 되살아난 옛 스크립트를 오도한다. 그래서 매니페스트의 `retired_locators`가 그 이름을 선언하고 환경 진단이 삭제를 제안한다(적용은 계획 파일을 거친다).
+
+### 왜 지웠는가
+
+옛 스크립트는 없어진 래퍼 `.cmd`를 **다시 만들었다.** 그 래퍼는 `GOOGLE_WORKSPACE_SERVICES`에 `contacts`를 포함하고 있어서, 한 번만 실행돼도 방금 해소한 등록 드리프트가 되살아난다. 새 경로를 만들고 옛 경로를 남겨 두면, 남은 쪽이 조용히 이긴다.
+
 ## 2.2 — 2026-08-23
 
 ### 목표

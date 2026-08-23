@@ -531,16 +531,18 @@ Initializer 자체도 필요한 정책만 사용한다.
 
 # 17.1 PC 공용 Google Workspace MCP 자동 연결
 
-Harness 초기화 시 `settings/google-workspace/manifest.json`이 존재하면 다음 순서로 처리한다.
+Harness 초기화 시 `runtimes/google-workspace.runtime.json`이 존재하면 다음 순서로 처리한다.
 
-1. `AI_HARNESS_GOOGLE_MCP_COMMAND` 사용자 환경변수를 확인한다.
-2. 없거나 경로가 깨졌으면 `scripts/Resolve-GoogleWorkspaceMcp.ps1`로 현재 설치 위치를 탐지한다.
-3. 런타임이 없고 Google 관련 업무를 사용할 가능성이 있거나 사용자가 공용 설치를 요청했다면 `scripts/Initialize-GoogleWorkspaceMcp.ps1 -RegisterInstalledClients`를 실행한다.
-4. 현재 AI 클라이언트가 MCP를 지원하면 공식 CLI 또는 공식 설정 형식을 확인해 `google-workspace` 서버를 사용자/전역 범위로 한 번 등록한다.
-5. 이미 같은 이름과 같은 command가 등록되어 있으면 재등록하지 않는다.
-6. 프로젝트에는 실제 command 경로나 token을 복제하지 않고 필요할 때 capability ID와 locator 환경변수 이름만 기록한다.
+1. `scripts/Resolve-HarnessRuntime.ps1 -RuntimeId google-workspace`로 현재 상태를 해석한다. **읽기 전용이며 아무것도 설치하지 않는다.** exit 4는 미설치이며 오류가 아니다.
+2. 위치는 사용자 환경변수가 아니라 도구 루트(`AI_HARNESS_TOOLS_ROOT`) 기준의 런타임 인덱스(`runtimes.json`의 `command_rel`)로 해석한다. **실행 경로를 환경변수에 박지 않는다.** 도구 루트가 옮겨져도 해석되어야 하기 때문이다.
+3. 런타임이 없고 Google 관련 업무를 사용할 가능성이 있거나 사용자가 공용 설치를 요청했다면 `scripts/Install-HarnessRuntime.ps1 -RuntimeId google-workspace`를 실행한다. 인증은 `scripts/Connect-HarnessRuntimeAuth.ps1`이 별도로 담당한다.
+4. 등록은 진단이 아니라 **적용 경로**를 거친다. `scripts/Sync-HarnessClients.ps1 -SavePlan`으로 계획을 만들고, 사용자가 확인한 뒤 `scripts/Install-Harness.ps1 -Plan`으로 적용한다. 초기화가 클라이언트 등록을 조용히 수행하지 않는다.
+5. 이미 같은 이름과 같은 command가 등록되어 있으면 재등록하지 않는다. 정합 판정은 `Sync-HarnessClients.ps1`이 선언·원장·실제 3자를 대조해서 낸다.
+6. 프로젝트에는 실제 command 경로나 token을 복제하지 않고 capability ID만 기록한다.
 
-새 AI 클라이언트가 처음 발견되면 사용자가 경로를 다시 말하게 하지 않는다. Harness manifest와 resolver로 command를 찾고 해당 클라이언트의 공식 등록 방식을 확인하여 한 번 연결한다. 설정 형식을 확인할 수 없거나 MCP를 지원하지 않으면 임의 파일을 만들지 않고 `PARTIAL`로 보고한다.
+전체 수명주기(install → auth → verify → sync → restart)는 `workflows/SHARED_RUNTIME.md`에 있다.
+
+새 AI 클라이언트가 처음 발견되면 사용자가 경로를 다시 말하게 하지 않는다. `settings/clients/<id>.client.json`의 등록 방식으로 command를 찾아 연결한다. 디스크립터가 없거나 MCP를 지원하지 않으면 임의 파일을 만들지 않고 `PARTIAL`로 보고한다.
 
 OAuth credential과 token은 PC 사용자 profile에만 존재해야 하며 Google Drive MASTER, Harness, 프로젝트, Git 저장소에 업로드하지 않는다.
 

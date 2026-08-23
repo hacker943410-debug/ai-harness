@@ -13,6 +13,11 @@
   "platforms_verified_on": "2026-08-23",
   "legacy_install_dirs": ["google-workspace-mcp"],
 
+  "retired_locators": {
+    "$comment": "v2.2 는 실행 경로를 사용자 환경변수에 박아 두고 그것으로 런타임을 찾았다. v3 는 런타임 인덱스의 command_rel 을 도구 루트 기준으로 해석하므로 이 변수를 아무도 읽지 않는다. 그런데 값은 그대로 남아 옛 실행 파일을 가리킨다. 읽는 사람도, 되살아난 옛 스크립트도 그 경로를 정답으로 믿는다. 남은 값은 정보가 아니라 함정이므로 진단이 찾아내 지우자고 제안한다.",
+    "environment_variables": ["AI_HARNESS_GOOGLE_MCP_COMMAND"]
+  },
+
   "requires": { "node": ">=22", "npm": true },
 
   "install": {

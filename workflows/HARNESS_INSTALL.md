@@ -19,7 +19,7 @@ Layer: A (git 추적)
 |---|---|---|
 | `<도구 루트>` (기본 `%LOCALAPPDATA%\AI-Tools`) | 디렉터리 생성 + ACL 제한 | 디렉터리 삭제 |
 | 사용자 환경변수 `AI_HARNESS_TOOLS_ROOT` | 설정 | 삭제 또는 이전 값 복원 |
-| 사용자 환경변수 `AI_HARNESS_GOOGLE_MCP_COMMAND` | 설정 (레거시 호환) | 동일 |
+| 사용자 환경변수 `AI_HARNESS_GOOGLE_MCP_COMMAND` | **설정하지 않는다** (v2.2 에서 은퇴). 값이 남아 있으면 삭제를 제안 | 이전 값 복원 (롤백 저널) |
 | `<도구 루트>\runtimes.json` / `clients.json` | 생성·갱신 | 파일 삭제 |
 | `<도구 루트>\<런타임>\<버전>\` | npm 패키지 설치 (수십~수백 MB) | 디렉터리 삭제 |
 | 각 AI CLI 의 MCP 설정 | 서버 1개 등록 | `<cli> mcp remove <이름>` |
@@ -412,7 +412,7 @@ claude          (또는 codex / agy)
 
 ```powershell
 [Environment]::GetEnvironmentVariable('AI_HARNESS_TOOLS_ROOT','User')
-[Environment]::GetEnvironmentVariable('AI_HARNESS_GOOGLE_MCP_COMMAND','User')
+[Environment]::GetEnvironmentVariable('AI_HARNESS_GOOGLE_MCP_COMMAND','User')   # 값이 있으면 v2.2 잔재
 Test-Path 'C:\AI-Tools'                    # 레거시 위치
 Get-Content "$env:LOCALAPPDATA\AI-Tools\runtimes.json" -ErrorAction SilentlyContinue
 ```
@@ -444,7 +444,8 @@ Remove-Item -Recurse -Force 'C:\AI-Tools'
 
 ## 8. 제거 / 되돌리기
 
-> ⚠ **자동 롤백은 아직 구현되어 있지 않다.** (§12) 아래는 수동 체크리스트다.
+> **하네스가 적용한 변경은 `Install-Harness.ps1 -Rollback <저널경로>` 로 되돌린다.** (§12)
+> 아래는 하네스를 **통째로 제거**할 때의 수동 체크리스트다. 저널이 없거나 하네스가 만들지 않은 것까지 지울 때 쓴다.
 
 ```powershell
 # 1. 클라이언트 등록 제거
