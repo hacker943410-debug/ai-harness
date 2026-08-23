@@ -413,6 +413,28 @@ foreach ($cid in $clientIds) {
 }
 
 # ===========================================================================
+# 9. 제약 고지 — 기술적으로 불가능한 것
+# ===========================================================================
+# 등록한 뒤에 경고하면 사용자는 이미 노출된 상태에서 그것을 읽는다.
+# 설치 시점에, 아직 아무것도 바뀌지 않았을 때 알린다.
+$limitations = [System.Collections.Generic.List[object]]::new()
+foreach ($cid in $clientIds) {
+    $d = $null
+    try { $d = Get-HarnessClientDescriptor -HarnessRoot $root -ClientId $cid } catch { continue }
+    # 이 PC 에 없는 CLI 의 제약은 알릴 것도 없다
+    if (-not (Get-HarnessNativeCommand $d.detect.command)) { continue }
+    foreach ($rid in $runtimeIds) {
+        $m = Get-HarnessRuntimeManifest -HarnessRoot $root -RuntimeId $rid
+        foreach ($l in (Get-HarnessClientLimitation -HarnessRoot $root -ClientId $cid `
+                        -RuntimeId $rid -RuntimeRisk ([string]$m.risk) -ServerName $m.server_name)) {
+            $limitations.Add($l)
+        }
+    }
+}
+# 같은 제약이 런타임 수만큼 반복되지 않게 (클라이언트, 제약 id) 로 한 번만 보여 준다.
+$limitations = @($limitations | Group-Object { "$($_.client)|$($_.id)" } | ForEach-Object { $_.Group[0] })
+
+# ===========================================================================
 # 판정
 # ===========================================================================
 $blocks = @($findings | Where-Object status -eq 'BLOCK')
@@ -428,6 +450,7 @@ $report = [pscustomobject]@{
     tools_root     = $resolvedTools
     blocks         = @($blocks | ForEach-Object { [pscustomobject]@{ item = $_.item; note = $_.note } })
     findings       = @($findings)
+    limitations    = @($limitations)
     plan           = @($plan)
 }
 
@@ -455,6 +478,12 @@ if ($Json) {
         if ($f.note) { Write-Output ("        └ {0}" -f $f.note) }
     }
     Write-Output ''
+    if ($limitations.Count) {
+        Write-Output '이 PC 에서 기술적으로 불가능한 것 — 진행 여부는 사용자가 정합니다'
+        Write-Output '  (하네스가 대신 막아 줄 수 없는 것들입니다. 선택지를 보고 고르세요.)'
+        Write-Output ''
+        Write-HarnessLimitationBlock -Limitations $limitations -Indent '  '
+    }
     if ($plan.Count) {
         Write-Output '이 PC 에 제안하는 변경 (아직 아무것도 적용되지 않았습니다):'
         $i = 0

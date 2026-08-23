@@ -234,6 +234,39 @@ if (-not $Quick) {
     }
 
     # -----------------------------------------------------------------------
+    # 5b2. 클라이언트 디스크립터 — 제약 고지 계약
+    # -----------------------------------------------------------------------
+    # 제약은 "있다"고 적는 것으로 끝나면 안 된다. 사용자가 고를 수 있어야 한다.
+    # 선택지 없는 제약 고지는 통보이지 선택이 아니다.
+    foreach ($cf in @(Get-ChildItem (Join-HarnessPath $root 'settings' 'clients') -Filter '*.client.json' -File -ErrorAction SilentlyContinue)) {
+        $cid = $cf.Name -replace '\.client\.json$', ''
+        $cd = $null
+        try { $cd = Read-HarnessJson -Path $cf.FullName } catch {
+            Add-Issue 'FAIL' 'CLIENT_PARSE' "$($cf.Name) 파싱 실패: $($_.Exception.Message)"; continue
+        }
+        if ($cd.PSObject.Properties.Name -notcontains 'limitations') { continue }
+        foreach ($lim in @($cd.limitations)) {
+            foreach ($req in @('id', 'severity', 'what', 'why', 'consequence')) {
+                if (-not $lim.$req) { Add-Issue 'FAIL' 'LIMITATION_FIELD_MISSING' "$cid 제약 '$($lim.id)' 에 $req 가 없습니다." }
+            }
+            if ($lim.severity -notin @('low', 'medium', 'high')) {
+                Add-Issue 'FAIL' 'LIMITATION_SEVERITY' "$cid 제약 '$($lim.id)' 의 severity 가 low/medium/high 가 아닙니다: $($lim.severity)"
+            }
+            $opts = @($lim.options)
+            if ($opts.Count -lt 2) {
+                Add-Issue 'FAIL' 'LIMITATION_NO_CHOICE' "$cid 제약 '$($lim.id)' 에 선택지가 $($opts.Count)개입니다. 선택지 없는 고지는 통보이지 선택이 아닙니다(최소 2개)."
+            }
+            foreach ($o in $opts) {
+                if (-not $o.id -or -not $o.label) { Add-Issue 'FAIL' 'LIMITATION_OPTION_FIELD' "$cid 제약 '$($lim.id)' 의 선택지에 id 또는 label 이 없습니다." }
+                if (-not $o.how) { Add-Issue 'FAIL' 'LIMITATION_OPTION_NO_HOW' "$cid 제약 '$($lim.id)' 의 선택지 '$($o.id)' 에 how 가 없습니다. 방법을 못 적으면 선택지가 아닙니다." }
+            }
+            if (@($opts | Where-Object { $_.recommended }).Count -ne 1) {
+                Add-Issue 'FAIL' 'LIMITATION_NO_RECOMMENDED' "$cid 제약 '$($lim.id)' 에 recommended 선택지가 정확히 1개여야 합니다."
+            }
+        }
+    }
+
+    # -----------------------------------------------------------------------
     # 5c. 카탈로그의 shared_runtime 계약
     # -----------------------------------------------------------------------
     $catPath = Join-HarnessPath $root 'catalogs' 'mcp-catalog.json'

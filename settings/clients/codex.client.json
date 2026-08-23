@@ -57,5 +57,55 @@
     "server_level_disable": null
   },
 
+  "$limitations_note": "기술적으로 불가능한 것은 최초 설치 시점에 알려야 한다. how 안의 {server_name} {client_id} {runtime_id} 는 해석 시 치환된다.",
+  "limitations": [
+    {
+      "id": "no_scope_flag",
+      "severity": "medium",
+      "applies_when": {},
+      "what": "등록 범위를 고를 수 없다. 항상 전역이다",
+      "why": "codex mcp add 에 scope 플래그가 없다. 프로젝트별 .codex/config.toml 은 신뢰된 프로젝트에서만 읽히고 수동 편집이 필요하다.",
+      "consequence": "한 번 등록하면 모든 프로젝트에서 이 서버가 보인다. 프로젝트 단위로 켜고 끌 수 없다.",
+      "options": [
+        {
+          "id": "accept_global",
+          "recommended": true,
+          "label": "전역 등록을 받아들이고 도구 정책으로 통제한다",
+          "how": "$CODEX_HOME/config.toml 의 mcp_servers.{server_name}.disabled_tools 로 위험 도구 제거, default_tools_approval_mode = \"writes\" 로 쓰기 승인",
+          "effect": "Codex 의 도구 필터는 모델용 목록 생성 전에 적용되므로 컨텍스트도 실제로 줄어든다."
+        },
+        {
+          "id": "skip_registration",
+          "label": "등록하지 않는다",
+          "how": "계획 파일에서 client.register:{client_id}:{runtime_id} 의 enabled 를 false 로 바꾼다",
+          "effect": "Codex 에서 이 능력을 쓸 수 없다."
+        }
+      ]
+    },
+    {
+      "id": "config_may_be_externally_owned",
+      "severity": "medium",
+      "applies_when": {},
+      "what": "제3의 도구가 설정 파일을 소유하면 등록이 조용히 지워진다",
+      "why": "이 PC 에서 실제로 일어났다. 다계정 래퍼(orca)가 CODEX_HOME 을 재정의하고 config.toml 을 재작성하면서 [mcp_servers] 블록을 지웠다. 14:54 등록 확인 -> 16:15 소실.",
+      "consequence": "등록했다고 계속 등록된 상태로 남지 않는다. 원장과 실제가 갈라진다.",
+      "options": [
+        {
+          "id": "recheck_each_session",
+          "recommended": true,
+          "label": "작업 시작 시 정합을 확인한다",
+          "how": ".\\scripts\\Sync-HarnessClients.ps1",
+          "effect": "지워졌으면 unregistered 로 잡힌다. 재등록 명령도 함께 나온다."
+        },
+        {
+          "id": "skip_registration",
+          "label": "등록하지 않는다",
+          "how": "계획 파일에서 client.register:{client_id}:{runtime_id} 의 enabled 를 false 로 바꾼다",
+          "effect": "사라질 등록을 관리하지 않아도 된다."
+        }
+      ]
+    }
+  ],
+
   "notes": "scope 플래그가 없다. 등록은 항상 전역이다. 프로젝트별 .codex/config.toml 은 신뢰된 프로젝트에서만 읽히며 수동 편집이 필요하다."
 }

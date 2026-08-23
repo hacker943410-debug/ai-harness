@@ -411,6 +411,20 @@ if ($removeRows.Count) {
     Write-Output '  적용하면 이 값들은 사라집니다. 의도한 것인지 확인하세요.'
 }
 
+# 적용하면 사용자가 감수하게 되는 것. 계획 단계가 데이터로 들고 온다.
+# 하네스가 막아 줄 수 없는 것을 조용히 적용하지 않는다.
+$hardLimits = @()
+foreach ($s in $actions) {
+    foreach ($l in @($s.limitations)) { if ($l.severity -eq 'high') { $hardLimits += $l } }
+}
+$hardLimits = @($hardLimits | Group-Object { "$($_.client)|$($_.id)" } | ForEach-Object { $_.Group[0] })
+if ($hardLimits.Count) {
+    Write-Output ''
+    Write-Output '적용하면 감수하게 되는 것 — 하네스가 막아 줄 수 없습니다'
+    Write-Output ''
+    Write-HarnessLimitationBlock -Limitations $hardLimits -Indent '  '
+}
+
 if ($actions.Count -eq 0) { Write-Output ''; exit 0 }
 
 if ($DryRun) {
@@ -461,6 +475,14 @@ if (-not $Yes) {
         exit 2
     }
     Write-Output ''
+    if ($hardLimits.Count) {
+        $ans = Read-Host "위 제약 $($hardLimits.Count)건을 알고 진행하려면 LIMITS 를 입력하세요"
+        if ($ans -ne 'LIMITS') {
+            Write-Output '취소했습니다. 아무것도 적용되지 않았습니다.'
+            Write-Output '선택지 중 "등록하지 않는다" 를 고르려면 계획 파일에서 해당 단계의 enabled 를 false 로 바꾸세요.'
+            exit 2
+        }
+    }
     if ($removeRows.Count) {
         $ans = Read-Host "선언에 없는 값 $($removeRows.Count)건이 사라집니다. 동의하면 REMOVE 를 입력하세요"
         if ($ans -ne 'REMOVE') { Write-Output '취소했습니다. 아무것도 적용되지 않았습니다.'; exit 2 }

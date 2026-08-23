@@ -60,5 +60,32 @@
       "reduces_context": true,
       "hint": "/mcp 토글로 프로젝트별 on/off. Google 과 무관한 프로젝트에서 토큰을 줄이는 유일한 수단."
     }
-  }
+  },
+
+  "$limitations_note": "기술적으로 불가능한 것은 최초 설치 시점에 알려야 한다. how 안의 {server_name} {client_id} {runtime_id} 는 해석 시 치환된다.",
+  "limitations": [
+    {
+      "id": "scoped_deny_keeps_schema",
+      "severity": "medium",
+      "applies_when": {},
+      "what": "도구 단위 deny 는 실행만 막고 컨텍스트는 줄이지 않는다",
+      "why": "permissions.deny 에 mcp__{server_name}__{tool} 을 넣으면 호출은 차단되지만 도구 스키마는 모델 컨텍스트에 그대로 남는다. 컨텍스트가 실제로 줄어드는 것은 서버 전체를 지정한 bare deny(mcp__{server_name})뿐이다.",
+      "consequence": "위험 도구를 막아도 토큰은 계속 쓴다. 이 런타임은 도구가 80개가 넘어 무시할 수 없는 양이다.",
+      "options": [
+        {
+          "id": "per_project_disable",
+          "recommended": true,
+          "label": "관련 없는 프로젝트에서는 서버째 끈다",
+          "how": "해당 프로젝트에서 /mcp 토글 (~/.claude.json 의 disabledMcpServers)",
+          "effect": "그 프로젝트에서 스키마가 사라져 토큰이 실제로 줄어든다. 필요한 프로젝트에서는 그대로 쓴다."
+        },
+        {
+          "id": "tool_deny_only",
+          "label": "실행 차단만 하고 토큰은 감수한다",
+          "how": ".claude/settings.json 의 permissions.deny 에 mcp__{server_name}__<tool>",
+          "effect": "위험 도구는 못 부른다. 스키마는 남는다."
+        }
+      ]
+    }
+  ]
 }

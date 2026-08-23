@@ -582,6 +582,93 @@ function Get-HarnessRunningClientProcess {
 #>
 $script:HarnessPlanSchema = '1.0'
 
+# ---------------------------------------------------------------------------
+# 제약 고지 — 기술적으로 불가능한 것을 미리 말한다
+# ---------------------------------------------------------------------------
+
+<#
+    어떤 클라이언트는 우리가 선언한 통제를 강제할 수단 자체가 없다.
+    그것을 등록한 뒤에 경고하면, 사용자는 이미 노출된 상태에서 그 경고를 읽는다.
+    설치 시점에 "이건 안 된다, 대신 이런 선택지가 있다"를 제시하고 사용자가 고르게 한다.
+
+    제약은 코드가 아니라 클라이언트 디스크립터의 limitations 배열에 데이터로 선언한다.
+    새 클라이언트의 새 제약을 추가하는 데 스크립트를 고쳐야 하면 설계가 틀린 것이다.
+
+    applies_when.runtime_risk 가 있으면 그 위험도의 런타임에만 적용된다.
+    없으면 항상 적용된다.
+#>
+function Get-HarnessClientLimitation {
+    param(
+        [Parameter(Mandatory = $true)][string]$HarnessRoot,
+        [Parameter(Mandatory = $true)][string]$ClientId,
+        [string]$RuntimeId,
+        [string]$RuntimeRisk,
+        [string]$ServerName
+    )
+    $d = $null
+    try { $d = Get-HarnessClientDescriptor -HarnessRoot $HarnessRoot -ClientId $ClientId } catch { return @() }
+    if ($d.PSObject.Properties.Name -notcontains 'limitations' -or -not $d.limitations) { return @() }
+
+    $tokens = @{
+        '{server_name}' = $ServerName
+        '{client_id}'   = $ClientId
+        '{runtime_id}'  = $RuntimeId
+    }
+    function Expand-Tokens { param([string]$s)
+        if (-not $s) { return $s }
+        foreach ($k in $tokens.Keys) { $s = $s.Replace($k, [string]$tokens[$k]) }
+        return $s
+    }
+
+    $out = [System.Collections.Generic.List[object]]::new()
+    foreach ($lim in @($d.limitations)) {
+        $aw = $lim.applies_when
+        if ($aw -and ($aw.PSObject.Properties.Name -contains 'runtime_risk') -and @($aw.runtime_risk).Count) {
+            if (-not $RuntimeRisk) { continue }
+            if (@($aw.runtime_risk) -notcontains $RuntimeRisk) { continue }
+        }
+        $opts = @()
+        foreach ($o in @($lim.options)) {
+            $opts += [pscustomobject]@{
+                id          = $o.id
+                recommended = [bool]$o.recommended
+                label       = Expand-Tokens ([string]$o.label)
+                how         = Expand-Tokens ([string]$o.how)
+                effect      = Expand-Tokens ([string]$o.effect)
+            }
+        }
+        $out.Add([pscustomobject]@{
+            client      = $ClientId
+            runtime_id  = $RuntimeId
+            id          = $lim.id
+            severity    = [string]$lim.severity
+            what        = Expand-Tokens ([string]$lim.what)
+            why         = Expand-Tokens ([string]$lim.why)
+            consequence = Expand-Tokens ([string]$lim.consequence)
+            options     = @($opts)
+        })
+    }
+    return @($out)
+}
+
+function Write-HarnessLimitationBlock {
+    param([Parameter(Mandatory = $true)]$Limitations, [string]$Indent = '  ')
+    foreach ($l in @($Limitations)) {
+        Write-Output ("{0}[{1}] {2} — {3}" -f $Indent, $l.severity, $l.client, $l.what)
+        Write-Output ("{0}    왜   : {1}" -f $Indent, $l.why)
+        Write-Output ("{0}    결과 : {1}" -f $Indent, $l.consequence)
+        Write-Output ("{0}    선택지:" -f $Indent)
+        foreach ($o in @($l.options)) {
+            # 표시 폭이 다른 문자를 앞에 두면 정렬이 깨진다. 표식은 뒤에 붙인다.
+            $mark = if ($o.recommended) { '   <- 권장' } else { '' }
+            Write-Output ("{0}      - {1}{2}" -f $Indent, $o.label, $mark)
+            if ($o.how) { Write-Output ("{0}          {1}" -f $Indent, $o.how) }
+            if ($o.effect) { Write-Output ("{0}          => {1}" -f $Indent, $o.effect) }
+        }
+        Write-Output ''
+    }
+}
+
 function New-HarnessPlanStep {
     param(
         [Parameter(Mandatory = $true)][string]$StepId,
@@ -595,7 +682,8 @@ function New-HarnessPlanStep {
         [string[]]$DependsOn = @(),
         $Payload = $null,
         $Undo = $null,
-        [string]$CommandLine = ''
+        [string]$CommandLine = '',
+        $Limitations = @()
     )
     return [pscustomobject]@{
         step_id      = $StepId
@@ -612,6 +700,8 @@ function New-HarnessPlanStep {
         command_line = $CommandLine
         payload      = $Payload
         undo         = $Undo
+        # 이 단계를 적용하면 사용자가 감수하게 되는 것. 적용자가 별도 동의를 받는다.
+        limitations  = @($Limitations)
     }
 }
 
@@ -691,12 +781,19 @@ function New-HarnessRegistrationStep {
         command_line = "$($d.detect.command) $($rmArgv -join ' ')"
     }
 
+    $limits = @(Get-HarnessClientLimitation -HarnessRoot $HarnessRoot -ClientId $ClientId `
+        -RuntimeId $RuntimeId -RuntimeRisk ([string]$m.risk) -ServerName $m.server_name)
+
     if ($Mode -eq 'register') {
         $note = $Note
         if ($m.risk -eq 'high') {
             $note += "  [risk=high — 명령에 -IAcceptRisk 가 들어 있다. 차단 도구: $(@($m.tool_policy.deny) -join ', ')]"
         }
-        return New-HarnessPlanStep -StepId "client.register:$ClientId`:$RuntimeId" -Kind 'exec' `
+        $hardLimits = @($limits | Where-Object severity -eq 'high')
+        if ($hardLimits.Count) {
+            $note += "  [제약: $(($hardLimits | ForEach-Object { $_.what }) -join '; ') — 적용 시 별도 동의를 받는다]"
+        }
+        return New-HarnessPlanStep -StepId "client.register:$ClientId`:$RuntimeId" -Kind 'exec' -Limitations $limits `
             -Action '클라이언트 등록' -Target "$ClientId <- $RuntimeId" `
             -Current $Current -Proposed "$($m.server_name) 를 scope=$scope 로 등록" `
             -Risk $Risk -Optional $Optional -DependsOn @("runtime.install:$RuntimeId") -Note $note.Trim() `

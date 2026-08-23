@@ -30,6 +30,10 @@ Layer: A (git 추적)
 
 **관리자 권한은 필요 없다.** 전부 사용자 범위다.
 
+**하네스가 대신 해 줄 수 없는 것도 있다.** 어떤 CLI 는 우리가 선언한 도구 통제를
+강제할 수단 자체가 없다. 그런 것은 숨기지 않고 진단 단계에서 선택지와 함께 제시하며,
+진행 여부는 사용자가 정한다 (§4.7).
+
 ---
 
 ## 1. 사전 조건
@@ -165,7 +169,59 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 | `원장에는 등록, 실제로는 없음` | **등록이 외부 요인으로 사라졌다.** 재등록 필요 |
 | `관리형 설정 홈` 경고 | 외부 도구가 그 CLI 의 설정 파일을 소유한다. **하네스가 넣은 등록이 나중에 지워질 수 있다.** 작업 시작 시 등록 상태를 다시 확인해야 한다 |
 | `CODEX_HOME` 등 설정 홈 재정의 | 설정 파일 경로를 가정하는 어떤 검사도 이 환경에서는 틀린 답을 준다. 항상 CLI 에게 물어야 한다 |
-| `도구 통제 미검증` | 그 CLI 에서 위험 도구 차단/승인 메커니즘이 확인되지 않았다. 위험 런타임 등록 시 감안할 것 |
+| `도구 통제 미검증` | 그 CLI 에서 위험 도구 차단/승인 메커니즘이 **아직 조사되지 않았다** |
+| `도구 단위 차단 불가` | 조사했고 **수단이 없다는 것이 확인됐다.** 아래 §4.7 을 읽고 선택할 것 |
+
+### 4.7 제약 고지 — 기술적으로 불가능한 것
+
+진단 마지막에 이런 블록이 나온다.
+
+```
+이 PC 에서 기술적으로 불가능한 것 — 진행 여부는 사용자가 정합니다
+
+  [high] agy — 도구 단위 차단·승인 수단이 없다
+      왜   : ...
+      결과 : 매니페스트의 tool_policy.deny 가 강제되지 않는다 ...
+      선택지:
+        - 등록은 하되 평소에는 꺼 둔다   <- 권장
+            agy mcp disable google-workspace
+            => 평소 노출이 0 이 된다 ...
+        - 이 클라이언트에는 등록하지 않는다
+            ...
+```
+
+**이것은 경고가 아니라 갈림길이다.** 하네스가 대신 막아 줄 수 없는 것이므로,
+무엇을 감수할지는 사람이 정해야 한다. 그래서 등록한 뒤가 아니라 **아무것도 바뀌지 않은
+이 시점에** 보여 준다.
+
+읽는 법:
+
+| 필드 | 뜻 |
+|---|---|
+| `severity` | `high` 면 적용 시 별도 동의(`LIMITS` 입력)를 받는다. `medium` 이하는 고지만 한다 |
+| `왜` | 왜 불가능한지. 추측이 아니라 확인한 근거다 |
+| `결과` | 그대로 진행하면 실제로 무엇이 통제되지 않는지 |
+| `선택지` | 각각 실행할 명령(`how`)과 그 결과(`=>`)가 붙어 있다. 하나에 `<- 권장` 이 붙는다 |
+
+선택을 실행에 반영하는 방법:
+
+```powershell
+# 1) 계획 파일을 만든다
+.\scripts\Get-HarnessEnvironment.ps1 -SavePlan .\plan.json
+
+# 2) "등록하지 않는다" 를 골랐다면 그 단계의 enabled 를 false 로 바꾼다
+#    plan.json 에서 client.register:<client>:<runtime> 를 찾아 "enabled": false
+
+# 3) 적용. high 제약이 남아 있으면 LIMITS 를 입력해야 진행된다
+.\scripts\Install-Harness.ps1 -Plan .\plan.json
+```
+
+`LIMITS` 를 입력하지 않으면 **아무것도 적용되지 않는다.** 되돌릴 것도 없다.
+
+> 제약은 클라이언트 디스크립터(`settings/clients/<id>.client.json`)의 `limitations` 에
+> 데이터로 선언한다. 새 제약을 추가하는 데 스크립트를 고칠 필요가 없다.
+> 저장소 검사기가 "선택지가 2개 이상이고 각각 `how` 가 있으며 권장이 정확히 1개"인지 강제한다.
+> **선택지 없는 고지는 통보이지 선택이 아니기 때문이다.**
 
 ---
 
@@ -182,9 +238,38 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 >     Select-Object Id, ProcessName, StartTime
 > ```
 
-적용은 **한 번에 하나씩** 한다. 각 단계는 독립적이고, 하지 않아도 나머지가 동작한다.
+### 5.0 권장 경로 — 계획 파일로 한 번에
 
-### 5.1 도구 루트 준비 (필수)
+아래 §5.1~5.7 은 각 단계를 손으로 실행하는 방법이다. 무엇이 일어나는지 보려면 유용하지만,
+실제 설치는 **계획 파일 한 번**으로 하는 편이 낫다. 확인 절차와 롤백 저널이 딸려 오기 때문이다.
+
+```powershell
+# 1) 진단이 이 PC 에 맞는 계획을 만든다 (아무것도 바꾸지 않음)
+.\scripts\Get-HarnessEnvironment.ps1 -SavePlan .\plan.json
+
+# 2) 계획을 읽고 빼고 싶은 단계의 enabled 를 false 로 바꾼다 (§4.7 의 선택을 여기서 반영)
+notepad .\plan.json
+
+# 3) 실행될 명령을 먼저 본다
+.\scripts\Install-Harness.ps1 -Plan .\plan.json -DryRun
+
+# 4) 적용. 제약 동의(LIMITS) -> REMOVE 동의 -> APPLY 순으로 확인을 받는다
+.\scripts\Install-Harness.ps1 -Plan .\plan.json
+
+# 되돌리기 (저널 경로는 적용이 끝날 때 출력된다)
+.\scripts\Install-Harness.ps1 -Rollback '<저널경로>'
+```
+
+적용자는 **재탐지하지 않는다.** 계획 파일에서 뺀 단계를 되살리지 않으며,
+선행 단계를 빼면 그것에 의존하는 단계도 아예 제시하지 않는다.
+
+`선택` 으로 표시된 단계는 기본적으로 실행되지 않는다. 넣으려면 `-IncludeOptional`
+또는 `-Only <step_id>` 를 쓴다.
+
+### 5.1 도구 루트 준비 (수동 경로)
+
+아래부터는 §5.0 을 쓰지 않고 손으로 할 때의 절차다.
+적용은 **한 번에 하나씩** 한다. 각 단계는 독립적이고, 하지 않아도 나머지가 동작한다.
 
 ```powershell
 $Tools = "$env:LOCALAPPDATA\AI-Tools"          # 비ASCII 홈이면 ASCII 경로로 바꿀 것
@@ -440,21 +525,24 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$H\Test-HarnessRepo.ps1" -J
 
 ---
 
-## 12. 아직 자동화되지 않은 것 (정직하게)
+## 12. 무엇이 자동화됐고 무엇이 안 됐나 (정직하게)
 
-| 항목 | 현재 | 계획 |
+| 항목 | 현재 | 비고 |
 |---|---|---|
-| 통합 적용 스크립트 | 없음. §5 를 단계별로 실행 | `Install-Harness.ps1` (계획 파일 + 저널) |
-| 롤백 저널 | 없음. §8 은 수동 체크리스트 | 변경 전 상태를 기록하고 역재생 |
-| 적용 전 3-way diff | 없음 | 선언 vs 매니페스트 vs 실제 비교 후 ADD/CHANGE/**REMOVE** 표시 |
-| 실행 중 세션 자동 차단 | 진단이 안내만 함 | 적용 직전 재확인 후 거부 |
-| macOS / Linux | 미지원 | 실제 요구가 생기면 |
-| AGY 도구 통제 | 메커니즘 미검증 | 확인 후 디스크립터에 반영 |
+| 통합 적용 스크립트 | **있다.** `Install-Harness.ps1` (계획 파일 소비) | §5.0 |
+| 롤백 저널 | **있다.** 변경 전 상태를 기록하고 `-Rollback` 으로 역재생 | undo 를 모르는 exec 는 "수동 확인 필요"로 남는다 |
+| 적용 전 3-way diff | **있다.** 선언 / 원장 / 실제 비교 후 ADD·CHANGE·**REMOVE** | REMOVE 는 별도 동의 |
+| 실행 중 세션 자동 차단 | **있다.** 적용 직전 재확인 후 거부 | `-AllowRunningClients` 로만 통과 |
+| 제약 고지 | **있다.** 디스크립터의 `limitations` 를 선택지와 함께 제시 | §4.7 |
+| macOS / Linux | **미지원** | 실제 요구가 생기면. `platforms` 에 검증한 것만 적는다 |
+| 프로젝트별 도구 정책 자동 적용 | **수동.** §10 의 설정을 사람이 넣는다 | 클라이언트마다 파일·키가 달라 아직 데이터화하지 않았다 |
+| Drive 스냅샷 | **있다.** `Publish-HarnessSnapshot.ps1` (불변, 추적 파일만) | 정본은 GitHub. Drive 는 라벨 붙은 사본 |
 
 ---
 
 ## 관련 문서
 
+- `workflows/SHARED_RUNTIME.md` — 공용 런타임 수명주기 (install → auth → verify → sync → restart)
 - `workflows/GOOGLE_WORKSPACE_SETUP.md` — Google 최초 로그인 (자기 계정으로)
 - `workflows/GOOGLE_WORKSPACE_MCP.md` — 설치 후 운영 규칙과 권한 경계
 - `workflows/CAPABILITY_ACQUISITION.md` — 필요할 때만 MCP/Skill 획득
