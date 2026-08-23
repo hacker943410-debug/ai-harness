@@ -1,4 +1,4 @@
-﻿# AI Harness v3 마이그레이션 — 인수인계
+# AI Harness v3 마이그레이션 — 인수인계
 
 작성: 2026-08-23
 용도: 세션이 끊긴 뒤 **다음 세션이 이 문서만 읽고 이어서 작업**할 수 있게 한다.
@@ -9,8 +9,12 @@
 ## 0. 한 문장 요약
 
 `C:\AI-Harness`(AI Harness 2.2)를 **GitHub에서 받아 어느 PC에서든 설치·사용할 수 있는 3계층 구조**로 재편하는 중이다.
-**M0~M7b 구현 완료.** 이 PC 적용도 대부분 끝났다(하네스 ACL 제한, 레지스트리 8건 확정,
-claude·agy 등록 드리프트 해소). 남은 것은 **사용자 결정 4건**(§7 의 2·6·7·8)과 M8 잔여 항목이다.
+**M0~M7b 구현 완료. M8 도 대부분 끝났다.**
+이 PC 적용 완료: 하네스 저장소 ACL 제한 / 카탈로그 레지스트리 좌표 확정(조회 대상 0건) /
+claude·agy 등록 드리프트 해소 / AGY 노출 완화(`mcp disable`).
+
+남은 것은 **사용자 결정 3건**(§7 의 2·6·8)과 M8 잔여 항목(§6)이다.
+구현이 막힌 것은 없다. 전부 "할지 말지"의 문제다.
 
 ---
 
@@ -20,7 +24,7 @@ claude·agy 등록 드리프트 해소). 남은 것은 **사용자 결정 4건**
 |---|---|
 | 하네스 로컬 | `C:\AI-Harness` |
 | 원격 | `https://github.com/hacker943410-debug/ai-harness` (**Private**) |
-| 현재 HEAD | `30f64a6` + 이 커밋 |
+| 현재 HEAD | `d5ce48d` + 이 커밋 (working tree clean, origin/main 동기) |
 | 기준점 태그 | `v2.2.0` = `9e142bf` (롤백 지점) |
 | 도구 루트 (Layer B) | `%LOCALAPPDATA%\AI-Tools` = `C:\Users\hacke\AppData\Local\AI-Tools` |
 | 레거시 도구 루트 | `C:\AI-Tools` (**아직 존재**, ACL은 제한 완료, 삭제 대기) |
@@ -29,21 +33,16 @@ claude·agy 등록 드리프트 해소). 남은 것은 **사용자 결정 4건**
 ### 커밋 이력
 
 ```
-87372cc  fix: 등록 경로의 결함 4건 — 실제 적용 중 드러남
-390817e  docs: HANDOFF — ACL 제한과 레지스트리 8건 반영 완료 표시
-f775743  fix: ACL 조작을 DACL 전용으로, 카탈로그 서식 보존, 레지스트리 확정 8건 반영
-93e1b55  docs: HANDOFF 를 M7b 완료 상태로 갱신
-831e3e9  M7b(3/3): 카탈로그 통합, 레지스트리 해석기, 저장소 검사 확장, 수명주기 문서
-4359d6d  M7b(2/2): 클라이언트 정합 + 인증 연결/해제, 하네스 저장소 권한 결함 발견
-3e42f64  M7b(1/2): 통합 적용 스크립트 — 변경 계획 파일 + 3-way diff + 롤백 저널
-b935e86  docs: 세션 인수인계 문서 추가 (proposals/HANDOFF.md)
-4bab32b  docs: PC 환경별 최초 설치 가이드 추가
-e5af9c3  M7(1/2): 공용 런타임 계층 + 설치 전 환경 진단
-75d0e46  M6: 공통 헬퍼 도입, 경로/인코딩 결함 일괄 수정, 저장소 자체 검사기 추가
-321f1b4  M5: 공용 도구 루트를 %LOCALAPPDATA%\AI-Tools 로 이전하고 ACL 을 제한
-3870325  proposal: 클라이언트 디스크립터에 config_path_is_authoritative 규칙 추가
-26f3cd4  docs: 새 사용자용 Google Workspace 로그인 가이드 추가
-9e142bf  (tag: v2.2.0) baseline: AI Harness 2.2 into version control
+d5ce48d docs: HANDOFF — 레지스트리 해석 완료(조회 대상 0건)와 실측 사실 4건 추가
+30f64a6 feat: 원격 서버를 좌표 확정으로 인정한다 — 미해석 조회 대상 0건
+7cb95bd fix: 레지스트리 해석 — 검색 결과의 isLatest 를 믿지 않는다
+b33cbf4 feat: 등록됨과 켜짐을 구분한다 — AGY 권장 완화 적용 후 판정이 실제로 바뀌게
+80b1fb8 docs: HANDOFF — 제약 고지 설계 규칙과 스냅샷 스크립트 반영
+4d9238c feat: 제약 고지 — 기술적으로 불가능한 것을 설치 시점에 선택지와 함께 제시
+8c13719 docs: HANDOFF 자기모순 2건 수정 (결정 건수, clients.json 상태)
+909c12f docs: HANDOFF — AGY 도구 통제 부재 확정, Drive 스냅샷 강등 반영
+48df5dd M8: AGY 도구 통제 조사 완료(부재 확인), Drive 를 불변 스냅샷으로 강등
+c299c13 docs: HANDOFF — 드리프트 해소 완료, 등록 경로 실측 사실 5건 추가
 ```
 
 ---
@@ -245,10 +244,6 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
    - `notion` / `azure-devops` / `markitdown` / `unity` 는 발행자의 공식 서버가
      레지스트리에 없다. 좌표를 원한다면 공식 문서·저장소에서 찾아 손으로 넣어야 한다
    - `searxng` 는 발행자를 특정할 수 없어 `discovery_only` 로 내렸다
- — `not_found` 5(chrome-devtools, azure, azure-devops, searxng,
-   markitdown, google-cloud, google-analytics, semgrep 중 일부), `publisher_mismatch` 4
-   (notion / apify / xcodebuildmcp / unity), `resolved_no_package` 2 (stripe / netdata).
-   `publisher: "community"` 는 레지스트리 소유자와 절대 일치할 수 없다 — 카탈로그 데이터 결함
 5. 중복 claude.ai Google 커넥터 정리 (D11)
 6. ~~Drive 스냅샷 강등~~ — **구현 완료** (`Publish-HarnessSnapshot.ps1` + `harness-drive-snapshot.mjs`).
    **아직 한 번도 발행하지 않았다.** DryRun 은 통과: 76개 파일 / 약 1.6MB / never_sync 위반 0.
@@ -320,4 +315,35 @@ powershell ... -File '...\Install-Harness.ps1' -Rollback <저널경로>         
 
 다음 세션 첫 지시 예시:
 
-> `C:\AI-Harness\proposals\HANDOFF.md` 를 읽고 §7 미결 사항부터 이어서 진행해줘.
+> `C:\AI-Harness\proposals\HANDOFF.md` 를 읽고 §9.1 부터 이어서 진행해줘.
+
+---
+
+## 9.1 다음에 바로 할 수 있는 일 (우선순위 순)
+
+구현이 막힌 것은 없다. 아래는 전부 **결정하면 바로 실행되는** 것들이다.
+
+| # | 할 일 | 명령 | 성격 |
+|---|---|---|---|
+| 1 | **Drive 스냅샷 첫 발행** | `.\scripts\Publish-HarnessSnapshot.ps1 -Label v3.0.0` | 외부 업로드(76개 파일). DryRun 통과함 |
+| 2 | **래퍼 정리** — `<tools_root>\google-workspace-mcp\google-workspace-mcp.cmd`, `google-workspace-auth.cmd`, `sync-harness-to-drive.mjs` | 사람이 직접 삭제 | 아무도 안 가리킴. **claude·agy 재시작 후 정합이 `ok` 인지 먼저 확인** |
+| 3 | **Codex 등록** | `Sync-HarnessClients.ps1 -SavePlan` → `Install-Harness.ps1 -IncludeOptional` | 살아있는 설정 변경. risk=high. orca 가 지울 수 있음(§5-10) |
+| 4 | **azure 프리릴리스 결정** | 카탈로그의 `3.0.0-beta.37` 을 정식으로 내릴지 | 검사기가 WARN 을 내는 상태 |
+| 5 | `schemas/` 추가 | runtime-manifest / runtime-index / client-descriptor / **change-plan** | 순수 구현 |
+| 6 | 중복 claude.ai Google 커넥터 정리 (D11) | — | 조사 필요 |
+| 7 | 레거시 `C:\AI-Tools` 삭제 | 진단이 `manual` 단계로 제시 | 모든 CLI 재시작 후 |
+| 8 | `notion` / `azure-devops` / `markitdown` / `unity` 좌표 | 공식 문서·저장소에서 손으로 | 레지스트리 밖 출처 필요 |
+
+### 재시작이 필요한 것 (아직 안 됨)
+
+claude·agy 등록을 `.bin` shim + 명시적 env 로 바꿨다.
+**떠 있는 세션은 옛 등록(래퍼, `contacts` 켜짐)을 물고 있다.** 재시작해야 반영된다.
+재시작 후 `Sync-HarnessClients.ps1` 이 계속 `ok` 인지 확인하고 나서 위 2번을 한다.
+
+### 이 세션에서 배운 것 중 다음 작업에 바로 걸리는 것
+
+- 살아있는 등록을 바꿀 때는 실패가 **등록을 지운 채로 끝날 수 있다**(§5-28). 지금은 복원하지만
+  복원도 실패할 수 있으니 `restored` / `restore_failed` 출력을 반드시 읽을 것
+- 네이티브 CLI 를 호출하는 새 코드를 쓸 때 `2>&1` + `ErrorActionPreference='Stop'` 조합을
+  조심할 것(§5-25). 함수 스코프로 `Continue` 를 걸어야 한다
+- 새 `.ps1` 은 **UTF-8 BOM** 으로 저장하고 `Test-HarnessRepo.ps1` 을 돌릴 것
