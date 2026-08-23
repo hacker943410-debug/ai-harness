@@ -11,7 +11,8 @@
 `C:\AI-Harness`(AI Harness 2.2)를 **GitHub에서 받아 어느 PC에서든 설치·사용할 수 있는 3계층 구조**로 재편하는 중이다.
 **M0~M7b 구현 완료. M8 도 대부분 끝났다.**
 이 PC 적용 완료: 하네스 저장소 ACL 제한 / 카탈로그 레지스트리 좌표 확정(조회 대상 0건) /
-claude·agy 등록 드리프트 해소 / AGY 노출 완화(`mcp disable`).
+claude·agy 등록 드리프트 해소 / AGY 노출 완화(`mcp disable`) /
+**v2.2 레거시 경로 은퇴 + 래퍼 삭제 (2026-08-23)**.
 
 남은 것은 **사용자 결정 3건**(§7 의 2·6·8)과 M8 잔여 항목(§6)이다.
 구현이 막힌 것은 없다. 전부 "할지 말지"의 문제다.
@@ -24,7 +25,7 @@ claude·agy 등록 드리프트 해소 / AGY 노출 완화(`mcp disable`).
 |---|---|
 | 하네스 로컬 | `C:\AI-Harness` |
 | 원격 | `https://github.com/hacker943410-debug/ai-harness` (**Private**) |
-| 현재 HEAD | `d5ce48d` + 이 커밋 (working tree clean, origin/main 동기) |
+| 현재 HEAD | `6bd881c` + 이 커밋 (working tree clean, origin/main 동기) |
 | 기준점 태그 | `v2.2.0` = `9e142bf` (롤백 지점) |
 | 도구 루트 (Layer B) | `%LOCALAPPDATA%\AI-Tools` = `C:\Users\hacke\AppData\Local\AI-Tools` |
 | 레거시 도구 루트 | `C:\AI-Tools` (**아직 존재**, ACL은 제한 완료, 삭제 대기) |
@@ -33,6 +34,8 @@ claude·agy 등록 드리프트 해소 / AGY 노출 완화(`mcp disable`).
 ### 커밋 이력
 
 ```
+6bd881c refactor: v2.2 레거시 경로를 은퇴시킨다 — 새 경로를 만들고 옛 경로를 남기면 남은 쪽이 이긴다
+1fc2961 docs: HANDOFF 를 세션 종료 상태로 정리
 d5ce48d docs: HANDOFF — 레지스트리 해석 완료(조회 대상 0건)와 실측 사실 4건 추가
 30f64a6 feat: 원격 서버를 좌표 확정으로 인정한다 — 미해석 조회 대상 0건
 7cb95bd fix: 레지스트리 해석 — 검색 결과의 isLatest 를 믿지 않는다
@@ -160,7 +163,23 @@ clients.json 원장 생성됨 (agy, claude 2건)
 **§4 드리프트 — 2026-08-23 해소.**
 래퍼 `.cmd` 가 매니페스트에 없는 `contacts` 를 켜고 있었고 claude·agy 등록이 그것을 가리켰다.
 지금은 둘 다 `.bin` shim + 명시적 env 를 가리키며 도구 수가 82개(6종)로 확인됐다.
-**래퍼 파일 자체는 아직 남아 있다.** 아무도 가리키지 않지만 지우려면 §7-7 참고.
+
+**래퍼 삭제 — 2026-08-23 완료.** `google-workspace-mcp.cmd` / `google-workspace-auth.cmd` /
+`sync-harness-to-drive.mjs` 삭제. 사본은 `<tools_root>\journal\retired-20260823\` 에 있다
+(스크래치패드가 아니라 도구 루트에 둔다. 유일한 사본이 세션과 함께 사라지면 안 된다).
+삭제 후 `Test-HarnessRuntime` 재실행: transport_ok / 82개 / authorized / verified.
+
+**단, 그냥 지울 수 있는 상태가 아니었다.** 세 곳이 아직 래퍼를 가리키고 있었다
+(§5-37). 그래서 레거시 경로를 먼저 은퇴시켰다:
+
+- 삭제: `scripts/Initialize-GoogleWorkspaceMcp.ps1`, `scripts/Resolve-GoogleWorkspaceMcp.ps1`,
+  `settings/google-workspace/{manifest.json,mcp-server.template.json}`
+- 사용자 환경변수 `AI_HARNESS_GOOGLE_MCP_COMMAND` 삭제 (계획 → 확인 → 적용.
+  저널 `<tools_root>\journal\install-20260823-104829Z.jsonl` 에 이전 값)
+- 매니페스트에 `retired_locators` 를 추가해 **은퇴한 변수 이름을 데이터로 선언**한다.
+  진단이 값이 남아 있으면 WARN 과 삭제 계획 단계를 낸다
+- 옛 경로를 안내하던 문서 5곳(PROJECT_INIT §17.1 / GOOGLE_WORKSPACE_MCP /
+  HARNESS_DOCTOR 38 / README / HARNESS_INSTALL §0·§8) 수정
 
 적용은 순탄하지 않았다. 그 과정에서 등록 경로의 결함 4건이 드러났고(§5-24~27)
 `87372cc` 에서 고쳤다. **claude 등록이 한 번 사라졌다가 복구됐다.**
@@ -216,6 +235,10 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 | 34 | 레지스트리 검색은 **표시 이름과 매칭되지 않는다.** `"Chrome DevTools MCP"` → 0건, `"chrome-devtools"` → 5건. 카탈로그의 `query` 는 사람이 읽는 이름이므로 `id` / `id-mcp` / 슬러그도 함께 던져야 한다 |
 | 35 | 사칭 항목이 **진짜와 같은 버전 번호를 쓴다.** `io.github.Async23/chrome-devtools-mcp` 와 진짜가 둘 다 `1.7.0`. 버전·이름·최신 여부 무엇으로도 구분할 수 없고 **발행자 대조만이 방어다** |
 | 36 | 원격 서버는 `packages` 가 비어 있고 `remotes` 에 URL 이 있다. `packages` 배열이 존재해도 `identifier` 가 비어 있을 수 있으므로 **존재가 아니라 값으로 판정한다.** 패키지 없음은 결함이 아니라 원격 서버의 정상 형태다 |
+| 37 | **"아무도 안 가리킨다"는 등록만 본 판정이었다.** 래퍼 `.cmd` 를 지우기 직전에 확인해 보니 셋이 가리키고 있었다. ① 사용자 환경변수 `AI_HARNESS_GOOGLE_MCP_COMMAND` ② `Initialize-GoogleWorkspaceMcp.ps1` — 래퍼가 없으면 **다시 만들고**, 그 내용이 `GOOGLE_WORKSPACE_SERVICES=...,contacts` 이며, 만든 뒤 ①을 거기로 다시 박는다 ③ `Resolve-GoogleWorkspaceMcp.ps1` + `settings/google-workspace/manifest.json`. **새 경로를 만들고 옛 경로를 남기면 남은 쪽이 조용히 이긴다.** 대체됐다고 판단한 파일은 그때 지운다 |
+| 38 | **v3 진단은 은퇴한 환경변수를 보지 않았다.** 아무도 읽지 않는 값이라 무해해 보이지만, 남아 있으면 사람과 되살아난 옛 스크립트가 그것을 정답으로 믿는다. 지금은 매니페스트 `retired_locators.environment_variables` 가 이름을 선언하고 진단이 찾아 삭제를 제안한다. **스크립트에 변수 이름을 박지 않는다** — 박으면 런타임 추가가 코드 수정이 된다 |
+| 39 | `Install-Harness.ps1` 의 `env-set` 은 `payload.value = null` 로 **삭제**를 표현할 수 있다. JSON 왕복·사후 확인·롤백(이전 값 복원)이 모두 그대로 동작한다. 새 단계 종류를 만들 필요가 없었다 |
+| 40 | **PS 5.1 의 `Get-Content -Raw` 는 BOM 없는 UTF-8 을 ANSI(949)로 읽는다.** 계획 파일(BOM 없는 UTF-8)을 그렇게 읽으면 한글이 깨지면서 따옴표까지 망가져 `ConvertFrom-Json` 이 실패한다. 파일은 멀쩡한데 읽기가 틀린 것이다. `-Encoding UTF8` 을 주거나 하네스의 `Read-HarnessJson` 을 쓴다 |
 
 ---
 
@@ -231,9 +254,8 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 1. ~~§4 드리프트 적용~~ — 2026-08-23 완료. agy·claude 모두 `ok`
 2. ~~하네스 저장소 ACL 제한~~ — 2026-08-23 적용 완료
 3. ~~레지스트리 확정 8건 반영~~ — 2026-08-23 반영 완료. `registry_lookup` 53 → 45 건
-3b. **래퍼 `.cmd` 삭제** — `%LOCALAPPDATA%\AI-Tools\google-workspace-mcp\google-workspace-mcp.cmd`
-   (와 `google-workspace-auth.cmd`). 이제 아무도 가리키지 않지만, 사람이 직접 쓰던 것일 수 있어
-   자동 삭제하지 않는다. 지우기 전에 claude·agy 재시작 후 정합이 계속 `ok` 인지 확인할 것
+3b. ~~래퍼 `.cmd` 삭제~~ — **2026-08-23 완료.** 다만 그냥 지울 수 없었다.
+   레거시 경로(스크립트 2개 + settings + 환경변수)를 먼저 은퇴시켜야 했다. §4 와 §5-37 참고
 4. ~~카탈로그 registry_lookup 해석~~ — **완료. 조회할 것이 0건이다.**
    `registry_lookup` 53 → 39 이고 그 39건은 전부 조회 대상이 아니다
    (35건 `discovery_only`, 4건 `registry_absent` 기록됨).
@@ -249,8 +271,7 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
    **아직 한 번도 발행하지 않았다.** DryRun 은 통과: 76개 파일 / 약 1.6MB / never_sync 위반 0.
    실제 발행은 외부로 올리는 일이라 확인 필요:
    `.\scripts\Publish-HarnessSnapshot.ps1 -Label v3.0.0`
-   구 `sync-harness-to-drive.mjs` 는 Layer B(`AI-Tools\google-workspace-mcp\`)에 남아 있다.
-   **대체됐으므로 래퍼 `.cmd` 와 함께 지운다** (§M8-3b). 그 전까지는 쓰지 말 것
+   구 `sync-harness-to-drive.mjs` 는 **삭제됐다** (2026-08-23, §M8-3b)
 7. `schemas/` 추가: runtime-manifest / runtime-index / client-descriptor / change-plan
    (계획 파일 스키마도 이제 대상이다)
 8. 레거시 `C:\AI-Tools` 삭제 (모든 CLI 재시작 후). 진단이 `manual` 단계로 제시하며 자동 삭제하지 않는다
@@ -264,7 +285,7 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 
 | # | 내용 | 준비 상태 |
 |---|---|---|
-| ~~1~~ | ~~claude / agy 등록 드리프트~~ | **2026-08-23 적용 완료.** 둘 다 `ok`. **claude·agy 재시작해야 새 등록으로 동작한다** |
+| ~~1~~ | ~~claude / agy 등록 드리프트~~ | **2026-08-23 적용 완료.** 둘 다 `ok`. 재시작 반영도 확인됨(claude 에 `contacts` 없음, 82개) |
 | 2 | **Codex 등록** — 지금 미등록. orca 가 설정을 소유해 다시 지워질 수 있음(§5-10). risk=high 라 `-IAcceptRisk` 필요. argv 순서는 help 로만 확인했고 실제 등록은 안 해 봤다(§5-24) | 계획에 `선택` 단계로 들어 있음 (`-IncludeOptional` 필요) |
 | ~~3~~ | ~~하네스 저장소 ACL 제한~~ | **2026-08-23 적용 완료.** 저널 `install-20260823-085210Z.jsonl` 에 이전 SDDL |
 | ~~4~~ | ~~레지스트리 확정 8건 카탈로그 반영~~ | **2026-08-23 반영 완료** (`f775743`) |
@@ -325,8 +346,8 @@ powershell ... -File '...\Install-Harness.ps1' -Rollback <저널경로>         
 
 | # | 할 일 | 명령 | 성격 |
 |---|---|---|---|
-| 1 | **Drive 스냅샷 첫 발행** | `.\scripts\Publish-HarnessSnapshot.ps1 -Label v3.0.0` | 외부 업로드(76개 파일). DryRun 통과함 |
-| 2 | **래퍼 정리** — `<tools_root>\google-workspace-mcp\google-workspace-mcp.cmd`, `google-workspace-auth.cmd`, `sync-harness-to-drive.mjs` | 사람이 직접 삭제 | 아무도 안 가리킴. **claude·agy 재시작 후 정합이 `ok` 인지 먼저 확인** |
+| 1 | **Drive 스냅샷 첫 발행** | `.\scripts\Publish-HarnessSnapshot.ps1 -Label v3.0.0` | 외부 업로드(추적 파일 72개). DryRun 통과함 |
+| ~~2~~ | ~~래퍼 정리~~ | — | **2026-08-23 완료** (§4) |
 | 3 | **Codex 등록** | `Sync-HarnessClients.ps1 -SavePlan` → `Install-Harness.ps1 -IncludeOptional` | 살아있는 설정 변경. risk=high. orca 가 지울 수 있음(§5-10) |
 | 4 | **azure 프리릴리스 결정** | 카탈로그의 `3.0.0-beta.37` 을 정식으로 내릴지 | 검사기가 WARN 을 내는 상태 |
 | 5 | `schemas/` 추가 | runtime-manifest / runtime-index / client-descriptor / **change-plan** | 순수 구현 |
@@ -334,11 +355,10 @@ powershell ... -File '...\Install-Harness.ps1' -Rollback <저널경로>         
 | 7 | 레거시 `C:\AI-Tools` 삭제 | 진단이 `manual` 단계로 제시 | 모든 CLI 재시작 후 |
 | 8 | `notion` / `azure-devops` / `markitdown` / `unity` 좌표 | 공식 문서·저장소에서 손으로 | 레지스트리 밖 출처 필요 |
 
-### 재시작이 필요한 것 (아직 안 됨)
+### 재시작 — 2026-08-23 확인됨
 
-claude·agy 등록을 `.bin` shim + 명시적 env 로 바꿨다.
-**떠 있는 세션은 옛 등록(래퍼, `contacts` 켜짐)을 물고 있다.** 재시작해야 반영된다.
-재시작 후 `Sync-HarnessClients.ps1` 이 계속 `ok` 인지 확인하고 나서 위 2번을 한다.
+claude 세션에 `contacts` 도구가 없다(6종 82개). 새 등록으로 동작한다.
+정합도 `agy ok(꺼짐) / claude ok` 그대로다. codex 는 미등록이며 이는 미결정 항목(§7-2)이다.
 
 ### 이 세션에서 배운 것 중 다음 작업에 바로 걸리는 것
 
@@ -347,3 +367,6 @@ claude·agy 등록을 `.bin` shim + 명시적 env 로 바꿨다.
 - 네이티브 CLI 를 호출하는 새 코드를 쓸 때 `2>&1` + `ErrorActionPreference='Stop'` 조합을
   조심할 것(§5-25). 함수 스코프로 `Continue` 를 걸어야 한다
 - 새 `.ps1` 은 **UTF-8 BOM** 으로 저장하고 `Test-HarnessRepo.ps1` 을 돌릴 것
+- **"대체됐다"고 판단한 파일은 그때 지운다.** 남겨 두면 지우려는 것을 다시 만들어 놓는다(§5-37).
+  옛 경로를 안내하는 문서도 같이 고친다 — 문서가 남아 있으면 사람이 그 경로를 되살린다
+- 계획 파일을 PS 에서 읽을 때 `Get-Content -Raw` 를 그냥 쓰지 말 것(§5-40)
