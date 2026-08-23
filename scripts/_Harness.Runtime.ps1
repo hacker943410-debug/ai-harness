@@ -338,9 +338,12 @@ function Read-HarnessClientRegistration {
         [Parameter(Mandatory = $true)][string]$ServerName
     )
     $exe = Get-HarnessNativeCommand $Descriptor.detect.command
+    # enabled 는 3상태다. $true / $false / $null(이 클라이언트로는 알 수 없음).
+    # 알 수 없는 것을 "켜져 있음"으로 가정하면 없는 위험을 보고하거나 있는 위험을 놓친다.
     $res = [ordered]@{
         present = $false; command = $null; args = @()
         env = [ordered]@{}; env_parseable = $false; parseable = $false
+        enabled = $null
     }
     if (-not $exe) { return [pscustomobject]$res }
 
@@ -360,6 +363,9 @@ function Read-HarnessClientRegistration {
             if ($hit[0].transport.PSObject.Properties.Name -contains 'env' -and $hit[0].transport.env) {
                 foreach ($p in $hit[0].transport.env.PSObject.Properties) { $res.env[$p.Name] = [string]$p.Value }
                 $res.env_parseable = $true
+            }
+            if ($sem.parse.enabled_field -and ($hit[0].PSObject.Properties.Name -contains $sem.parse.enabled_field)) {
+                $res.enabled = [bool]$hit[0].($sem.parse.enabled_field)
             }
         }
         'kv_text' {
@@ -404,6 +410,13 @@ function Read-HarnessClientRegistration {
                         $res.args = @($split.args)
                         $res.parseable = [bool]$split.command
                     }
+                    # 어느 칸이 상태인지 위치로 정하지 않는다. 열 순서가 바뀌면 조용히 틀린다.
+                    # 선언된 표식과 값이 같은 칸을 찾는다.
+                    foreach ($c in $cols) {
+                        $v = $c.Trim().ToLowerInvariant()
+                        if (@($sem.parse.disabled_markers) -contains $v) { $res.enabled = $false }
+                        elseif (@($sem.parse.enabled_markers) -contains $v) { $res.enabled = $true }
+                    }
                 }
             }
         }
@@ -444,6 +457,8 @@ function Get-HarnessRegistrationDiff {
         client_installed = [bool](Get-HarnessNativeCommand $descriptor.detect.command)
         installed = [bool]$entry
         actual_readable = $false
+        # $true 켜짐 / $false 꺼짐 / $null 이 클라이언트로는 알 수 없음
+        actual_enabled = $null
         rows = @(); has_remove = $false; has_change = $false; ledger_drift = @()
     }
     if (-not $result.client_installed) { $result.rows = @(); return [pscustomobject]$result }
@@ -473,6 +488,7 @@ function Get-HarnessRegistrationDiff {
     # --- 실제 ---------------------------------------------------------------
     $actual = Read-HarnessClientRegistration -Descriptor $descriptor -ServerName $manifest.server_name
     $result.actual_readable = [bool]$actual.parseable
+    $result.actual_enabled = $actual.enabled
 
     # 표시는 있는 그대로, 판정은 정규화한 값으로 한다.
     # 둘을 섞으면 "왜 다른지" 를 사람이 못 읽거나(정규화된 값만 보임),

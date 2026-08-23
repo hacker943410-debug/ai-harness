@@ -29,10 +29,15 @@
   },
   "env_flag_template": ["-e", "{key}={value}"],
 
+  "$enabled_note": "등록돼 있다와 켜져 있다는 다르다. mcp disable 로 끈 서버도 목록에는 남는다. 그 차이를 못 보면 권장 완화를 적용해도 진단이 같은 경고를 계속 낸다.",
   "probe_semantics": {
     "present_exit_code": 0,
     "absent_exit_code": 0,
-    "parse": { "kind": "table_text", "match_column": "NAME", "command_column": "COMMAND/URL" }
+    "parse": {
+      "kind": "table_text", "match_column": "NAME", "command_column": "COMMAND/URL",
+      "enabled_markers": ["enabled"],
+      "disabled_markers": ["disabled"]
+    }
   },
 
   "register_is_upsert": true,
@@ -68,7 +73,7 @@
           "recommended": true,
           "label": "등록은 하되 평소에는 꺼 둔다",
           "how": "agy mcp disable {server_name}      # 쓸 때만: agy mcp enable {server_name}",
-          "effect": "평소 노출이 0 이 된다. 필요할 때 한 줄로 켜고 끈다. 켜 둔 동안은 여전히 무방비다."
+          "effect": "평소 노출이 0 이 된다. 필요할 때 한 줄로 켜고 끈다. 켜 둔 동안은 여전히 무방비다. 적용하면 진단이 '차단 불가 — 꺼 둠'(OK) 으로 바뀌고 정합 행렬에도 표시된다."
         },
         {
           "id": "skip_registration",

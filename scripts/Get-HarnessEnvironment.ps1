@@ -393,20 +393,29 @@ foreach ($cid in $clientIds) {
     if ($tpsStatus -eq 'unverified') {
         Add-Finding 'client' "$($d.display_name) 도구 통제" '미검증' 'WARN' '위험 도구 차단/승인 메커니즘이 확인되지 않았다.'
     } elseif (-not $canDeny) {
+        # "차단 수단이 없다"는 사실이 아니라 "지금 실제로 노출돼 있는가"를 보고한다.
+        # 권장 완화(서버 끄기)를 적용했는데도 같은 경고가 나오면, 사용자는 경고를 무시하게 된다.
         $exposed = @()
+        $mitigated = @()
         foreach ($rid in $runtimeIds) {
             $mm = Get-HarnessRuntimeManifest -HarnessRoot $root -RuntimeId $rid
             if ($mm.risk -ne 'high') { continue }
             if ($names -notcontains $mm.server_name) { continue }
+            $reg = Read-HarnessClientRegistration -Descriptor $d -ServerName $mm.server_name
+            if ($false -eq $reg.enabled) { $mitigated += $rid; continue }
             $exposed += "$rid(deny: $(@($mm.tool_policy.deny) -join ', '))"
         }
         if ($exposed.Count) {
-            Add-Finding 'client' "$($d.display_name) 도구 통제" '도구 단위 차단 불가' 'WARN' `
-                ("risk=high 런타임이 등록돼 있는데 이 클라이언트는 도구 단위로 막을 수 없다. " +
+            Add-Finding 'client' "$($d.display_name) 도구 통제" '차단 불가 — 노출 중' 'WARN' `
+                ("risk=high 런타임이 켜져 있는데 이 클라이언트는 도구 단위로 막을 수 없다. " +
                  "매니페스트의 deny 목록이 강제되지 않는다: $($exposed -join '; '). " +
-                 "통제 단위는 서버 전체 on/off 뿐이다.")
+                 "완화: 평소에는 서버를 꺼 둔다 (진단 하단의 제약 고지 참고).")
+        } elseif ($mitigated.Count) {
+            Add-Finding 'client' "$($d.display_name) 도구 통제" '차단 불가 — 꺼 둠' 'OK' `
+                ("도구 단위 차단은 불가능하지만 해당 런타임이 꺼져 있어 지금은 노출이 없다: $($mitigated -join ', '). " +
+                 '쓸 때만 켜고 끝나면 다시 끈다.')
         } else {
-            Add-Finding 'client' "$($d.display_name) 도구 통제" '도구 단위 차단 불가' 'INFO' `
+            Add-Finding 'client' "$($d.display_name) 도구 통제" '차단 불가 — 미등록' 'INFO' `
                 'risk=high 런타임이 등록돼 있지 않아 지금은 노출이 없다.'
         }
     }

@@ -20,7 +20,7 @@ claude·agy 등록 드리프트 해소). 남은 것은 **사용자 결정 4건**
 |---|---|
 | 하네스 로컬 | `C:\AI-Harness` |
 | 원격 | `https://github.com/hacker943410-debug/ai-harness` (**Private**) |
-| 현재 HEAD | `4d9238c` + 이 문서 갱신 커밋 |
+| 현재 HEAD | `80b1fb8` + 이 커밋 |
 | 기준점 태그 | `v2.2.0` = `9e142bf` (롤백 지점) |
 | 도구 루트 (Layer B) | `%LOCALAPPDATA%\AI-Tools` = `C:\Users\hacke\AppData\Local\AI-Tools` |
 | 레거시 도구 루트 | `C:\AI-Tools` (**아직 존재**, ACL은 제한 완료, 삭제 대기) |
@@ -150,7 +150,7 @@ runtimes.json : state=verified  installed=3.4.4  install_dir=google-workspace-mc
 clients.json  : agy / claude 2건 (tool_policy_enforceable 포함)
 
 Sync-HarnessClients.ps1 결과 (2026-08-23 적용 후):
-  google-workspace x agy     ok
+  google-workspace x agy     ok    꺼져 있음 (mcp disable — 권장 완화 적용)
   google-workspace x claude  ok
   google-workspace x codex   unregistered   (선택 단계, 미승인)
 
@@ -212,6 +212,7 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 | 29 | **AGY 는 도구 단위 통제 수단이 없다** (2026-08-23 확인). `agy --help` 의 도구 관련 플래그는 `--dangerously-skip-permissions`(전부 자동 승인) 하나뿐, `mcp_config.json` 은 서버별 `command/args/env/disabled` 만, `antigravity-cli/settings.json` 에는 도구 정책 키가 없다(`trustedWorkspaces` 뿐). 통제 단위는 `agy mcp disable <name>` 뿐. **risk=high 런타임의 deny 목록이 AGY 에서는 강제되지 않는다** |
 | 30 | Drive `create_file` 은 **이름으로 형식을 추론한다**. `type` 을 안 주면 `.md` 가 Google Docs 로 변환되어 원본이 아니게 된다. 스냅샷은 항상 `type: "text"` 로 올린다. `parentPath` 는 필요한 폴더를 알아서 만든다 |
 | 31 | Drive 는 **한 폴더에 동명 파일을 허용한다.** update 실패 시 create 로 폴백하는 코드는 일시적 실패 한 번에 조용히 중복 파일을 만든다 |
+| 32 | **등록돼 있다 ≠ 켜져 있다.** `agy mcp disable` 로 끈 서버도 `mcp list` 에는 남고 `STATUS` 칸만 `disabled` 가 된다. 이 구분을 안 보면 완화를 적용해도 진단이 같은 경고를 계속 내고, 사용자는 경고를 무시하도록 훈련된다. 상태 칸은 **위치가 아니라 선언된 표식(`disabled_markers`)으로 찾는다** — 열 순서가 바뀌면 조용히 틀리기 때문 |
 
 ---
 
@@ -260,7 +261,7 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 | ~~4~~ | ~~레지스트리 확정 8건 카탈로그 반영~~ | **2026-08-23 반영 완료** (`f775743`) |
 | ~~5~~ | ~~AGY 도구 통제 메커니즘 검증~~ | **2026-08-23 조사 완료. 수단 없음**(§5-29) |
 | 6 | 레거시 `C:\AI-Tools` 삭제 시점 | `manual` 단계로 제시됨. 자동 실행 안 함 |
-| 7 | **AGY 에 google-workspace 를 계속 둘 것인가** — AGY 는 도구 단위 차단이 불가능하고(§5-29), 이 PC 의 agy 는 `--dangerously-skip-permissions` 로 뜬다. 즉 `delete_email`(영구 삭제, 1회 1000건) 이 무방비로 자동 승인된다 | **선택지가 이제 도구 안에 있다.** `Get-HarnessEnvironment.ps1` 의 "기술적으로 불가능한 것" 블록이 4개 선택지를 명령까지 붙여 제시한다(권장: `agy mcp disable google-workspace` 로 평소엔 꺼 두기). 지금은 등록만 돼 있고 어느 선택지도 적용하지 않은 상태다 |
+| ~~7~~ | ~~AGY 에 google-workspace 를 계속 둘 것인가~~ | **2026-08-23 권장안 적용.** `agy mcp disable google-workspace` 실행 완료(`mcp list` STATUS=disabled, `mcp_config.json` disabled=true 로 되읽어 확인). 진단이 `OK 차단 불가 — 꺼 둠` 으로 바뀌었다. **쓸 때만 `agy mcp enable google-workspace`, 끝나면 다시 끈다** |
 | 8 | **Drive 스냅샷 첫 발행** — 외부로 76개 파일을 올린다. DryRun 통과 | `-Label v3.0.0` 으로 즉시 가능 |
 
 ---

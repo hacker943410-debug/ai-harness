@@ -108,6 +108,12 @@ foreach ($rid in $runtimeIds) {
             if (-not $recorded.Count) { $cell.detail = '일치하지만 원장에 기록이 없다 (재등록하면 기록된다)' }
         }
 
+        # 등록돼 있다와 켜져 있다는 다르다. 꺼 둔 것은 드리프트가 아니라 의도된 상태일 수 있다.
+        # 보이지 않으면 "왜 도구가 안 보이지" 를 한참 찾게 된다.
+        if ($false -eq $diff.actual_enabled) {
+            $cell.detail = (($cell.detail + ' | 꺼져 있음 (mcp disable)').Trim(' ', '|')).Trim()
+        }
+
         if ($diff.ledger_drift.Count) {
             $cell.detail = ($cell.detail + ' | 원장 드리프트: ' + ($diff.ledger_drift -join '; ')).Trim(' ', '|')
         }
