@@ -43,66 +43,13 @@ function Add-Finding {
     param([string]$Area, [string]$Item, $Value, [string]$Status = 'OK', [string]$Note = '')
     $findings.Add([pscustomobject]@{ area = $Area; item = $Item; value = $Value; status = $Status; note = $Note })
 }
-<#
-    계획 단계 하나.
-      step_id    안정적인 식별자. 사용자가 계획 파일에서 단계를 지목하는 열쇠다.
-      kind       dir-create | acl-set | env-set | file-write | exec | manual
-                 manual 은 스크립트가 절대 자동 실행하지 않는다(사람이 판단해야 하는 것).
-      enabled    사용자가 false 로 바꾸면 그 단계와 그것에 의존하는 단계가 모두 빠진다.
-      depends_on 계획 안에 없는 id 는 "이미 충족됨"으로 본다.
-      payload    kind 별 실행 명세. 문자열을 다시 파싱하지 않도록 구조화해서 담는다.
-      undo       exec 는 되돌리는 방법을 스스로 알 수 없다. 여기에 명시하지 않으면
-                 롤백 시 "수동 확인 필요"로 남는다. 없는 것을 있다고 하지 않는다.
-#>
-function Add-Plan {
-    param(
-        [Parameter(Mandatory = $true)][string]$StepId,
-        [Parameter(Mandatory = $true)][ValidateSet('dir-create', 'acl-set', 'env-set', 'file-write', 'exec', 'manual')][string]$Kind,
-        [Parameter(Mandatory = $true)][string]$Action,
-        [Parameter(Mandatory = $true)][string]$Target,
-        $Current, $Proposed,
-        [string]$Risk = 'low',
-        [string]$Note = '',
-        [bool]$Optional = $false,
-        [string[]]$DependsOn = @(),
-        $Payload = $null,
-        $Undo = $null,
-        [string]$CommandLine = ''
-    )
-    $plan.Add([pscustomobject]@{
-        step_id      = $StepId
-        kind         = $Kind
-        action       = $Action
-        target       = $Target
-        current      = $Current
-        proposed     = $Proposed
-        risk         = $Risk
-        note         = $Note
-        optional     = $Optional
-        enabled      = $true
-        depends_on   = @($DependsOn)
-        command_line = $CommandLine
-        payload      = $Payload
-        undo         = $Undo
-    })
-}
+# 단계의 모양은 _Harness.Runtime.ps1 의 New-HarnessPlanStep 이 유일하게 정의한다.
+# 여기서는 목록에 담기만 한다.
+function Add-Plan { $plan.Add((New-HarnessPlanStep @args)) }
 function Test-NonAscii { param([string]$s) return ($s -and ($s -match '[^\x00-\x7F]')) }
-
-# exec 단계는 자식 powershell 로 돌린다. 인프로세스 호출은 하위 스크립트의 exit 와
-# ErrorActionPreference 가 적용자에게 새어 들어온다. 명령줄이 곧 실행되는 것과 같아야
-# 사용자가 본 것과 실행된 것이 일치한다.
-$psExe = (Get-Process -Id $PID).Path
-if (-not $psExe) { $psExe = 'powershell.exe' }
 function New-ScriptExec {
     param([string]$ScriptName, [string[]]$ScriptArgs)
-    $script = Join-HarnessPath $root 'scripts' $ScriptName
-    $argv = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $script) + @($ScriptArgs)
-    $quoted = $argv | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } }
-    return [pscustomobject]@{
-        file         = $psExe
-        arguments    = @($argv)
-        command_line = "$psExe $($quoted -join ' ')"
-    }
+    return (New-HarnessScriptExec -HarnessRoot $root -ScriptName $ScriptName -ScriptArgs $ScriptArgs)
 }
 
 # ===========================================================================
@@ -247,6 +194,20 @@ if ($ToolsRoot) {
 # 6. 하네스 (Layer A)
 # ===========================================================================
 Add-Finding 'harness' 'HARNESS_ROOT' $root $(if (Test-Path -LiteralPath (Join-HarnessPath $root 'CORE.md')) { 'OK' } else { 'BLOCK' })
+
+# 하네스 루트는 실행되는 .ps1 과 AI 가 따르는 정책이 들어 있는 곳이다.
+# 도구 루트만 잠그고 여기를 열어 두면 잠근 의미가 없다. 여기를 바꿀 수 있으면
+# 도구 루트를 어디로 볼지, 무엇을 설치할지를 바꿀 수 있다.
+$rootTrust = Test-HarnessPathTrust -Path $root
+Add-Finding 'harness' '저장소 권한' $(if ($rootTrust.trusted) { '권한 안전' } else { "위험: $($rootTrust.offenders -join '; ')" }) `
+    $(if ($rootTrust.trusted) { 'OK' } else { 'WARN' }) `
+    $(if ($rootTrust.trusted) { '' } else { '다른 로컬 사용자가 하네스 스크립트와 정책을 바꿀 수 있다. 실행되는 코드를 바꿀 수 있다는 뜻이다.' })
+if ($rootTrust.checked -and -not $rootTrust.trusted) {
+    Add-Plan -StepId "harness.acl:$root" -Kind 'acl-set' -Action '하네스 저장소 ACL 제한' -Target $root `
+        -Current ($rootTrust.offenders -join '; ') -Proposed '소유자 / SYSTEM / Administrators 만' -Risk 'medium' `
+        -Note 'C: 바로 아래 폴더는 Authenticated Users 쓰기 권한을 상속받는다. 하네스가 거기 있으면 실행되는 코드가 무방비다.' `
+        -Payload ([pscustomobject]@{ path = $root; disable_inheritance = $true })
+}
 $isRepo = $false
 Push-Location -LiteralPath $root -ErrorAction SilentlyContinue
 try {

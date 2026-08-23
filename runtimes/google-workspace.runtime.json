@@ -90,7 +90,15 @@
     "auth_command": { "bin": "google-workspace-mcp", "args": ["auth", "--profile", "${profile}"] },
     "never_sync": ["credentials.json", "tokens.json", "client_secret*.json"],
     "setup_guide": "workflows/GOOGLE_WORKSPACE_SETUP.md",
-    "notes": "토큰 저장소는 tools root 밖에 있다. 따라서 tools root 를 옮겨도 재인증이 필요 없다."
+    "notes": "토큰 저장소는 tools root 밖에 있다. 따라서 tools root 를 옮겨도 재인증이 필요 없다.",
+    "revoke": {
+      "$comment": "토큰 파일을 지우는 것은 '이 PC 에서 잊는 것'일 뿐 Google 쪽 부여(grant)는 살아 있다. 끊으려면 refresh_token 을 취소해야 하고, 그것이 실패하면 사람이 manual_url 에서 직접 해야 한다.",
+      "kind": "oauth2_http",
+      "endpoint": "https://oauth2.googleapis.com/revoke",
+      "token_file": "tokens.json",
+      "token_field": "refresh_token",
+      "manual_url": "https://myaccount.google.com/permissions"
+    }
   },
 
   "verify": {

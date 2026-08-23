@@ -514,3 +514,161 @@ function Get-HarnessRunningClientProcess {
     }
     return @($hits)
 }
+
+# ---------------------------------------------------------------------------
+# 변경 계획 — 스키마의 단일 정의
+# ---------------------------------------------------------------------------
+
+<#
+    계획을 만드는 스크립트가 여럿이므로(진단, 클라이언트 정합, 앞으로 추가될 것들)
+    단계의 모양은 반드시 한 곳에서만 정의한다.
+    스키마가 두 벌이 되면 적용자가 어느 한쪽을 조용히 무시하게 된다.
+
+      step_id    안정적인 식별자. 사용자가 계획 파일에서 단계를 지목하는 열쇠다.
+      kind       dir-create | acl-set | env-set | file-write | exec | manual
+                 manual 은 적용자가 절대 실행하지 않는다(사람이 판단해야 하는 것).
+      enabled    사용자가 false 로 바꾸면 그 단계와 그것에 의존하는 단계가 모두 빠진다.
+      depends_on 계획 안에 없는 id 는 "이미 충족됨"으로 본다.
+      payload    kind 별 실행 명세. 적용자가 문자열을 다시 파싱하지 않도록 구조화한다.
+      undo       exec 는 되돌리는 방법을 스스로 알 수 없다. 여기에 없으면
+                 롤백 시 "수동 확인 필요"로 남는다. 모르는 것을 안다고 하지 않는다.
+#>
+$script:HarnessPlanSchema = '1.0'
+
+function New-HarnessPlanStep {
+    param(
+        [Parameter(Mandatory = $true)][string]$StepId,
+        [Parameter(Mandatory = $true)][ValidateSet('dir-create', 'acl-set', 'env-set', 'file-write', 'exec', 'manual')][string]$Kind,
+        [Parameter(Mandatory = $true)][string]$Action,
+        [Parameter(Mandatory = $true)][string]$Target,
+        $Current, $Proposed,
+        [string]$Risk = 'low',
+        [string]$Note = '',
+        [bool]$Optional = $false,
+        [string[]]$DependsOn = @(),
+        $Payload = $null,
+        $Undo = $null,
+        [string]$CommandLine = ''
+    )
+    return [pscustomobject]@{
+        step_id      = $StepId
+        kind         = $Kind
+        action       = $Action
+        target       = $Target
+        current      = $Current
+        proposed     = $Proposed
+        risk         = $Risk
+        note         = $Note
+        optional     = $Optional
+        enabled      = $true
+        depends_on   = @($DependsOn)
+        command_line = $CommandLine
+        payload      = $Payload
+        undo         = $Undo
+    }
+}
+
+function New-HarnessChangePlan {
+    param(
+        [Parameter(Mandatory = $true)][string]$HarnessRoot,
+        [Parameter(Mandatory = $true)][string]$ToolsRoot,
+        [string]$Overall = 'READY',
+        $Blocks = @(),
+        $Findings = @(),
+        $Steps = @()
+    )
+    return [pscustomobject]@{
+        schema_version = $script:HarnessPlanSchema
+        kind           = 'harness-change-plan'
+        overall        = $Overall
+        checked_at     = (Get-HarnessUtcStamp)
+        harness_root   = $HarnessRoot
+        tools_root     = $ToolsRoot
+        blocks         = @($Blocks)
+        findings       = @($Findings)
+        plan           = @($Steps)
+    }
+}
+
+<#
+    exec 단계는 자식 powershell 로 돌린다.
+    인프로세스 호출은 하위 스크립트의 exit 와 ErrorActionPreference 가 적용자에게 새어 들어오고,
+    사용자가 본 명령줄과 실제로 일어난 일이 달라진다.
+#>
+function New-HarnessScriptExec {
+    param(
+        [Parameter(Mandatory = $true)][string]$HarnessRoot,
+        [Parameter(Mandatory = $true)][string]$ScriptName,
+        [string[]]$ScriptArgs = @()
+    )
+    $psExe = (Get-Process -Id $PID).Path
+    if (-not $psExe) { $psExe = 'powershell.exe' }
+    $script = Join-HarnessPath $HarnessRoot 'scripts' $ScriptName
+    $argv = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $script) + @($ScriptArgs)
+    $quoted = $argv | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } }
+    return [pscustomobject]@{
+        file         = $psExe
+        arguments    = @($argv)
+        command_line = "$psExe $($quoted -join ' ')"
+    }
+}
+
+<#
+    (런타임 x 클라이언트) 한 칸에 대한 등록/해제 단계.
+    진단과 클라이언트 정합이 같은 단계를 만들어야 하므로 여기서 한 번만 정의한다.
+#>
+function New-HarnessRegistrationStep {
+    param(
+        [Parameter(Mandatory = $true)][string]$HarnessRoot,
+        [Parameter(Mandatory = $true)][string]$ToolsRoot,
+        [Parameter(Mandatory = $true)][string]$RuntimeId,
+        [Parameter(Mandatory = $true)][string]$ClientId,
+        [Parameter(Mandatory = $true)][ValidateSet('register', 'unregister')][string]$Mode,
+        [string]$Current = '',
+        [string]$Note = '',
+        [string]$Risk = 'medium',
+        [bool]$Optional = $true
+    )
+    $m = Get-HarnessRuntimeManifest -HarnessRoot $HarnessRoot -RuntimeId $RuntimeId
+    $d = Get-HarnessClientDescriptor -HarnessRoot $HarnessRoot -ClientId $ClientId
+    $scope = if ($d.supports.default_scope) { $d.supports.default_scope } else { '' }
+    $values = @{ server_name = $m.server_name; scope = $scope }
+    $clientExe = Get-HarnessNativeCommand $d.detect.command
+    $rmArgv = Expand-HarnessArgv -Template @($d.argv.remove) -Values $values
+
+    $regArgs = @('-RuntimeId', $RuntimeId, '-Client', $ClientId, '-ToolsRoot', $ToolsRoot, '-Force')
+    if ($m.risk -eq 'high') { $regArgs += '-IAcceptRisk' }
+    $regExec = New-HarnessScriptExec -HarnessRoot $HarnessRoot -ScriptName 'Register-HarnessRuntimeClient.ps1' -ScriptArgs $regArgs
+    $rmExec = [pscustomobject]@{
+        kind = 'exec'; file = $clientExe; arguments = @($rmArgv)
+        command_line = "$($d.detect.command) $($rmArgv -join ' ')"
+    }
+
+    if ($Mode -eq 'register') {
+        $note = $Note
+        if ($m.risk -eq 'high') {
+            $note += "  [risk=high — 명령에 -IAcceptRisk 가 들어 있다. 차단 도구: $(@($m.tool_policy.deny) -join ', ')]"
+        }
+        return New-HarnessPlanStep -StepId "client.register:$ClientId`:$RuntimeId" -Kind 'exec' `
+            -Action '클라이언트 등록' -Target "$ClientId <- $RuntimeId" `
+            -Current $Current -Proposed "$($m.server_name) 를 scope=$scope 로 등록" `
+            -Risk $Risk -Optional $Optional -DependsOn @("runtime.install:$RuntimeId") -Note $note.Trim() `
+            -CommandLine $regExec.command_line `
+            -Payload ([pscustomobject]@{
+                file = $regExec.file; arguments = $regExec.arguments
+                # 적용 직전에 선언/원장/실제를 다시 대조하게 하는 힌트.
+                # 적용자가 런타임별 코드를 갖지 않도록 데이터로 넘긴다.
+                diff = [pscustomobject]@{ kind = 'registration'; runtime_id = $RuntimeId; client_id = $ClientId }
+            }) `
+            -Undo $rmExec
+    }
+
+    return New-HarnessPlanStep -StepId "client.unregister:$ClientId`:$RuntimeId" -Kind 'exec' `
+        -Action '클라이언트 등록 해제' -Target "$ClientId -> $($m.server_name)" `
+        -Current $Current -Proposed '등록 제거' -Risk $Risk -Optional $Optional -Note $Note `
+        -CommandLine $rmExec.command_line `
+        -Payload ([pscustomobject]@{ file = $clientExe; arguments = @($rmArgv) }) `
+        -Undo ([pscustomobject]@{
+            kind = 'exec'; file = $regExec.file; arguments = $regExec.arguments; command_line = $regExec.command_line
+        })
+}
