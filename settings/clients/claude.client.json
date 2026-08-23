@@ -1,0 +1,63 @@
+{
+  "$comment": "Layer A. 이 CLI 에 MCP 서버를 등록/조회/제거하는 방법만 선언한다. 새 CLI 추가는 이런 파일 1개면 된다.",
+  "schema_version": "1.0",
+  "client_id": "claude",
+  "display_name": "Claude Code",
+  "adapter_kind": "argv_cli",
+  "verified_on": "2026-08-23",
+
+  "detect": { "command": "claude" },
+
+  "$config_note": "설정 파일 경로를 판정 근거로 쓰지 않는다. 권위는 CLI 의 probe 다. 아래는 사용자 안내용.",
+  "config_path_is_authoritative": false,
+  "config_home_env": null,
+  "config_hint": "~/.claude.json (user/local scope), <project>/.mcp.json (project scope)",
+
+  "supports": {
+    "scopes": ["local", "project", "user"],
+    "default_scope": "user",
+    "env_flag": true,
+    "drift_detection": true,
+    "json_probe": false
+  },
+
+  "argv": {
+    "probe":    ["mcp", "get", "{server_name}"],
+    "register": ["mcp", "add", "-s", "{scope}", "{env_flags}", "{server_name}", "--", "{command}", "{args}"],
+    "remove":   ["mcp", "remove", "{server_name}", "-s", "{scope}"],
+    "list":     ["mcp", "list"]
+  },
+  "env_flag_template": ["-e", "{key}={value}"],
+
+  "$probe_note": "probe 는 존재 여부만이 아니라 실제 등록된 command 를 읽어와야 한다. 원장이 기록한 값과 클라이언트의 실제 값이 갈라져도 모르게 되기 때문이다.",
+  "probe_semantics": {
+    "present_exit_code": 0,
+    "absent_exit_code": 1,
+    "parse": { "kind": "kv_text", "command_key": "Command:", "args_key": "Args:", "env_key": "Environment:" }
+  },
+
+  "register_is_upsert": false,
+
+  "$tool_policy_note": "bare deny(mcp__server)는 스키마를 컨텍스트에서 제거하지만, scoped deny(mcp__server__tool)는 스키마를 남기고 실행만 막는다. 즉 도구 단위로는 토큰이 줄지 않는다.",
+  "tool_policy_support": {
+    "deny": {
+      "file": ".claude/settings.json",
+      "key": "permissions.deny",
+      "pattern": "mcp__{server_name}__{tool}",
+      "reduces_context": false
+    },
+    "approve": {
+      "file": ".claude/settings.json",
+      "key": "permissions.ask",
+      "pattern": "mcp__{server_name}__{tool}",
+      "reduces_context": false
+    },
+    "server_level_disable": {
+      "file": "~/.claude.json",
+      "key": "disabledMcpServers",
+      "scope": "per_project",
+      "reduces_context": true,
+      "hint": "/mcp 토글로 프로젝트별 on/off. Google 과 무관한 프로젝트에서 토큰을 줄이는 유일한 수단."
+    }
+  }
+}

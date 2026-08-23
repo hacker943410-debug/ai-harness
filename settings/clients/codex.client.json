@@ -1,0 +1,60 @@
+{
+  "$comment": "Layer A. Codex CLI 등록 계약.",
+  "schema_version": "1.0",
+  "client_id": "codex",
+  "display_name": "OpenAI Codex CLI",
+  "adapter_kind": "argv_cli",
+  "verified_on": "2026-08-23",
+
+  "detect": { "command": "codex" },
+
+  "$config_note": "이 PC 에서 CODEX_HOME 이 프로세스 범위로 재정의된 사례가 실제로 있었다(다계정 래퍼). ~/.codex/config.toml 을 읽는 검사는 그 환경에서 영원히 틀린 답을 준다. 권위는 CLI 의 probe 다.",
+  "config_path_is_authoritative": false,
+  "config_home_env": "CODEX_HOME",
+  "config_hint": "$CODEX_HOME/config.toml (기본 ~/.codex/config.toml), [mcp_servers.<id>] 테이블",
+
+  "supports": {
+    "scopes": [],
+    "default_scope": null,
+    "env_flag": true,
+    "drift_detection": true,
+    "json_probe": true
+  },
+
+  "argv": {
+    "probe":    ["mcp", "get", "{server_name}"],
+    "register": ["mcp", "add", "{env_flags}", "{server_name}", "--", "{command}", "{args}"],
+    "remove":   ["mcp", "remove", "{server_name}"],
+    "list":     ["mcp", "list", "--json"]
+  },
+  "env_flag_template": ["--env", "{key}={value}"],
+
+  "probe_semantics": {
+    "present_exit_code": 0,
+    "absent_exit_code": 1,
+    "parse": { "kind": "json_list", "list_argv": ["mcp", "list", "--json"], "name_field": "name", "command_path": "transport.command", "args_path": "transport.args" }
+  },
+
+  "register_is_upsert": false,
+
+  "$tool_policy_note": "Codex 의 도구 필터는 모델용 목록 생성 전에 적용되므로 컨텍스트를 실제로 줄인다. writes 모드는 read_only_hint 가 아닌 도구에 승인을 요구한다.",
+  "tool_policy_support": {
+    "deny": {
+      "file": "$CODEX_HOME/config.toml",
+      "key": "mcp_servers.{server_name}.disabled_tools",
+      "format": "toml_string_array",
+      "reduces_context": true
+    },
+    "approve": {
+      "file": "$CODEX_HOME/config.toml",
+      "key": "mcp_servers.{server_name}.default_tools_approval_mode",
+      "value": "writes",
+      "allowed_values": ["auto", "prompt", "writes", "approve"],
+      "reduces_context": false,
+      "hint": "writes = 읽기는 자유, 쓰기는 승인. 도구별로 덮어쓰려면 [mcp_servers.<s>.tools.<t>] approval_mode."
+    },
+    "server_level_disable": null
+  },
+
+  "notes": "scope 플래그가 없다. 등록은 항상 전역이다. 프로젝트별 .codex/config.toml 은 신뢰된 프로젝트에서만 읽히며 수동 편집이 필요하다."
+}

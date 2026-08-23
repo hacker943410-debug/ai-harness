@@ -1,0 +1,50 @@
+{
+  "$comment": "Layer A. AGY(Google Antigravity) 등록 계약. Gemini CLI 와 다른 제품이며 설정 스키마도 호환되지 않는다.",
+  "schema_version": "1.0",
+  "client_id": "agy",
+  "display_name": "AGY (Google Antigravity)",
+  "adapter_kind": "argv_cli",
+  "verified_on": "2026-08-23",
+
+  "detect": { "command": "agy" },
+
+  "config_path_is_authoritative": false,
+  "config_home_env": null,
+  "config_hint": "~/.gemini/config/mcp_config.json (전역), .agents/mcp_config.json (워크스페이스)",
+
+  "supports": {
+    "scopes": [],
+    "default_scope": null,
+    "env_flag": true,
+    "drift_detection": true,
+    "json_probe": false
+  },
+
+  "$argv_note": "help 원문: 'Flags must come before <name>; a flag placed after it is rejected.' 그리고 add 는 'Add or update' 이므로 upsert 다.",
+  "argv": {
+    "probe":    ["mcp", "list"],
+    "register": ["mcp", "add", "{env_flags}", "{server_name}", "{command}", "{args}"],
+    "remove":   ["mcp", "remove", "{server_name}"],
+    "list":     ["mcp", "list"]
+  },
+  "env_flag_template": ["-e", "{key}={value}"],
+
+  "probe_semantics": {
+    "present_exit_code": 0,
+    "absent_exit_code": 0,
+    "parse": { "kind": "table_text", "match_column": "NAME", "command_column": "COMMAND/URL" }
+  },
+
+  "register_is_upsert": true,
+  "flags_must_precede_name": true,
+
+  "$tool_policy_note": "미검증. Gemini CLI 의 excludeTools/includeTools 를 AGY 에 그대로 적용하면 안 된다. 별개 제품이고 원격 서버 키도 serverUrl 대 httpUrl 로 다르다.",
+  "tool_policy_support": {
+    "deny": null,
+    "approve": null,
+    "server_level_disable": null,
+    "status": "unverified"
+  },
+
+  "notes": "mcp list 에 --json 이 없어 표 텍스트를 파싱한다. 형식이 바뀌면 drift 탐지가 조용히 깨질 수 있으므로 파싱 실패는 OK 가 아니라 UNKNOWN 으로 보고한다."
+}

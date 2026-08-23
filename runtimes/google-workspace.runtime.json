@@ -1,0 +1,103 @@
+{
+  "$comment": "Layer A. 무엇을 어떤 버전으로 쓰는지만 선언한다. 어디에 설치됐는지는 절대 담지 않는다. 절대경로가 들어가면 CI 실패.",
+  "schema_version": "2.0",
+
+  "runtime_id": "google-workspace",
+  "capability_id": "google-workspace-local",
+  "server_name": "google-workspace",
+  "display_name": "Google Workspace MCP (공용 머신 런타임)",
+
+  "scope": "machine_user",
+  "risk": "high",
+  "platforms": ["windows"],
+  "platforms_verified_on": "2026-08-23",
+  "legacy_install_dirs": ["google-workspace-mcp"],
+
+  "requires": { "node": ">=22", "npm": true },
+
+  "install": {
+    "kind": "npm_pinned",
+    "package": "@dguido/google-workspace-mcp",
+    "version": "3.4.4",
+    "pinned_at": "2026-08-23",
+    "npm_args": ["--ignore-scripts"],
+    "bin_name": "google-workspace-mcp"
+  },
+
+  "server": {
+    "transport": "stdio",
+    "args": ["start"],
+    "env": {
+      "GOOGLE_WORKSPACE_SERVICES": "${services}",
+      "GOOGLE_WORKSPACE_MCP_PROFILE": "${profile}",
+      "GOOGLE_WORKSPACE_TOON_FORMAT": "true"
+    },
+    "env_from": {}
+  },
+
+  "parameters": {
+    "profile": {
+      "type": "string",
+      "default": "default",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
+      "description": "OAuth 프로필 이름. 계정을 분리할 때 사용한다. 이 값이 곧 어떤 Google 계정으로 동작할지를 결정한다."
+    },
+    "services": {
+      "type": "string",
+      "default": "drive,gmail,calendar,docs,sheets,slides",
+      "description": "활성화할 서비스. 여기 없는 서비스의 OAuth 스코프는 인증 시 요청되지 않는다. 늘리면 재인증이 필요하다. contacts 는 실사용 근거가 없어 기본에서 제외했다."
+    },
+    "read_only": {
+      "type": "boolean",
+      "default": false,
+      "description": "Drive 업로드·Docs 편집·메일 초안/발송·일정 생성이 실제 요구사항이므로 기본은 false 다. 위험은 범위가 아니라 tool_policy 로 통제한다."
+    }
+  },
+
+  "tool_policy": {
+    "$comment": "deny = 가능한 클라이언트에서는 노출 자체를 막는다. approve = 노출하되 호출 직전 승인. 그 외는 자유 사용.",
+    "deny": [
+      "delete_email",
+      "empty_trash",
+      "batch_delete",
+      "remove_permission"
+    ],
+    "approve": [
+      "send_email",
+      "share_file",
+      "batch_share",
+      "delete_item",
+      "delete_event",
+      "delete_contact",
+      "delete_draft",
+      "create_filter",
+      "delete_filter",
+      "batch_move",
+      "empty_trash"
+    ],
+    "rationale": {
+      "delete_email": "휴지통이 아니라 영구 삭제이며 한 번에 1000건까지 처리한다. delete_item(휴지통 이동)과 이름이 비슷하다.",
+      "empty_trash": "휴지통 전체를 영구 삭제한다.",
+      "remove_permission": "공유 권한 회수는 타인의 접근을 즉시 끊는다.",
+      "send_email": "외부로 나가는 되돌릴 수 없는 작업."
+    }
+  },
+
+  "credentials": {
+    "storage": "${HOME}/.config/google-workspace-mcp/profiles/${profile}",
+    "required_files": ["credentials.json"],
+    "auth_state_files": ["tokens.json"],
+    "auth_command": { "bin": "google-workspace-mcp", "args": ["auth", "--profile", "${profile}"] },
+    "never_sync": ["credentials.json", "tokens.json", "client_secret*.json"],
+    "setup_guide": "workflows/GOOGLE_WORKSPACE_SETUP.md",
+    "notes": "토큰 저장소는 tools root 밖에 있다. 따라서 tools root 를 옮겨도 재인증이 필요 없다."
+  },
+
+  "verify": {
+    "$comment": "get_status 는 문제 상황도 성공한 도구 호출로 반환한다. exit code 로 판정하면 인증 안 된 런타임을 인증됐다고 기록하게 된다. 실제 API 호출로 판정한다.",
+    "tool": "get_storage_quota",
+    "args": {},
+    "assert_contains": "Storage Quota",
+    "read_only": true
+  }
+}

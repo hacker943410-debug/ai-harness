@@ -98,6 +98,39 @@ function Get-HarnessToolsRoot {
 }
 
 # ---------------------------------------------------------------------------
+# 네이티브 명령 해석
+# ---------------------------------------------------------------------------
+
+<#
+    PowerShell 은 npm / npx / claude / codex 를 .ps1 shim 으로 해석한다.
+    .ps1 은 ExecutionPolicy 의 지배를 받는다. 신규 Windows 는 LocalMachine 이 Restricted 이므로
+    거기서 `& npm install` 은 npm 이 실행되기도 전에 PSSecurityException 으로 죽는다.
+    실측:
+        powershell -ExecutionPolicy Restricted -Command "npm -v"      -> PSSecurityException
+        powershell -ExecutionPolicy Restricted -Command "npm.cmd -v"  -> 11.17.0
+    같은 이름의 .cmd / .exe 가 있으면 반드시 그것을 쓴다.
+    -CommandType Application 은 .ps1(ExternalScript)을 후보에서 제외한다.
+#>
+function Get-HarnessNativeCommand {
+    param([Parameter(Mandatory = $true)][string]$Name)
+
+    foreach ($cand in @("$Name.cmd", "$Name.exe", "$Name.bat", $Name)) {
+        $c = Get-Command $cand -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($c) { return $c.Source }
+    }
+    # Application 으로 못 찾으면 마지막 수단으로 무엇이든 반환한다(경고는 호출자 몫).
+    $any = Get-Command $Name -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($any) { return $any.Source }
+    return $null
+}
+
+function Test-HarnessCommandIsPs1Shim {
+    param([Parameter(Mandatory = $true)][string]$Name)
+    $c = Get-Command $Name -ErrorAction SilentlyContinue | Select-Object -First 1
+    return ($c -and "$($c.Source)".EndsWith('.ps1', [StringComparison]::OrdinalIgnoreCase))
+}
+
+# ---------------------------------------------------------------------------
 # 인코딩
 # ---------------------------------------------------------------------------
 
