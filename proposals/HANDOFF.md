@@ -239,6 +239,7 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
 | 38 | **v3 진단은 은퇴한 환경변수를 보지 않았다.** 아무도 읽지 않는 값이라 무해해 보이지만, 남아 있으면 사람과 되살아난 옛 스크립트가 그것을 정답으로 믿는다. 지금은 매니페스트 `retired_locators.environment_variables` 가 이름을 선언하고 진단이 찾아 삭제를 제안한다. **스크립트에 변수 이름을 박지 않는다** — 박으면 런타임 추가가 코드 수정이 된다 |
 | 39 | `Install-Harness.ps1` 의 `env-set` 은 `payload.value = null` 로 **삭제**를 표현할 수 있다. JSON 왕복·사후 확인·롤백(이전 값 복원)이 모두 그대로 동작한다. 새 단계 종류를 만들 필요가 없었다 |
 | 40 | **PS 5.1 의 `Get-Content -Raw` 는 BOM 없는 UTF-8 을 ANSI(949)로 읽는다.** 계획 파일(BOM 없는 UTF-8)을 그렇게 읽으면 한글이 깨지면서 따옴표까지 망가져 `ConvertFrom-Json` 이 실패한다. 파일은 멀쩡한데 읽기가 틀린 것이다. `-Encoding UTF8` 을 주거나 하네스의 `Read-HarnessJson` 을 쓴다 |
+| 41 | **계획 파일 생산자가 둘인데 모양이 달랐다.** 스키마를 쓰다 발견했다. `Get-HarnessEnvironment` 는 계획 객체를 손으로 조립하며 `limitations` 를 넣었고, 팩토리 `New-HarnessChangePlan`(Sync 가 쓰는 것)에는 그 필드가 없었다. `overall` 어휘도 달랐다(READY/… vs IN_SYNC/…). 소비자가 `overall` 을 읽지 않아서 아무도 몰랐다. 지금은 팩토리가 유일한 정의이고 둘 다 그것을 쓴다. **적용자가 하나여도 생산자가 여럿이면 형식은 갈라진다** |
 
 ---
 
@@ -272,8 +273,12 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
    실제 발행은 외부로 올리는 일이라 확인 필요:
    `.\scripts\Publish-HarnessSnapshot.ps1 -Label v3.0.0`
    구 `sync-harness-to-drive.mjs` 는 **삭제됐다** (2026-08-23, §M8-3b)
-7. `schemas/` 추가: runtime-manifest / runtime-index / client-descriptor / change-plan
-   (계획 파일 스키마도 이제 대상이다)
+7. ~~`schemas/` 추가~~ — **2026-08-23 완료.** runtime-manifest / runtime-index /
+   client-descriptor / client-index / change-plan (+ 기존 capability-lock).
+   `scripts/harness-schema-validate.mjs` 는 **의존성 0** 이다(ajv 를 넣으면 "먼저 npm install"
+   이 되고 아무도 안 돌린다). `Test-HarnessRepo.ps1` 이 Layer A 를 매번 검증하고,
+   node 가 없으면 통과가 아니라 `SCHEMA_UNCHECKED`(UNENFORCED) 로 보고한다.
+   Layer B·계획 파일은 저장소 밖이라 손으로 돌린다 — 방법은 `schemas/README.md`
 8. 레거시 `C:\AI-Tools` 삭제 (모든 CLI 재시작 후). 진단이 `manual` 단계로 제시하며 자동 삭제하지 않는다
 9. `POLICY_INDEX.compat.json` (기계가 읽는 계약은 YAML 금지 — PS 5.1에 파서 없음)
 10. ~~AGY 도구 통제 메커니즘 검증~~ — **조사 완료. 수단이 없다**(§5-29). 남은 것은 조사가 아니라 결정(§7-7)
@@ -350,7 +355,7 @@ powershell ... -File '...\Install-Harness.ps1' -Rollback <저널경로>         
 | ~~2~~ | ~~래퍼 정리~~ | — | **2026-08-23 완료** (§4) |
 | 3 | **Codex 등록** | `Sync-HarnessClients.ps1 -SavePlan` → `Install-Harness.ps1 -IncludeOptional` | 살아있는 설정 변경. risk=high. orca 가 지울 수 있음(§5-10) |
 | 4 | **azure 프리릴리스 결정** | 카탈로그의 `3.0.0-beta.37` 을 정식으로 내릴지 | 검사기가 WARN 을 내는 상태 |
-| 5 | `schemas/` 추가 | runtime-manifest / runtime-index / client-descriptor / **change-plan** | 순수 구현 |
+| ~~5~~ | ~~`schemas/` 추가~~ | — | **2026-08-23 완료** (§6-7) |
 | 6 | 중복 claude.ai Google 커넥터 정리 (D11) | — | 조사 필요 |
 | 7 | 레거시 `C:\AI-Tools` 삭제 | 진단이 `manual` 단계로 제시 | 모든 CLI 재시작 후 |
 | 8 | `notion` / `azure-devops` / `markitdown` / `unity` 좌표 | 공식 문서·저장소에서 손으로 | 레지스트리 밖 출처 필요 |

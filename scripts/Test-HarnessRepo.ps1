@@ -272,6 +272,66 @@ if (-not $Quick) {
     }
 
     # -----------------------------------------------------------------------
+    # 5b3. 스키마 계약 — 선언 파일이 schemas/ 와 실제로 일치하는가
+    # -----------------------------------------------------------------------
+    # 스키마는 문서가 아니라 검사다. 돌리지 않는 스키마는 며칠 만에 실제와 갈라지고,
+    # 갈라진 스키마는 없는 것보다 나쁘다. 틀린 계약을 사실처럼 읽게 만들기 때문이다.
+    # node 가 없으면 PASS 가 아니라 UNENFORCED 로 보고한다.
+    $schemaDir = Join-HarnessPath $root 'schemas'
+    $validator = Join-HarnessPath $root 'scripts' 'harness-schema-validate.mjs'
+    $nodeExe = Get-HarnessNativeCommand 'node'
+
+    if (-not (Test-Path -LiteralPath $schemaDir)) {
+        Add-Issue 'WARN' 'SCHEMA_DIR_MISSING' 'schemas/ 가 없습니다. 기계가 읽는 계약이 없는 상태입니다.'
+    } elseif (-not (Test-Path -LiteralPath $validator)) {
+        Add-Issue 'FAIL' 'SCHEMA_VALIDATOR_MISSING' "검증기가 없습니다: $validator"
+    } elseif (-not $nodeExe) {
+        Add-Issue 'WARN' 'SCHEMA_UNCHECKED' 'node 가 없어 스키마 검증을 건너뜁니다 (UNENFORCED). 통과가 아닙니다.'
+    } else {
+        # 네이티브 명령의 stderr 를 합치면 5.1 은 각 줄을 ErrorRecord 로 감싸고,
+        # ErrorActionPreference='Stop' 이면 그 자리에서 죽는다. 함수 스코프로 낮춘다.
+        function Invoke-SchemaCheck {
+            param([string]$Node, [string]$Validator, [string]$Schema, [string[]]$Targets)
+            $ErrorActionPreference = 'Continue'
+            $out = & $Node $Validator '--schema' $Schema @Targets 2>&1 | Out-String
+            return [pscustomobject]@{ exit = $LASTEXITCODE; text = $out }
+        }
+
+        $schemaTargets = @(
+            @{ schema = 'runtime-manifest.schema.json'
+               files  = @(Get-ChildItem (Join-HarnessPath $root 'runtimes') -Filter '*.json' -File -ErrorAction SilentlyContinue) },
+            @{ schema = 'client-descriptor.schema.json'
+               files  = @(Get-ChildItem (Join-HarnessPath $root 'settings' 'clients') -Filter '*.client.json' -File -ErrorAction SilentlyContinue) }
+        )
+
+        $checked = 0
+        foreach ($st in $schemaTargets) {
+            $sp = Join-HarnessPath $schemaDir $st.schema
+            if (-not (Test-Path -LiteralPath $sp)) {
+                Add-Issue 'FAIL' 'SCHEMA_MISSING' "선언된 스키마가 없습니다: $($st.schema)"
+                continue
+            }
+            $files = @($st.files)
+            if (-not $files.Count) { continue }
+            $res = Invoke-SchemaCheck -Node $nodeExe -Validator $validator -Schema $sp -Targets @($files | ForEach-Object { $_.FullName })
+            if ($res.exit -ne 0) {
+                foreach ($line in ($res.text -split "`r?`n")) {
+                    if ($line.Trim()) { Add-Issue 'FAIL' 'SCHEMA_VIOLATION' "$($st.schema): $($line.Trim())" }
+                }
+            }
+            $checked += $files.Count
+        }
+
+        # 스키마 파일 자체도 JSON 이어야 한다. 깨진 스키마는 조용히 아무것도 검사하지 않는다.
+        foreach ($sf in @(Get-ChildItem $schemaDir -Filter '*.schema.json' -File -ErrorAction SilentlyContinue)) {
+            try { $null = Read-HarnessJson -Path $sf.FullName } catch {
+                Add-Issue 'FAIL' 'SCHEMA_PARSE' "$($sf.Name) 파싱 실패: $($_.Exception.Message)"
+            }
+        }
+        Add-Issue 'INFO' 'SCHEMA_OK' "스키마 검증 $checked 개 파일 (schemas/ $(@(Get-ChildItem $schemaDir -Filter '*.schema.json' -File -ErrorAction SilentlyContinue).Count)개)"
+    }
+
+    # -----------------------------------------------------------------------
     # 5c. 카탈로그의 shared_runtime 계약
     # -----------------------------------------------------------------------
     $catPath = Join-HarnessPath $root 'catalogs' 'mcp-catalog.json'

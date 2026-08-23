@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/hacker943410-debug/ai-harness/schemas/change-plan.schema.json",
+  "title": "AI Harness 변경 계획 파일 — harness-change-plan 1.0",
+  "$comment": "진단(Get-HarnessEnvironment / Sync-HarnessClients)이 만들고, 사람이 enabled 를 편집하고, Install-Harness.ps1 하나만 소비한다. 계획을 만드는 스크립트는 여럿이어도 적용하는 스크립트는 하나다 — 둘이 되는 순간 확인 절차를 우회하는 길이 생긴다. 이 파일은 사람이 손으로 고치는 유일한 기계 계약이므로 스키마가 가장 크게 도움이 되는 자리다.",
+
+  "type": "object",
+  "required": ["schema_version", "kind", "harness_root", "tools_root", "plan"],
+  "additionalProperties": false,
+  "patternProperties": { "^\\$": true },
+
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "kind": { "const": "harness-change-plan" },
+
+    "overall": {
+      "$comment": "총평은 생산자마다 척도가 다르다. 환경 진단은 READY/READY_WITH_WARNINGS/BLOCKED(준비됐는가), 클라이언트 정합은 IN_SYNC/DRIFT/UNKNOWN(일치하는가)을 답한다. 서로 다른 질문이므로 하나로 합치지 않는다. 대신 소비자는 이 값으로 분기하지 않는다 — 진행 여부는 blocks 와 각 단계의 enabled 로만 정한다.",
+      "enum": ["READY", "READY_WITH_WARNINGS", "BLOCKED", "IN_SYNC", "DRIFT", "UNKNOWN"]
+    },
+    "checked_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T" },
+    "harness_root": { "type": "string", "minLength": 1 },
+    "tools_root": { "type": "string", "minLength": 1 },
+
+    "blocks": {
+      "$comment": "진행을 막는 사유. status=BLOCK 인 finding 에서 나온다.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "item": { "type": "string" },
+          "note": { "type": "string" }
+        }
+      }
+    },
+
+    "findings": {
+      "$comment": "진단이 본 것. 적용자는 이것으로 아무것도 하지 않는다 — 사람이 읽는 근거다.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["area", "item", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "area": { "type": "string" },
+          "item": { "type": "string" },
+          "value": {
+            "$comment": "문자열·불리언·숫자 무엇이든 올 수 있다. 표시용이다.",
+            "type": ["string", "boolean", "number", "null"]
+          },
+          "status": { "enum": ["OK", "INFO", "WARN", "BLOCK"] },
+          "note": { "type": "string" }
+        }
+      }
+    },
+
+    "limitations": {
+      "$comment": "이 PC 에서 기술적으로 불가능한 것. 적용 전에 선택지와 함께 제시된다. 모양은 클라이언트 디스크립터의 limitation 과 같고, client / runtime_id 가 덧붙는다.",
+      "type": "array"
+    },
+
+    "matrix": {
+      "$comment": "클라이언트 정합이 덧붙이는 (런타임 x 클라이언트) 행렬. 표시용이며 적용자는 읽지 않는다.",
+      "type": "array"
+    },
+
+    "plan": {
+      "$comment": "적용 후보 단계. 키 이름이 'steps' 가 아니라 'plan' 이다.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/step" }
+    }
+  },
+
+  "$defs": {
+    "step": {
+      "$comment": "단계의 모양은 _Harness.Runtime.ps1 의 New-HarnessPlanStep 이 유일하게 정의한다. payload 는 kind 마다 다르며 이 어휘로는 kind 별 분기를 표현할 수 없다 — 적용자가 kind 별로 다시 검사한다. kind 별 payload: dir-create {path, restrict_acl} / acl-set {path, disable_inheritance} / env-set {name, scope, value(null 이면 삭제)} / file-write {path, text} / exec {file, arguments[], diff?} / manual {instructions}.",
+      "type": "object",
+      "required": ["step_id", "kind", "action", "target", "enabled"],
+      "additionalProperties": false,
+      "patternProperties": { "^\\$": true },
+      "properties": {
+        "step_id": {
+          "$comment": "단계의 이름. 같은 계획 안에서 유일해야 하고 depends_on 이 이 값을 가리킨다.",
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": { "enum": ["dir-create", "acl-set", "env-set", "file-write", "exec", "manual"] },
+        "action": { "type": "string", "minLength": 1 },
+        "target": { "type": "string" },
+
+        "current": {
+          "$comment": "적용 전 상태(표시용). 사람이 무엇이 바뀌는지 보는 자리다.",
+          "type": ["string", "boolean", "number", "null"]
+        },
+        "proposed": { "type": ["string", "boolean", "number", "null"] },
+
+        "risk": { "enum": ["low", "medium", "high"] },
+        "note": { "type": "string" },
+
+        "optional": {
+          "$comment": "true 면 -IncludeOptional 또는 -Only 없이는 적용되지 않는다.",
+          "type": "boolean"
+        },
+        "enabled": {
+          "$comment": "사람이 편집하는 유일한 필드. false 로 두면 그 단계는 적용되지 않는다.",
+          "type": "boolean"
+        },
+        "depends_on": { "type": "array", "items": { "type": "string" } },
+
+        "command_line": {
+          "$comment": "사람이 읽는 표시용. 실제 실행은 payload.file + payload.arguments 로 한다. 문자열을 다시 파싱해서 실행하면 공백 있는 경로에서 조용히 틀린다.",
+          "type": "string"
+        },
+        "payload": { "type": ["object", "null"] },
+
+        "undo": {
+          "$comment": "되돌리는 방법을 아는 단계만 채운다. 모르면 null 이며, 적용자는 '되돌리기 없음'을 저널에 남긴다. 모른다는 것을 안다고 말하지 않는다.",
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "type": "string" },
+            "file": { "type": "string" },
+            "arguments": { "type": "array", "items": { "type": "string" } },
+            "command_line": { "type": "string" }
+          }
+        },
+
+        "limitations": {
+          "$comment": "이 단계를 적용하면 사용자가 감수하게 되는 것. severity=high 면 적용자가 APPLY 전에 따로 동의를 받는다. 모양은 클라이언트 디스크립터의 limitation 과 같다.",
+          "type": "array"
+        }
+      }
+    }
+  }
+}

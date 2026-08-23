@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/hacker943410-debug/ai-harness/schemas/client-index.schema.json",
+  "title": "AI Harness 등록 원장 — <tools_root>/clients.json (Layer B)",
+  "$comment": "'무엇을 어느 클라이언트에 등록했다고 믿는가'의 기록이다. 이것은 사실이 아니라 주장이며, 실제와 갈라질 수 있다(제3의 도구가 설정을 지운 사례가 있다). 판정은 항상 원장 x 실제 probe x 선언 3자를 대조해서 낸다. git 에 올라가지 않는다.",
+
+  "type": "object",
+  "required": ["schema_version", "registrations"],
+  "additionalProperties": false,
+  "patternProperties": { "^\\$": true },
+
+  "properties": {
+    "schema_version": { "const": "2.0" },
+    "updated_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T" },
+
+    "registrations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["runtime_id", "client", "status"],
+        "additionalProperties": false,
+        "patternProperties": { "^\\$": true },
+        "properties": {
+          "runtime_id": { "type": "string" },
+          "server_name": { "type": "string" },
+          "client": { "type": "string" },
+
+          "fingerprint": {
+            "$comment": "등록된 command+args+env 의 지문. 실제 probe 결과와 비교해 드리프트를 판정한다. 비밀값이 들어가지 않도록 HMAC 로 만든다.",
+            "type": "string",
+            "pattern": "^hmac-sha256:[0-9a-f]{64}$"
+          },
+          "tools_root_id": {
+            "$comment": "어느 도구 루트에서 등록했는가. 다르면 foreign_root 다 — 다른 루트의 등록을 이 루트의 것으로 착각하면 안 된다.",
+            "type": "string"
+          },
+
+          "risk": { "enum": ["low", "medium", "high"] },
+          "risk_accepted": { "type": "boolean" },
+          "tool_policy_enforceable": {
+            "$comment": "false 면 매니페스트의 deny 목록이 이 클라이언트에서 강제되지 않는다는 뜻이다. 문서로만 남는다는 사실을 원장에 남긴다.",
+            "type": "boolean"
+          },
+
+          "status": {
+            "$comment": "registered = 이번에 등록함. already_registered = 이미 같은 값이었음. partial = 이식용 설정만 기록. failed/skipped/unknown 은 등록되지 않았다는 뜻이다.",
+            "enum": ["registered", "already_registered", "partial", "failed", "skipped", "unknown", "not_installed"]
+          },
+          "detail": { "type": "string" },
+          "recorded_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T" }
+        }
+      }
+    }
+  }
+}

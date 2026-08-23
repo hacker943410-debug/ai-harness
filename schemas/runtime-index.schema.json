@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/hacker943410-debug/ai-harness/schemas/runtime-index.schema.json",
+  "title": "AI Harness 런타임 인덱스 — <tools_root>/runtimes.json (Layer B)",
+  "$comment": "머신의 실체를 기록한다. 어디에 설치됐고 어떤 상태인지. git 에 올라가지 않는다(Test-HarnessRepo.ps1 이 추적되면 FAIL). 경로는 tools_root 상대(command_rel)로 적는다 — 루트를 옮겨도 해석되어야 하기 때문이다.",
+
+  "type": "object",
+  "required": ["schema_version", "tools_root", "runtimes"],
+  "additionalProperties": false,
+  "patternProperties": { "^\\$": true },
+
+  "properties": {
+    "schema_version": { "const": "2.0" },
+    "tools_root": { "type": "string", "minLength": 1 },
+    "tools_root_id": {
+      "$comment": "이 도구 루트의 신원. 다른 루트에서 등록된 원장 항목을 foreign_root 로 가려낼 때 쓴다.",
+      "type": "string"
+    },
+    "updated_at": { "$ref": "#/$defs/timestamp" },
+
+    "runtimes": {
+      "$comment": "키는 runtime_id 이며 값의 runtime_id 와 같아야 한다.",
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+      "additionalProperties": { "$ref": "#/$defs/entry" }
+    }
+  },
+
+  "$defs": {
+    "timestamp": {
+      "$comment": "UTC. 로컬 오프셋은 커밋되는 파일을 계속 흔들고 PC 간 비교를 깨뜨린다.",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T"
+    },
+
+    "entry": {
+      "type": "object",
+      "required": ["runtime_id", "installed_version", "install_dir", "command_rel", "state"],
+      "additionalProperties": false,
+      "patternProperties": { "^\\$": true },
+      "properties": {
+        "runtime_id": { "type": "string" },
+        "capability_id": { "type": "string" },
+        "server_name": { "type": "string" },
+        "package": { "type": "string" },
+
+        "declared_version": {
+          "$comment": "기록 시점의 Layer A 선언. 지금의 선언과 다르면 version_drift 다.",
+          "type": "string"
+        },
+        "installed_version": { "type": "string" },
+
+        "install_dir": {
+          "$comment": "tools_root 상대. 절대경로를 넣으면 루트를 옮기는 순간 전부 틀린다.",
+          "type": "string",
+          "minLength": 1
+        },
+        "command_rel": { "type": "string", "minLength": 1 },
+        "args": { "type": "array", "items": { "type": "string" } },
+        "env": { "type": "object", "additionalProperties": { "type": "string" } },
+        "parameters": { "type": "object" },
+
+        "platform": { "enum": ["windows", "macos", "linux"] },
+        "risk": { "enum": ["low", "medium", "high"] },
+
+        "state": {
+          "$comment": "installed = 설치만 됨. reachable = 실제로 뜨고 도구를 노출함(인증과 무관). verified = 인증된 API 호출까지 성공. stale_verified 는 TTL 이 지났을 때 읽는 쪽이 만들어 내는 값이며 디스크에 기록되지 않는다.",
+          "enum": ["installed", "reachable", "verified"]
+        },
+
+        "installed_at": { "$ref": "#/$defs/timestamp" },
+        "last_verified_at": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}T" },
+        "verify_ttl_hours": {
+          "$comment": "몇 달 전 검증이 영원히 유효한 척하지 않는다. 지나면 stale_verified 로 감쇠한다.",
+          "type": "integer",
+          "minimum": 1
+        },
+
+        "last_verify_evidence": {
+          "$comment": "verified 를 '주장'이 아니라 '증거'로 만든다. 무엇을 호출해 무엇을 확인했는지 남긴다.",
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "transport_ok": { "type": "boolean" },
+            "tool_count": { "type": ["integer", "null"] },
+            "auth_state": {
+              "$comment": "관측된 값: authorized / auth_failed / not_authorized / unknown. 서버마다 늘어날 수 있어 열거하지 않는다.",
+              "type": ["string", "null"]
+            },
+            "tool": { "type": ["string", "null"] },
+            "assert": { "type": ["string", "null"] },
+            "at": { "$ref": "#/$defs/timestamp" }
+          }
+        },
+
+        "adopted_from": {
+          "$comment": "-Adopt 로 채택한 레거시 디렉터리 이름. 재다운로드 없이 기존 설치를 인수했다는 기록.",
+          "type": ["string", "null"]
+        }
+      }
+    }
+  }
+}

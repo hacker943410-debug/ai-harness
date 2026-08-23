@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/hacker943410-debug/ai-harness/schemas/runtime-manifest.schema.json",
+  "title": "AI Harness 공용 런타임 매니페스트 (Layer A)",
+  "$comment": "무엇을 어떤 버전으로 쓰는지만 선언한다. 어디에 설치됐는지(Layer B)는 절대 담지 않는다. 절대경로가 들어가면 다른 모든 PC 에서 틀린 값이 되므로 Test-HarnessRepo.ps1 이 별도로 거부한다. $ 로 시작하는 키는 사람이 읽는 주석이며 어디에나 올 수 있다.",
+
+  "type": "object",
+  "required": ["schema_version", "runtime_id", "capability_id", "server_name", "risk", "install", "server"],
+  "additionalProperties": false,
+  "patternProperties": { "^\\$": true },
+
+  "properties": {
+    "schema_version": { "const": "2.0" },
+
+    "runtime_id": {
+      "$comment": "파일명 <runtime_id>.runtime.json 과 일치해야 한다. 일치 검사는 Test-HarnessRepo.ps1 이 한다.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+    },
+    "capability_id": {
+      "$comment": "카탈로그 항목의 id. 프로젝트(Layer C)가 참조하는 유일한 이름이다.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+    },
+    "server_name": {
+      "$comment": "각 CLI 에 등록될 MCP 서버 이름.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+    },
+    "display_name": { "type": "string" },
+
+    "scope": { "enum": ["machine_user", "project"] },
+    "risk": {
+      "$comment": "high 면 tool_policy 의 deny/approve 를 채워야 하고, 등록 시 -IAcceptRisk 를 요구한다.",
+      "enum": ["low", "medium", "high"]
+    },
+
+    "platforms": {
+      "$comment": "실제로 설치하고 검증한 플랫폼만 적는다. 검증 없이 넓히지 않는다.",
+      "type": "array",
+      "items": { "enum": ["windows", "macos", "linux"] },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "platforms_verified_on": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+
+    "legacy_install_dirs": {
+      "$comment": "옛 판이 쓰던 디렉터리 이름. -Adopt 가 재다운로드 없이 채택할 때 후보로 쓴다.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+
+    "retired_locators": {
+      "$comment": "옛 판이 실행 경로를 박아 두었던 사용자 환경변수. v3 는 읽지 않지만 남은 값이 옛 실행 파일을 가리켜 사람과 되살아난 옛 스크립트를 오도한다. 환경 진단이 이 선언을 보고 삭제를 제안한다.",
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^\\$": true },
+      "properties": {
+        "environment_variables": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+          "uniqueItems": true
+        }
+      }
+    },
+
+    "requires": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "node": { "type": "string" },
+        "npm": { "type": "boolean" }
+      }
+    },
+
+    "install": {
+      "$comment": "버전은 여기에만 존재한다. 카탈로그에 다시 적으면 두 값이 갈라진다.",
+      "type": "object",
+      "required": ["kind", "version"],
+      "additionalProperties": false,
+      "patternProperties": { "^\\$": true },
+      "properties": {
+        "kind": { "enum": ["npm_pinned"] },
+        "package": { "type": "string", "minLength": 1 },
+        "version": {
+          "$comment": "정확한 버전만 허용한다. latest / * / ^ / ~ 는 자동으로 최신을 따라가므로 재현되지 않는다.",
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)*$"
+        },
+        "pinned_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "npm_args": { "type": "array", "items": { "type": "string" } },
+        "bin_name": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "server": {
+      "$comment": "절대경로 금지. 보간은 ${HOME} ${CONFIG_HOME} ${TOOLS_ROOT} ${RUNTIME_DIR} 와 선언된 parameters 키만 허용한다.",
+      "type": "object",
+      "required": ["transport"],
+      "additionalProperties": false,
+      "patternProperties": { "^\\$": true },
+      "properties": {
+        "transport": { "enum": ["stdio"] },
+        "args": { "type": "array", "items": { "type": "string" } },
+        "env": { "type": "object", "additionalProperties": { "type": "string" } },
+        "env_from": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+
+    "parameters": {
+      "$comment": "server.env 의 ${키} 보간에 쓰인다. 여기 없는 키를 보간하면 해석 시 실패한다.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["type"],
+        "additionalProperties": false,
+        "patternProperties": { "^\\$": true },
+        "properties": {
+          "type": { "enum": ["string", "boolean", "integer"] },
+          "default": {},
+          "pattern": { "type": "string" },
+          "enum": { "type": "array" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+
+    "tool_policy": {
+      "$comment": "deny = 가능한 클라이언트에서는 노출 자체를 막는다. approve = 노출하되 호출 직전 승인. 강제 가능 여부는 클라이언트마다 다르며 디스크립터의 limitations 가 선언한다.",
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^\\$": true },
+      "properties": {
+        "deny": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "approve": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "rationale": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+
+    "credentials": {
+      "$comment": "비밀값 자체는 적지 않는다. 위치와 파일 이름만 선언한다. never_sync 는 매니페스트가 유일한 출처여야 한다 — 동기화 스크립트가 제외 목록을 따로 하드코딩하면 두 목록이 갈라지고, 갈라지는 순간 비밀값이 올라간다.",
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^\\$": true },
+      "properties": {
+        "storage": { "type": "string" },
+        "required_files": { "type": "array", "items": { "type": "string" } },
+        "auth_state_files": { "type": "array", "items": { "type": "string" } },
+        "auth_command": {
+          "type": ["object", "null"],
+          "required": ["bin", "args"],
+          "additionalProperties": false,
+          "properties": {
+            "bin": { "type": "string" },
+            "args": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "never_sync": { "type": "array", "items": { "type": "string" } },
+        "setup_guide": { "type": ["string", "null"] },
+        "notes": { "type": "string" },
+        "revoke": {
+          "$comment": "토큰 파일을 지우는 것은 '이 PC 에서 잊는 것'일 뿐이고 발급자 쪽 부여는 살아 있다. 끊는 방법과, 그것이 실패했을 때 사람이 갈 곳을 함께 선언한다.",
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "patternProperties": { "^\\$": true },
+          "properties": {
+            "kind": { "enum": ["oauth2_http"] },
+            "endpoint": { "type": "string" },
+            "token_file": { "type": "string" },
+            "token_field": { "type": "string" },
+            "manual_url": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "verify": {
+      "$comment": "exit code 가 아니라 실제 read-only 호출 결과로 판정한다. 서버 자체 진단 도구는 문제 상황도 성공한 호출로 반환할 수 있다.",
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^\\$": true },
+      "properties": {
+        "tool": { "type": ["string", "null"] },
+        "args": { "type": "object" },
+        "assert_contains": { "type": ["string", "null"] },
+        "read_only": { "type": "boolean" }
+      }
+    }
+  }
+}

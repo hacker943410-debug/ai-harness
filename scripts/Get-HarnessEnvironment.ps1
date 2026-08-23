@@ -466,18 +466,10 @@ $blocks = @($findings | Where-Object status -eq 'BLOCK')
 $warns = @($findings | Where-Object status -eq 'WARN')
 $overall = if ($blocks.Count) { 'BLOCKED' } elseif ($warns.Count) { 'READY_WITH_WARNINGS' } else { 'READY' }
 
-$report = [pscustomobject]@{
-    schema_version = '1.0'
-    kind           = 'harness-change-plan'
-    overall        = $overall
-    checked_at     = (Get-HarnessUtcStamp)
-    harness_root   = $root
-    tools_root     = $resolvedTools
-    blocks         = @($blocks | ForEach-Object { [pscustomobject]@{ item = $_.item; note = $_.note } })
-    findings       = @($findings)
-    limitations    = @($limitations)
-    plan           = @($plan)
-}
+# 계획 파일을 손으로 조립하지 않는다. 모양은 New-HarnessChangePlan 이 유일하게 정의한다.
+$report = New-HarnessChangePlan -HarnessRoot $root -ToolsRoot $resolvedTools -Overall $overall `
+    -Blocks @($blocks | ForEach-Object { [pscustomobject]@{ item = $_.item; note = $_.note } }) `
+    -Findings @($findings) -Limitations @($limitations) -Steps @($plan)
 
 if ($SavePlan) {
     Write-HarnessJson -Path $SavePlan -InputObject $report -Depth 10

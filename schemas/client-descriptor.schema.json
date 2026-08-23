@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/hacker943410-debug/ai-harness/schemas/client-descriptor.schema.json",
+  "title": "AI Harness 클라이언트 디스크립터 — settings/clients/<id>.client.json (Layer A)",
+  "$comment": "이 CLI 에 MCP 서버를 등록/조회/제거하는 방법과, 이 CLI 가 강제할 수 없는 것을 선언한다. 새 CLI 를 지원하려면 이런 파일 1개를 추가하며 스크립트는 고치지 않는다. 스크립트를 고쳐야 한다면 설계가 틀린 것이다.",
+
+  "type": "object",
+  "required": ["schema_version", "client_id", "display_name", "adapter_kind", "detect", "argv"],
+  "additionalProperties": false,
+  "patternProperties": { "^\\$": true },
+
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "client_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,31}$" },
+    "display_name": { "type": "string", "minLength": 1 },
+    "adapter_kind": { "enum": ["argv_cli"] },
+    "verified_on": {
+      "$comment": "이 계약을 실제 CLI 로 확인한 날. 확인하지 않은 것을 적지 않는다.",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+
+    "detect": {
+      "type": "object",
+      "required": ["command"],
+      "additionalProperties": false,
+      "properties": { "command": { "type": "string", "minLength": 1 } }
+    },
+
+    "config_path_is_authoritative": {
+      "$comment": "설정 파일 경로를 판정 근거로 쓸 수 있는가. 대개 false 다 — 제3의 도구가 설정 홈을 재정의하면 경로를 가정하는 검사는 영원히 틀린 답을 준다. 권위는 CLI 의 probe 다.",
+      "type": "boolean"
+    },
+    "config_home_env": { "type": ["string", "null"] },
+    "config_hint": {
+      "$comment": "사람 안내용. 코드가 이 값을 경로로 쓰면 안 된다.",
+      "type": "string"
+    },
+
+    "supports": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^\\$": true },
+      "properties": {
+        "scopes": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "default_scope": { "type": ["string", "null"] },
+        "env_flag": { "type": "boolean" },
+        "drift_detection": { "type": "boolean" },
+        "json_probe": { "type": "boolean" }
+      }
+    },
+
+    "argv": {
+      "$comment": "치환 토큰: {server_name} {command} {args} {scope} {env_flags}. 토큰 순서는 CLI 의 파서에 달려 있다 — claude 의 -e 는 가변 인자라 {server_name} 이 앞에 와야 하고 -- 로 끊어야 한다. 순서를 바꾸면 이름이 환경변수로 먹힌다.",
+      "type": "object",
+      "required": ["probe", "register", "remove"],
+      "additionalProperties": false,
+      "patternProperties": { "^\\$": true },
+      "properties": {
+        "probe":    { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "register": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "remove":   { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "list":     { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+      }
+    },
+    "env_flag_template": {
+      "$comment": "환경변수 1개를 argv 로 펼치는 방법. 예: [\"-e\", \"{key}={value}\"] 또는 [\"--env\", \"{key}={value}\"].",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+
+    "probe_semantics": {
+      "$comment": "probe 는 존재 여부만이 아니라 실제 등록된 command 를 읽어와야 한다. 원장과 실제가 갈라져도 모르게 되기 때문이다. 파싱에 실패하면 OK 가 아니라 UNKNOWN 이다.",
+      "type": "object",
+      "required": ["parse"],
+      "additionalProperties": false,
+      "patternProperties": { "^\\$": true },
+      "properties": {
+        "present_exit_code": { "type": "integer" },
+        "absent_exit_code": {
+          "$comment": "present 와 같을 수 있다(목록형 CLI). 그때는 exit code 가 아니라 파싱 결과로 판정한다.",
+          "type": "integer"
+        },
+        "parse": { "$ref": "#/$defs/parse" }
+      }
+    },
+
+    "register_is_upsert": {
+      "$comment": "false 면 재등록이 remove -> add 다. add 가 실패하면 고치려던 등록이 아예 없어진다 — 실제로 일어났다. 등록자는 실패 시 이전 등록을 복원하고 결과를 보고해야 한다.",
+      "type": "boolean"
+    },
+    "flags_must_precede_name": { "type": "boolean" },
+
+    "tool_policy_support": {
+      "$comment": "매니페스트의 tool_policy 를 이 CLI 의 기능으로 번역하는 방법. null 은 '수단이 없다'는 뜻이며, 없다면 limitations 로 사용자에게 알려야 한다.",
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^\\$": true },
+      "properties": {
+        "deny": { "$ref": "#/$defs/policyChannel" },
+        "approve": { "$ref": "#/$defs/policyChannel" },
+        "server_level_disable": { "$ref": "#/$defs/policyChannel" },
+        "status": { "enum": ["verified_absent", "verified_present", "unknown"] },
+        "verified_on": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "consequence": { "type": "string" }
+      }
+    },
+
+    "limitations": {
+      "$comment": "하네스가 강제할 수 없는 것을 최초 설치 시점에 선택지와 함께 제시한다. 등록한 뒤에 뜨는 경고는 사용자가 이미 노출된 상태에서 읽는다 — 그건 정보이지 선택이 아니다.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/limitation" }
+    },
+
+    "notes": { "type": "string" }
+  },
+
+  "$defs": {
+    "parse": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "patternProperties": { "^\\$": true },
+      "properties": {
+        "kind": { "enum": ["kv_text", "table_text", "json_list"] },
+
+        "command_key": { "type": "string" },
+        "args_key": { "type": "string" },
+        "env_key": {
+          "$comment": "kv_text: 환경변수는 이 키 '다음 줄들에 들여쓰기로' 나올 수 있다. 그 줄의 꼬리만 읽으면 항상 비어 보이고, 올바르게 등록해도 드리프트가 사라지지 않는다.",
+          "type": "string"
+        },
+
+        "match_column": { "type": "string" },
+        "command_column": { "type": "string" },
+        "enabled_markers": {
+          "$comment": "table_text: 상태 칸은 위치가 아니라 선언된 표식으로 찾는다. 열 순서가 바뀌면 조용히 틀리기 때문이다.",
+          "type": "array", "items": { "type": "string" }
+        },
+        "disabled_markers": { "type": "array", "items": { "type": "string" } },
+
+        "list_argv": { "type": "array", "items": { "type": "string" } },
+        "name_field": { "type": "string" },
+        "command_path": { "type": "string" },
+        "args_path": { "type": "string" }
+      }
+    },
+
+    "policyChannel": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "patternProperties": { "^\\$": true },
+      "properties": {
+        "file": { "type": "string" },
+        "key": { "type": "string" },
+        "pattern": { "type": "string" },
+        "format": { "type": "string" },
+        "value": { "type": "string" },
+        "allowed_values": { "type": "array", "items": { "type": "string" } },
+        "command": { "type": "array", "items": { "type": "string" } },
+        "scope": { "type": "string" },
+        "reduces_context": {
+          "$comment": "실행을 막는 것과 컨텍스트를 줄이는 것은 다른 사건이다. 도구 스키마가 모델 컨텍스트에 남으면 토큰은 계속 쓴다.",
+          "type": "boolean"
+        },
+        "hint": { "type": "string" }
+      }
+    },
+
+    "limitation": {
+      "type": "object",
+      "required": ["id", "severity", "what", "why", "consequence", "options"],
+      "additionalProperties": false,
+      "patternProperties": { "^\\$": true },
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_]*$" },
+        "severity": {
+          "$comment": "high 는 적용자가 APPLY 전에 별도 동의를 받는다. 거부하면 아무것도 적용되지 않는다.",
+          "enum": ["low", "medium", "high"]
+        },
+        "applies_when": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "runtime_risk": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "what": { "type": "string", "minLength": 1 },
+        "why": {
+          "$comment": "확인된 근거를 적는다. '아마 안 될 것이다'는 근거가 아니다.",
+          "type": "string", "minLength": 1
+        },
+        "consequence": { "type": "string", "minLength": 1 },
+        "options": {
+          "$comment": "선택지 없는 고지는 통보다. 최소 2개이며 recommended 는 정확히 1개여야 한다 — '정확히 1개'는 이 어휘로 표현할 수 없어 Test-HarnessRepo.ps1 이 강제한다.",
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "how", "effect"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_]*$" },
+              "recommended": { "type": "boolean" },
+              "label": { "type": "string", "minLength": 1 },
+              "how": {
+                "$comment": "실행할 명령이나 편집할 위치. 방법을 못 적으면 선택지가 아니다.",
+                "type": "string", "minLength": 1
+              },
+              "effect": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

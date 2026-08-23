@@ -728,8 +728,11 @@ function New-HarnessChangePlan {
         [string]$Overall = 'READY',
         $Blocks = @(),
         $Findings = @(),
-        $Steps = @()
+        $Steps = @(),
+        $Limitations = @()
     )
+    # 계획 파일의 모양도 정의가 하나여야 한다. 생산자마다 따로 조립하면
+    # 필드가 조용히 갈라지고, 소비자와 스키마는 어느 쪽이 정본인지 알 수 없게 된다.
     return [pscustomobject]@{
         schema_version = $script:HarnessPlanSchema
         kind           = 'harness-change-plan'
@@ -739,6 +742,7 @@ function New-HarnessChangePlan {
         tools_root     = $ToolsRoot
         blocks         = @($Blocks)
         findings       = @($Findings)
+        limitations    = @($Limitations)
         plan           = @($Steps)
     }
 }

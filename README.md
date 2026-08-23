@@ -54,8 +54,13 @@ AI_Harness_CLI_v2/
 │  └─ CAPABILITY_ACQUISITION.md
 ├─ scripts/
 │  └─ Capability 검색·프로젝트 설치·검증 도구
+├─ runtimes/
+│  └─ 공용 런타임 선언 (무엇을 어떤 버전으로)
+├─ settings/clients/
+│  └─ AI 클라이언트별 등록 계약과 제약 선언
 ├─ schemas/
-│  └─ 프로젝트 Capability Lock Schema
+│  └─ 기계가 읽는 계약 — 런타임 매니페스트·인덱스, 클라이언트 디스크립터·원장,
+│     변경 계획, 프로젝트 Capability Lock
 │
 └─ policies/
    ├─ 01_....md
@@ -76,6 +81,7 @@ AI_Harness_CLI_v2/
 - `workflows/CAPABILITY_ACQUISITION.md` → Capability가 부족할 때만 읽는 획득 절차
 - `runtimes/*.runtime.json` → 공용 런타임 선언 (무엇을 어떤 버전으로. 설치 위치는 담지 않는다)
 - `settings/clients/*.client.json` → AI 클라이언트별 등록 방식과 제약 선언
+- `schemas/*.schema.json` → 위 선언들의 기계가 읽는 계약. `Test-HarnessRepo.ps1` 이 매번 검증한다
 - `workflows/SHARED_RUNTIME.md` → 공용 런타임 수명주기 (install → auth → verify → sync → restart)
 - `workflows/GOOGLE_WORKSPACE_MCP.md` → PC 공용 Google Workspace MCP 연결·권한 절차
 - `policies/*.md` → 필요한 것만 JIT
