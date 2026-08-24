@@ -2,11 +2,136 @@
 
 이 문서는 AI Harness의 사용자 관점 변경사항과 검증 결과를 누적 기록한다. 최신 항목을 위에 추가한다.
 
-## 3.0 (진행 중) — 2026-08-23
+## 3.0 — 2026-08-24
+
+`POLICY_INDEX.yaml` 의 `harness_version` 이 `3.0` 이다. 그 값이 버전의 정본이다.
 
 ### 목표
 
 특정 PC에 맞춰진 구성을 **GitHub에서 받아 어느 PC에서든 설치·사용할 수 있는 3계층 구조**로 재편한다. 무엇을(Layer A, git) / 어디에·누구로(Layer B, 도구 루트) / 어떤 capability ID를(Layer C, 프로젝트)를 섞지 않는다. 설계 근거는 `proposals/HARNESS_V3_PROPOSAL.md`, 진행 상태는 `proposals/HANDOFF.md`에 있다.
+
+### 2026-08-24 — 공개, 플러그인, 에스코트
+
+#### 저장소가 Public 이 됐다 (MIT)
+
+`https://github.com/hacker943410-debug/ai-harness` — 누구든 쓰고 고치고 배포할 수 있다.
+
+v3 설계 당시의 결정(D1)은 Private 였고, 뒤집혔다.
+**공개만으로는 부족하다.** 라이선스 없는 공개 저장소는 법적으로 모든 권리 유보라
+남이 합법적으로 쓸 수 없다. `LICENSE`(MIT)를 넣었고 `plugin.json` 의
+`"license": "UNLICENSED"` 도 고쳤다.
+
+공개 전 히스토리 감사 — 커밋 36개, diff 103,244줄:
+
+| 대상 | 결과 |
+|---|---|
+| 비밀값 (private key / OAuth 토큰 / API 키) | 0건 |
+| secret 키+값 | 0건 |
+| 등록 지문 `hmac-sha256:…` / `tools-root.id` / Drive 폴더 id / OAuth client id | 0건 |
+| `credentials.json` / `tokens.json` / `runtimes.json` / `clients.json` | 커밋된 적 없음 |
+
+**3계층 분리가 문서가 아니라 실제로 지켜졌다는 증거다.** 비밀값과 머신 상태는
+Layer B 에만 있었고 `.githooks/pre-commit` 이 경로와 값 양쪽으로 막고 있었다.
+설계가 말뿐이었으면 지금 히스토리 재작성을 하고 있었을 것이다.
+
+#### 설치 에스코트 — 도구를 알고 고르게 한다
+
+카탈로그에 109개(MCP 65 + Skill 44)가 있어도 그게 뭔지 모르면 0개다.
+**아는 사람만 쓸 수 있는 도구는 설치되지 않은 것과 같다.**
+
+```powershell
+.\scripts\Invoke-HarnessEscort.ps1 -SavePlan .\escort.json
+```
+
+- "이 프로젝트에서 주로 뭘 하실 건가요?" → 추천 세트와 **왜 그걸 권하는지**
+- 카탈로그를 번호로 훑고, 번호를 치면 **쉬운 말로** 자세히
+- 항목마다 설치 여부를 묻고, 예면 **자동인지 직접인지** 다시 묻는다
+  - 자동 = 계획에 담고 `Install-Harness.ps1` 이 확인받고 실행
+  - 직접 = 명령을 순서대로 안내하고 기록만 남긴다
+- `g` 목표 다시 · `r` 추천 다시 · `q` 마치기. 아무것도 안 고르고 나가도 된다
+- 읽기 전용: `-List` / `-Explain <번호|id>` / `-Tips`
+
+**AI 없이 돈다.** 하네스를 처음 까는 시점에는 AI 가 아직 연결돼 있지 않을 수 있다.
+
+**에스코트도 적용하지 않는다.** 계획 파일만 낸다. 계획 생산자는 셋이 됐지만
+(`Get-HarnessEnvironment` / `Sync-HarnessClients` / `Invoke-HarnessEscort`)
+적용자는 여전히 `Install-Harness.ps1` 하나다.
+
+**자동 설치를 막을 때는 이유를 말한다.** `discovery_only` 처럼 좌표가 확정되지 않은 항목,
+정확한 버전을 못 정한 npm/pypi, 준비물이 필요한 컨테이너·SDK 방식.
+막는 것과 이유 없이 안 되는 것은 다르다.
+
+설명 문구는 스크립트가 아니라 `catalogs/escort-glossary.json` 과
+`escort-profiles.json` 에 있다. 도구가 늘어도 스크립트를 고치지 않는다.
+절차는 `workflows/ESCORT.md`, 설치 흐름 안에서의 자리는 `HARNESS_INSTALL.md` §5.0b.
+
+#### (선택) Claude Code 플러그인
+
+```text
+/plugin marketplace add hacker943410-debug/ai-harness
+/plugin install ai-harness@ai-harness
+```
+
+`/harness-init` · `/harness-doctor` · `/harness-status` · `/harness-escort` 와
+스킬 `harness-runtime` · `harness-capability`.
+
+**플러그인은 정본이 아니다.** Layer A 의 파일을 가리키는 얇은 진입점이며
+정책 원문을 복사하지 않는다. Codex 와 AGY 에는 이 메커니즘이 없으므로
+플러그인이 정본이 되면 그 사용자들이 뒤처지고 마스터가 또 갈라진다.
+
+**`.mcp.json` 은 일부러 넣지 않았다.** 제안서 §F8(b) 목록에는 있었지만,
+공용 런타임의 실체는 Layer B 에 있어 경로가 PC 마다 다르고, 무엇보다 등록 경로가
+`Register-HarnessRuntimeClient.ps1` 과 플러그인 둘로 갈라져 "적용하는 문은 하나"가 깨진다.
+
+하네스를 고치는 PC 는 로컬 경로(`add C:\AI-Harness`)로, 그냥 쓰는 PC 는 GitHub 으로 등록한다.
+**한 PC 에서 둘 다 등록하지 않는다** — 같은 이름이 겹치면 어느 쪽이 로드됐는지 알 수 없다.
+
+#### 검사 규칙 추가 (`Test-HarnessRepo.ps1`)
+
+| 코드 | 판정 | 막는 것 |
+|---|---|---|
+| `ESCORT_UNKNOWN_ID` | FAIL | 카탈로그에 없는 id 를 추천하는 것. 존재하지 않는 도구를 권유하면 사용자를 막다른 길로 보낸다 |
+| `ESCORT_DUPLICATE_PROFILE` | FAIL | 프로필 id 중복 |
+| `ESCORT_UNKNOWN_INSTALL_KIND` | WARN | 카탈로그가 쓰는 설치 방식인데 사전에 설명이 없는 것 |
+
+#### 문서 정합
+
+- `README.md` 가 아직 v2.2("Google Drive = MASTER")를 설명하고 있었다. D6 과 정면으로 어긋난다.
+  §0(3계층) 신설, §3 정본·런타임·스냅샷, §15 git clone 기준,
+  §21 "바꾸는 문은 하나", §22 에스코트, §23 플러그인, §24 라이선스.
+  **README 가 v3 에서 처음으로 Layer B 의 존재를 언급한다.** 그전에는 어디에도 없었다
+- `HANDOFF.md` 의 손으로 관리하던 커밋 이력 표를 **삭제했다.**
+  `6d56aba` 에서 멈춘 채 커밋 5개가 뒤에 붙어 있었고 아무도 몰랐다.
+  아무도 그 표를 근거로 쓰지 않았기 때문이다. git 이 정본이다
+- 클라이언트 등록(codex 등)을 **미결 사항에서 종결했다.** Layer B 는 쓰는 사람이 쓸 때
+  연결한다. 저장소가 특정 PC 의 등록 상태를 미결로 들고 있을 이유가 없다
+
+### 검증 (2026-08-24)
+
+- `Test-HarnessRepo.ps1` — PASS_WITH_WARNING (경고 1건은 알려진 `markitdown` 프리릴리스 고정)
+- `ESCORT_UNKNOWN_ID` **음성 테스트** — 가짜 id 를 넣으면 실제로 FAIL 이 난다
+- 에스코트 전 구간 — 에스코트 → 계획 파일 → `Install-Harness.ps1 -DryRun` 이 실제 명령 표시
+  → `change-plan.schema.json` 통과
+- 플러그인 — `claude plugin validate` 통과, 실제 설치 후 `details` 로 구성요소 5개 로드 확인
+  (MCP servers 0 — 의도대로)
+- 공개 경로 — 인증 없이 `raw.githubusercontent.com` 에서 `marketplace.json` HTTP 200.
+  제안서 §11 **V7**("private 저장소 marketplace 미검증") 쟁점 소멸
+
+### 고친 실수 (기록해 둔다)
+
+- **계획 단계를 `optional: true` 로 냈다.** 적용자가 전부 제외해 "적용할 단계가 없습니다" 가 떴다.
+  사용자가 **명시적으로 y 를 누른 것**을 "선택 사항"으로 모델링한 게 틀렸다. `optional: false` 로 고쳤다
+- **에스코트가 EOF 에서 터졌다.** `Read-Host` 는 입력 통로가 닫히면 빈 문자열이 아니라 `$null` 을 준다.
+  그것을 문자열로 다뤄 `.Trim()` 에서 터졌다. "빈 줄 3연속"만 세고 있었던 게 문제였다.
+  `$null` 은 "입력이 없다"가 아니라 "통로가 닫혔다"이므로 즉시 종료 코드 `3` 으로 빠진다
+- **되돌아갈 길이 없었다.** 목표 선택과 추천이 한 번 지나가면 끝이어서 껐다 켜야 했다.
+  `g` / `r` / `h` 를 넣었다. **한 번 지나가면 끝인 화면은 사용자를 껐다 켜게 만든다**
+- **`HARNESS_INSTALL.md` 이 에스코트를 몰랐다.** `ESCORT.md` 는 "설치 가이드의 도구 고르기 단계"라고
+  주장하는데 그 문서에는 언급이 0건이었다. 편도 참조다. 에스코트의 대상이 *처음 세팅하는 사람*인데
+  정작 처음 읽는 문서에서 안 보였다. §5.0b 로 넣었다
+
+> 마지막 두 건은 **사용자가 직접 써 보고 나왔다.**
+> 스크립트가 도는 것과 쓸 만한 것은 다르다. 검증했던 것은 앞쪽이었다.
 
 ### 2.2 에서 은퇴한 것
 

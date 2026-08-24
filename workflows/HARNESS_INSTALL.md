@@ -34,6 +34,10 @@ Layer: A (git 추적)
 강제할 수단 자체가 없다. 그런 것은 숨기지 않고 진단 단계에서 선택지와 함께 제시하며,
 진행 여부는 사용자가 정한다 (§4.7).
 
+**무슨 도구를 쓸지는 이 표에 없다.** 위 표는 하네스 자체를 이 PC 에 맞추는 범위다.
+어떤 MCP·Skill 을 쓸지는 별개의 결정이고, 카탈로그에 109개가 있다.
+목록만 보고 고르기 어려우면 설치 에스코트가 하나씩 설명하고 물어본다 — **§5.0b**.
+
 ---
 
 ## 1. 사전 조건
@@ -287,6 +291,51 @@ notepad .\plan.json
 
 `선택` 으로 표시된 단계는 기본적으로 실행되지 않는다. 넣으려면 `-IncludeOptional`
 또는 `-Only <step_id>` 를 쓴다.
+
+### 5.0b 무슨 도구를 깔지 모르겠다면 — 설치 에스코트
+
+§5.0 의 계획은 **하네스 자체를 이 PC 에 맞추는** 것이다.
+그와 별개로 **어떤 MCP·Skill 을 쓸지**는 사람이 골라야 한다. 카탈로그에 109개가 있다.
+
+목록만 던지면 아무도 안 고른다. 그래서 물어보고 설명해 주는 경로가 따로 있다.
+
+```powershell
+.\scripts\Invoke-HarnessEscort.ps1 -SavePlan .\escort.json
+```
+
+에스코트가 하는 일:
+
+```
+"이 프로젝트에서 주로 뭘 하실 건가요?"  → 추천 세트와 그 이유
+카탈로그를 번호로 훑어보기               → 번호를 치면 쉬운 말로 자세히
+항목마다 설치할까요? [y/n/나중에]
+   y → 자동?  계획에 담고 Install-Harness.ps1 이 확인받고 실행
+       직접?  명령을 순서대로 안내하고 기록만 남김
+```
+
+`g` 로 목표를 다시 고를 수 있고, `r` 로 추천을 다시 본다. 아무것도 안 고르고 나가도 된다.
+
+**대화형이므로 사람이 직접 실행해야 한다.** AI CLI 안에서 `! powershell ...` 로 부르면
+입력이 연결되지 않아 종료 코드 `3` 으로 빠진다. 그때는 읽기 전용 모드를 쓴다.
+
+```powershell
+.\scripts\Invoke-HarnessEscort.ps1 -List              # 전체 목록 (번호 붙여서)
+.\scripts\Invoke-HarnessEscort.ps1 -Explain 62        # 한 항목만 쉬운 말로
+.\scripts\Invoke-HarnessEscort.ps1 -Tips              # 카탈로그 보는 법
+```
+
+에스코트도 **적용하지 않는다.** 계획 파일을 내고 §5.0 과 같은 문(`Install-Harness.ps1`)으로 넘긴다.
+
+```powershell
+.\scripts\Install-Harness.ps1 -Plan .\escort.json -DryRun
+.\scripts\Install-Harness.ps1 -Plan .\escort.json
+```
+
+`discovery_only` 처럼 좌표가 확정되지 않은 항목은 **자동 설치를 막고 이유를 말한 뒤**
+직접 설치 가이드로 넘어간다. 자세한 것은 `workflows/ESCORT.md`.
+
+> 순서 참고: 에스코트는 §5.1~5.2(도구 루트·가드)가 끝난 뒤가 자연스럽다.
+> 공용 런타임을 고르면 §5.3~5.7 이 그 뒤에 이어진다.
 
 ### 5.1 도구 루트 준비 (수동 경로)
 
@@ -565,6 +614,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$H\Test-HarnessRepo.ps1" -J
 
 ## 관련 문서
 
+- `workflows/ESCORT.md` — 설치 에스코트. 어떤 도구를 쓸지 설명받고 고르는 절차 (§5.0b)
 - `workflows/SHARED_RUNTIME.md` — 공용 런타임 수명주기 (install → auth → verify → sync → restart)
 - `workflows/GOOGLE_WORKSPACE_SETUP.md` — Google 최초 로그인 (자기 계정으로)
 - `workflows/GOOGLE_WORKSPACE_MCP.md` — 설치 후 운영 규칙과 권한 경계
