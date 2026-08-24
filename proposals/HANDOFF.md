@@ -330,6 +330,45 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
     "선택 사항"으로 모델링한 게 틀렸다. `optional: false` 로 바꿨다.
     `enabled` 편집으로 빼는 길은 그대로 남아 있다.
 
+8c. ~~저장소 공개 범위~~ — **2026-08-24 Public 전환 완료. D1 이 뒤집혔다.**
+
+    제안서 D1 은 "정책 26개는 사용자 자산"이라는 이유로 **Private** 였다.
+    사용자가 "자유롭게 사용 가능하도록" 뒤집었다. 그대로 따랐다.
+
+    **공개만으로는 부족하다.** 라이선스 없는 공개 저장소는 법적으로 모든 권리 유보라
+    남이 합법적으로 쓸 수 없다. `LICENSE`(MIT) 를 추가했고
+    `plugin.json` 의 `"license": "UNLICENSED"` 도 `MIT` 로 고쳤다.
+
+    **공개 전 히스토리 감사 (커밋 36개, diff 103,244줄):**
+
+    | 대상 | 결과 |
+    |---|---|
+    | 비밀값 패턴 (private key / ya29 / gh?_ / sk- / AIza / xox?-) | 0건 |
+    | secret 키+값 (`private_key`/`client_secret`/`refresh_token`/`access_token`) | 0건 |
+    | 등록 지문 `hmac-sha256:…` | 0건 |
+    | `tools-root.id` GUID / Drive 폴더 id / OAuth client id | 0건 |
+    | `credentials.json`/`tokens.json`/`runtimes.json`/`clients.json` | 커밋된 적 없음 |
+
+    **3계층 분리가 실제로 지켜졌다는 증거다.** 설계가 문서에만 있었으면
+    지금 히스토리 재작성을 하고 있었을 것이다.
+
+    사용자명은 일반화했다(`C:\Users\hacke` → `C:\Users\<사용자>`, HANDOFF·PROPOSAL 2곳).
+    **히스토리에는 남는다.** 윈도우 사용자명은 재작성 비용을 치를 만한 비밀이 아니다.
+
+    **V7(§11 "private 저장소 marketplace 미검증") 해소.**
+    Public 전환 후 인증 없이 `raw.githubusercontent.com` 에서 `marketplace.json` 이
+    HTTP 200 으로 내려온다. private 여부는 이제 쟁점이 아니다.
+
+    **마켓플레이스 등록은 PC 성격에 따라 다르게 한다:**
+
+    | PC | 등록 | 이유 |
+    |---|---|---|
+    | 하네스를 고치는 PC (이 PC) | `add C:\AI-Harness` (Directory) | 작업 트리 수정이 즉시 반영 |
+    | 그냥 쓰는 PC | `add hacker943410-debug/ai-harness` (GitHub) | 정본을 따라간다 |
+
+    **한 PC 에서 둘 다 등록하지 않는다.** 같은 이름의 마켓플레이스가 둘이 되면
+    어느 쪽이 이겼는지 알 수 없다. 이 PC 는 Directory 로 등록돼 있다(확인함).
+
 9. `POLICY_INDEX.compat.json` (기계가 읽는 계약은 YAML 금지 — PS 5.1에 파서 없음)
 10. ~~AGY 도구 통제 메커니즘 검증~~ — **조사 완료. 수단이 없다**(§5-29). 남은 것은 조사가 아니라 결정(§7-7)
 11. ~~(선택) `.claude-plugin/marketplace.json`~~ — **2026-08-24 완료.**
