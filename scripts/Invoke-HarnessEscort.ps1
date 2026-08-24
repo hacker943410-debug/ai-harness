@@ -85,24 +85,37 @@ function Write-Wrapped {
 # ---------------------------------------------------------------------------
 $script:EmptyReads = 0
 
+function Exit-NoInput {
+    Write-Output ''
+    Write-Output '입력을 받을 수 없습니다. 이 스크립트는 대화형이라 사람이 답해야 합니다.'
+    Write-Output '터미널에서 직접 실행하세요. (AI CLI 안에서 `! ...` 로 부르면 입력이 연결되지 않습니다)'
+    Write-Output ''
+    Write-Output '  대화 없이 볼 수 있는 것:'
+    Write-Output "    .\scripts\Invoke-HarnessEscort.ps1 -List"
+    Write-Output "    .\scripts\Invoke-HarnessEscort.ps1 -Explain <번호 또는 id>"
+    Write-Output "    .\scripts\Invoke-HarnessEscort.ps1 -Tips"
+    exit 3
+}
+
 function Read-EscortLine {
     param([string]$Prompt)
-    if ($script:EmptyReads -ge 3) {
-        Write-Output ''
-        Write-Output '입력을 받을 수 없습니다. 대화형 콘솔에서 다시 실행하세요.'
-        Write-Output "  목록만 보기 : .\scripts\Invoke-HarnessEscort.ps1 -List"
-        Write-Output "  항목 설명   : .\scripts\Invoke-HarnessEscort.ps1 -Explain <id>"
-        exit 3
-    }
-    $answer = Read-Host $Prompt
+    if ($script:EmptyReads -ge 3) { Exit-NoInput }
+
+    # Read-Host 는 EOF 에서 $null 을 준다. 빈 줄('')과 다르다.
+    # 이것을 문자열로 다루면 .Trim() 에서 터진다 — 실제로 터졌다.
+    # $null 은 "입력이 없다"가 아니라 "입력 통로가 닫혔다"는 뜻이므로 즉시 빠진다.
+    $answer = $null
+    try { $answer = Read-Host $Prompt } catch { Exit-NoInput }
+    if ($null -eq $answer) { Exit-NoInput }
+
     if ([string]::IsNullOrWhiteSpace($answer)) { $script:EmptyReads++ } else { $script:EmptyReads = 0 }
-    return $answer.Trim()
+    return ([string]$answer).Trim()
 }
 
 function Read-YesNo {
     param([string]$Prompt, [string]$Default = 'n')
     while ($true) {
-        $a = (Read-EscortLine "$Prompt").ToLower()
+        $a = ([string](Read-EscortLine $Prompt)).ToLower()
         if (-not $a) { return $Default }
         if ($a -in @('y', 'yes', 'ㅛ', '예', 'ㅇ')) { return 'y' }
         if ($a -in @('n', 'no', '아니오', 'ㄴ')) { return 'n' }
@@ -392,7 +405,12 @@ if ($ProfileId) {
     else { Write-Output "프로필 '$ProfileId' 을(를) 찾지 못했습니다. 질문으로 진행합니다." }
 }
 
-if ($chosenProfiles.Count -eq 0) {
+# 목표 선택과 추천 계산은 언제든 다시 부를 수 있어야 한다.
+# 한 번 지나가면 끝인 화면은 사용자를 껐다 켜게 만든다.
+$script:recommendIds = [System.Collections.Generic.List[string]]::new()
+$script:considerIds = [System.Collections.Generic.List[string]]::new()
+
+function Select-EscortGoal {
     Write-Head $profiles.question
     $pn = 1
     foreach ($p in $profiles.profiles) {
@@ -402,13 +420,26 @@ if ($chosenProfiles.Count -eq 0) {
     }
     Write-Output ''
     Write-Output "  $($profiles.hint)"
+    if ($chosenProfiles.Count -gt 0) {
+        Write-Output ("  지금 고른 것: " + ((@($chosenProfiles | ForEach-Object { $_.label })) -join ', ') + "  (엔터만 치면 그대로 둡니다)")
+    }
     Write-Output ''
     $answer = Read-EscortLine '번호'
+
+    # 엔터만 쳤고 이미 고른 게 있으면 바꾸지 않는다.
+    if ((-not $answer) -and ($chosenProfiles.Count -gt 0)) {
+        Write-Output '  그대로 두겠습니다.'
+        return
+    }
+
+    $chosenProfiles.Clear()
     foreach ($tok in ($answer -split '[,\s]+')) {
         $n = 0
         if ([int]::TryParse($tok, [ref]$n)) {
             if (($n -ge 1) -and ($n -le $profiles.profiles.Count)) {
-                $chosenProfiles.Add($profiles.profiles[$n - 1])
+                if (-not $chosenProfiles.Contains($profiles.profiles[$n - 1])) {
+                    $chosenProfiles.Add($profiles.profiles[$n - 1])
+                }
             }
         }
     }
@@ -419,51 +450,62 @@ if ($chosenProfiles.Count -eq 0) {
     }
 }
 
-# ---------------------------------------------------------------------------
-# 2단계 : 추천 세트
-# ---------------------------------------------------------------------------
-$recommendIds = [System.Collections.Generic.List[string]]::new()
-foreach ($id in @($profiles.always.recommend)) { if (-not $recommendIds.Contains($id)) { $recommendIds.Add($id) } }
-foreach ($p in $chosenProfiles) {
-    foreach ($id in @($p.recommend)) { if (-not $recommendIds.Contains($id)) { $recommendIds.Add($id) } }
-}
-
-$considerIds = [System.Collections.Generic.List[string]]::new()
-foreach ($p in $chosenProfiles) {
-    foreach ($id in @($p.consider)) {
-        if ((-not $recommendIds.Contains($id)) -and (-not $considerIds.Contains($id))) { $considerIds.Add($id) }
+function Update-EscortRecommendation {
+    $script:recommendIds.Clear()
+    $script:considerIds.Clear()
+    foreach ($id in @($profiles.always.recommend)) {
+        if (-not $script:recommendIds.Contains($id)) { $script:recommendIds.Add($id) }
+    }
+    foreach ($p in $chosenProfiles) {
+        foreach ($id in @($p.recommend)) {
+            if (-not $script:recommendIds.Contains($id)) { $script:recommendIds.Add($id) }
+        }
+    }
+    foreach ($p in $chosenProfiles) {
+        foreach ($id in @($p.consider)) {
+            if ((-not $script:recommendIds.Contains($id)) -and (-not $script:considerIds.Contains($id))) {
+                $script:considerIds.Add($id)
+            }
+        }
     }
 }
 
-Write-Head '이 선택에 맞는 추천'
-Write-Output '  왜 이걸 권하는지부터 말씀드릴게요.'
-Write-Output ''
-Write-Wrapped $profiles.always.why '    '
-foreach ($p in $chosenProfiles) {
+function Show-Recommendation {
+    Write-Head '이 선택에 맞는 추천'
+    Write-Output ("  고른 것: " + ((@($chosenProfiles | ForEach-Object { $_.label })) -join ', '))
+    Write-Output '  왜 이걸 권하는지부터 말씀드릴게요.'
     Write-Output ''
-    Write-Output "  [$($p.label)]"
-    Write-Wrapped $p.why '    '
-}
+    Write-Wrapped $profiles.always.why '    '
+    foreach ($p in $chosenProfiles) {
+        Write-Output ''
+        Write-Output "  [$($p.label)]"
+        Write-Wrapped $p.why '    '
+    }
 
-Write-Output ''
-Write-Output '  ● 먼저 권하는 것'
-if ($recommendIds.Count -eq 0) { Write-Output '    (없음 — 지금은 아무것도 안 깔아도 됩니다)' }
-foreach ($id in $recommendIds) {
-    $it = Find-Item $id
-    if ($it) { Show-ItemLine $it } else { Write-Output "    $id  (카탈로그에서 찾지 못함)" }
-}
-
-if ($considerIds.Count -gt 0) {
     Write-Output ''
-    Write-Output '  ○ 필요해지면 볼 것'
-    foreach ($id in $considerIds) {
+    Write-Output '  ● 먼저 권하는 것'
+    if ($script:recommendIds.Count -eq 0) { Write-Output '    (없음 — 지금은 아무것도 안 깔아도 됩니다)' }
+    foreach ($id in $script:recommendIds) {
         $it = Find-Item $id
-        if ($it) { Show-ItemLine $it }
+        if ($it) { Show-ItemLine $it } else { Write-Output "    $id  (카탈로그에서 찾지 못함)" }
     }
+
+    if ($script:considerIds.Count -gt 0) {
+        Write-Output ''
+        Write-Output '  ○ 필요해지면 볼 것'
+        foreach ($id in $script:considerIds) {
+            $it = Find-Item $id
+            if ($it) { Show-ItemLine $it }
+        }
+    }
+
+    Write-Output ''
+    Write-Output '  번호를 입력하면 그 도구를 쉬운 말로 자세히 설명하고, 깔지 말지 여쭤봅니다.'
 }
 
-Write-Output ''
-Write-Output '  번호를 입력하면 그 도구를 쉬운 말로 자세히 설명하고, 깔지 말지 여쭤봅니다.'
+if ($chosenProfiles.Count -eq 0) { Select-EscortGoal }
+Update-EscortRecommendation
+Show-Recommendation
 
 # ---------------------------------------------------------------------------
 # 3·4단계 : 열람과 결정
@@ -570,14 +612,22 @@ function Show-Filtered {
     Write-Output "  $($list.Count)개. 번호를 입력하면 자세히 봅니다."
 }
 
-Write-Head '무엇을 보시겠어요?'
-Write-Output '  번호       그 도구를 자세히 보고, 깔지 말지 결정'
-Write-Output '  a          전체 카탈로그'
-Write-Output '  d <분야>   분야별로 보기 (예: d web)'
-Write-Output '  s <검색어> 이름·기능으로 찾기 (예: s browser)'
-Write-Output '  ?          카탈로그 보는 법'
-Write-Output '  p          지금까지 담은 것 보기'
-Write-Output '  q          마치기'
+function Show-Menu {
+    Write-Head '무엇을 보시겠어요?'
+    Write-Output '  번호       그 도구를 자세히 보고, 깔지 말지 결정'
+    Write-Output '  a          전체 카탈로그'
+    Write-Output '  d <분야>   분야별로 보기 (예: d web)'
+    Write-Output '  s <검색어> 이름·기능으로 찾기 (예: s browser)'
+    Write-Output ''
+    Write-Output '  g          처음 질문으로 — 뭘 하려는지 다시 고르기'
+    Write-Output '  r          추천 다시 보기'
+    Write-Output '  p          지금까지 담은 것 보기'
+    Write-Output '  ?          카탈로그 보는 법'
+    Write-Output '  h          이 메뉴 다시 보기'
+    Write-Output '  q          마치기'
+}
+
+Show-Menu
 
 while ($true) {
     Write-Output ''
@@ -589,6 +639,13 @@ while ($true) {
 
     if ($verb -eq 'q') { break }
     elseif ($verb -eq '?') { Show-Tips }
+    elseif ($verb -eq 'h') { Show-Menu }
+    elseif ($verb -eq 'g') {
+        Select-EscortGoal
+        Update-EscortRecommendation
+        Show-Recommendation
+    }
+    elseif ($verb -eq 'r') { Show-Recommendation }
     elseif ($verb -eq 'a') { Show-Filtered 'all' '' }
     elseif ($verb -eq 'd') {
         if (-not $rest) {
