@@ -40,31 +40,32 @@ Codex 등록(세 클라이언트 `IN_SYNC`) / Drive 스냅샷 `v3.0.0` 발행.
 |---|---|
 | 하네스 로컬 | `C:\AI-Harness` |
 | 원격 | `https://github.com/hacker943410-debug/ai-harness` (**Public**, MIT — 2026-08-24 전환. D1 뒤집힘) |
-| 현재 HEAD | `6d56aba` + 이 커밋 (working tree clean, origin/main 동기) |
+| 현재 HEAD | `git -C C:\AI-Harness log --oneline -1` 로 확인 (여기 적지 않는다 — 아래 참고) |
 | 기준점 태그 | `v2.2.0` = `9e142bf` (롤백 지점) |
 | 도구 루트 (Layer B) | `%LOCALAPPDATA%\AI-Tools` = `C:\Users\<사용자>\AppData\Local\AI-Tools` |
 | 레거시 도구 루트 | `C:\AI-Tools` (**남겨 두기로 결정됨**, ACL 제한 완료, 비밀값 없음) |
 | OAuth 프로필 | `%USERPROFILE%\.config\google-workspace-mcp\profiles\default` (도구 루트 **밖**) |
 
-### 커밋 이력
+### 커밋 이력 — 여기 적지 않는다
 
+이 자리에 커밋 목록을 손으로 관리했었다. **2026-08-24 삭제했다.**
+
+이유는 이 저장소가 계속 말해 온 것과 같다. **같은 사실을 두 군데 적으면 갈라진다.**
+실제로 갈라졌다. 표는 `6d56aba` 에서 멈춰 있었고 그 뒤로 커밋이 5개 더 붙어 있었다.
+그리고 아무도 몰랐다 — 아무도 그 표를 근거로 쓰지 않았기 때문이다.
+쓰이지 않는데 갈라지기만 하는 기록은 없느니만 못하다.
+
+git 이 정본이다.
+
+```powershell
+git -C C:\AI-Harness log --oneline -20        # 최근 이력
+git -C C:\AI-Harness log --oneline v2.2.0..   # 기준점 이후 전부
+git -C C:\AI-Harness show <sha>               # 그 커밋이 왜 그랬는지 (메시지에 근거가 있다)
 ```
-6d56aba feat: 미해결 좌표 5건 확정 — 레지스트리 밖 출처를 발행자 대조로 확인
-e739374 feat: schemas/ — 기계가 읽는 계약을 추가하고 매 검사에서 실제로 돌린다
-b88f96c docs: HANDOFF — 레거시 경로 은퇴·래퍼 삭제 완료, 실측 사실 4건 추가
-6bd881c refactor: v2.2 레거시 경로를 은퇴시킨다 — 새 경로를 만들고 옛 경로를 남기면 남은 쪽이 이긴다
-1fc2961 docs: HANDOFF 를 세션 종료 상태로 정리
-d5ce48d docs: HANDOFF — 레지스트리 해석 완료(조회 대상 0건)와 실측 사실 4건 추가
-30f64a6 feat: 원격 서버를 좌표 확정으로 인정한다 — 미해석 조회 대상 0건
-7cb95bd fix: 레지스트리 해석 — 검색 결과의 isLatest 를 믿지 않는다
-b33cbf4 feat: 등록됨과 켜짐을 구분한다 — AGY 권장 완화 적용 후 판정이 실제로 바뀌게
-80b1fb8 docs: HANDOFF — 제약 고지 설계 규칙과 스냅샷 스크립트 반영
-4d9238c feat: 제약 고지 — 기술적으로 불가능한 것을 설치 시점에 선택지와 함께 제시
-8c13719 docs: HANDOFF 자기모순 2건 수정 (결정 건수, clients.json 상태)
-909c12f docs: HANDOFF — AGY 도구 통제 부재 확정, Drive 스냅샷 강등 반영
-48df5dd M8: AGY 도구 통제 조사 완료(부재 확인), Drive 를 불변 스냅샷으로 강등
-c299c13 docs: HANDOFF — 드리프트 해소 완료, 등록 경로 실측 사실 5건 추가
-```
+
+**커밋 메시지에 "왜"를 적는다.** 그러면 이 문서가 이력을 중복할 이유가 없어진다.
+이 문서가 담아야 하는 것은 *무엇이 일어났는가*(git 이 안다)가 아니라
+**무엇이 결정됐고 무엇을 다시 제안하지 말아야 하는가**다.
 
 ---
 
