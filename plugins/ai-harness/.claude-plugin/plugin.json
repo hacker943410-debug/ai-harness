@@ -5,6 +5,6 @@
   "author": { "name": "hacker943410-debug" },
   "homepage": "https://github.com/hacker943410-debug/ai-harness",
   "repository": "https://github.com/hacker943410-debug/ai-harness",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "keywords": ["harness", "policy", "jit", "mcp", "runtime", "korean"]
 }

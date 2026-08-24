@@ -143,7 +143,7 @@ v2.2 는 Google Drive 를 MASTER 로 썼다. **v3 에서 강등됐다.**
 
 그래서:
 
-- **정본** — `https://github.com/<owner>/ai-harness` (Private). 이력·되돌리기·검사가 붙는다
+- **정본** — `https://github.com/hacker943410-debug/ai-harness` (**Public**, MIT). 이력·되돌리기·검사가 붙는다
 - **런타임** — 이 저장소를 clone 한 로컬 경로. 예: `C:\AI-Harness`
 - **스냅샷** — `Publish-HarnessSnapshot.ps1` 이 Drive 에 발행하는 **불변** 폴더.
   예: `/AI-Harness-snapshots/v3.0.0`. 갱신하지 않는다. 다음 스냅샷은 **새 라벨**로 만든다.
@@ -477,7 +477,7 @@ migration state
 Layer A 만 받아오면 된다. Layer B 는 그 PC 에서 새로 만든다.
 
 ```powershell
-git clone https://github.com/<owner>/ai-harness.git C:\AI-Harness
+git clone https://github.com/hacker943410-debug/ai-harness.git C:\AI-Harness
 git -C C:\AI-Harness config core.hooksPath .githooks    # 비밀값 커밋 차단 활성화
 powershell -NoProfile -ExecutionPolicy Bypass -File 'C:\AI-Harness\scripts\Test-HarnessRepo.ps1'
 ```
@@ -713,9 +713,26 @@ powershell ... -File '...\Install-Harness.ps1' -Rollback <저널경로>
 Claude Code 사용자는 같은 하네스를 **플러그인 채널**로도 쓸 수 있다.
 
 ```text
-/plugin marketplace add <owner>/ai-harness
+/plugin marketplace add hacker943410-debug/ai-harness
 /plugin install ai-harness@ai-harness
 ```
+
+### 개발용 PC 는 로컬 경로로 붙인다
+
+하네스를 계속 고치는 PC 라면 GitHub 대신 **로컬 clone 경로**를 마켓플레이스로 등록한다.
+
+```text
+/plugin marketplace add C:\AI-Harness
+```
+
+이러면 작업 트리를 고치는 즉시 플러그인에 반영된다. GitHub 로 붙이면 push → pull 을 거쳐야 한다.
+
+| PC | 등록 방법 | 이유 |
+|---|---|---|
+| 하네스를 고치는 PC | `add C:\AI-Harness` (로컬 경로) | 고친 게 바로 반영된다 |
+| 그냥 쓰는 PC | `add hacker943410-debug/ai-harness` | 정본을 따라간다 |
+
+한 PC 에서 둘 다 등록하지 않는다. 같은 이름의 마켓플레이스가 둘이 되면 어느 쪽이 이겼는지 알 수 없다.
 
 그러면 다음이 생긴다.
 
@@ -744,3 +761,29 @@ Skill: harness-capability   Capability 가 부족할 때의 획득 절차
 **§21 의 "문은 하나" 규칙이 깨진다.**
 
 그래서 등록은 계속 하네스 스크립트가 담당하고, 플러그인은 절차를 부르는 역할만 한다.
+
+---
+
+## 24. 라이선스와 공개 범위
+
+**MIT.** 누구든 쓰고, 고치고, 배포하고, 상업적으로 써도 된다. 저작권 표시만 유지하면 된다.
+전문은 저장소 루트의 `LICENSE` 에 있다.
+
+저장소는 **Public** 이다. v3 설계 당시의 결정(D1)은 Private 였으나 2026-08-24 에 뒤집혔다.
+
+공개 전에 확인한 것:
+
+- 전체 커밋 히스토리 diff **103,244줄에서 비밀값 0건**
+  (private key / OAuth 토큰 / API 키 / secret 키+값 패턴)
+- 머신 식별자 **0건** — 등록 지문(`hmac-sha256:…`), `tools-root.id`,
+  Drive 폴더 id, OAuth client id 어느 것도 커밋된 적이 없다
+- `credentials.json` / `tokens.json` / `runtimes.json` / `clients.json` 이 커밋된 적 **없음**
+
+**이것이 3계층 분리가 실제로 지켜졌다는 증거다.** 비밀값과 머신 상태는 Layer B 에만 있었고,
+`.githooks/pre-commit` 이 경로와 값 양쪽으로 막고 있었다.
+
+fork 해서 쓰거나 기여할 때도 규칙은 같다.
+
+- Layer A(이 저장소)에 **설치 경로·토큰·머신 상태를 적지 않는다**
+- 훅을 켠다: `git config core.hooksPath .githooks`
+- `--no-verify` 로 우회하지 않는다

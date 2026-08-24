@@ -714,7 +714,7 @@ runtimes.json 의 command_rel 이 활성 버전을 가리킨다
 ```jsonc
 {
   "schema_version": "2.0",
-  "tools_root": "C:\\Users\\hacke\\AppData\\Local\\AI-Tools",
+  "tools_root": "C:\\Users\\<사용자>\\AppData\\Local\\AI-Tools",
   "tools_root_id": "7f1c…",
   "harness_root_id": "b93a…",
   "harness_version_at_write": "3.0",

@@ -39,10 +39,10 @@ Codex 등록(세 클라이언트 `IN_SYNC`) / Drive 스냅샷 `v3.0.0` 발행.
 | 항목 | 값 |
 |---|---|
 | 하네스 로컬 | `C:\AI-Harness` |
-| 원격 | `https://github.com/hacker943410-debug/ai-harness` (**Private**) |
+| 원격 | `https://github.com/hacker943410-debug/ai-harness` (**Public**, MIT — 2026-08-24 전환. D1 뒤집힘) |
 | 현재 HEAD | `6d56aba` + 이 커밋 (working tree clean, origin/main 동기) |
 | 기준점 태그 | `v2.2.0` = `9e142bf` (롤백 지점) |
-| 도구 루트 (Layer B) | `%LOCALAPPDATA%\AI-Tools` = `C:\Users\hacke\AppData\Local\AI-Tools` |
+| 도구 루트 (Layer B) | `%LOCALAPPDATA%\AI-Tools` = `C:\Users\<사용자>\AppData\Local\AI-Tools` |
 | 레거시 도구 루트 | `C:\AI-Tools` (**남겨 두기로 결정됨**, ACL 제한 완료, 비밀값 없음) |
 | OAuth 프로필 | `%USERPROFILE%\.config\google-workspace-mcp\profiles\default` (도구 루트 **밖**) |
 
