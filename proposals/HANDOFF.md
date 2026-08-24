@@ -17,6 +17,10 @@ claude·agy 등록 드리프트 해소 / AGY 노출 완화(`mcp disable`) /
 **2026-08-23 추가 완료:** v2.2 레거시 경로 은퇴 + 래퍼 삭제 / `schemas/` / 미해결 좌표 5건 확정 /
 Codex 등록(세 클라이언트 `IN_SYNC`) / Drive 스냅샷 `v3.0.0` 발행.
 
+**2026-08-24 완료 — 백로그 마지막 항목.** §6-11 플러그인 채널(`.claude-plugin/` + `plugins/ai-harness/`)과
+정본 정합 2건(`harness_version` 2.2 → **3.0**, `README.md` 를 v3 로 갱신). 상세는 §6-11.
+**남은 것은 §6-9 `POLICY_INDEX.compat.json` 하나뿐이다.**
+
 **미결 항목 0건.** 마지막 2건은 2026-08-23 사용자 결정으로 종결됐다.
 
 - 레거시 `C:\AI-Tools`(224MB) — **지우지 않는다.** 사용 중이다(§5-45).
@@ -301,7 +305,24 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
    진단은 계속 `manual/선택` 단계로 제시하지만 이미 거절된 제안이다
 9. `POLICY_INDEX.compat.json` (기계가 읽는 계약은 YAML 금지 — PS 5.1에 파서 없음)
 10. ~~AGY 도구 통제 메커니즘 검증~~ — **조사 완료. 수단이 없다**(§5-29). 남은 것은 조사가 아니라 결정(§7-7)
-11. (선택) `.claude-plugin/marketplace.json`
+11. ~~(선택) `.claude-plugin/marketplace.json`~~ — **2026-08-24 완료.**
+    `.claude-plugin/marketplace.json` + `plugins/ai-harness/`
+    (`plugin.json`, commands 3개 `/harness-init` `/harness-doctor` `/harness-status`,
+    skills 2개 `harness-runtime` `harness-capability`, `README.md`).
+    같은 커밋에서 **정본 정합 2건**을 함께 처리했다:
+    - `POLICY_INDEX.yaml` `harness_version` **2.2 → 3.0**.
+      Canonical Source 는 여기 하나다. Drive 스냅샷 라벨 `v3.0.0` 과 태그 `v2.2.0` 은 별개 네임스페이스다
+    - `README.md` 가 아직 v2.2(“Google Drive = MASTER”)를 설명하고 있었다.
+      D6 과 정면으로 어긋난다. §0(3계층) 신설, §2 트리 갱신, §3 정본/런타임/스냅샷,
+      §15 git clone 기준, §21 “바꾸는 문은 하나”, §22 플러그인 추가.
+      **README 는 v3 에서 처음으로 Layer B 의 존재를 언급한다.** 그전에는 어디에도 없었다
+
+    **설계 판단 — 플러그인에 `.mcp.json` 을 넣지 않는다.**
+    제안서 §F8(b) 는 `${CLAUDE_PLUGIN_ROOT}` 를 쓰는 `.mcp.json` 을 목록에 넣었지만,
+    공용 런타임의 실체는 Layer B(`%LOCALAPPDATA%\AI-Tools`)에 있고 경로가 PC 마다 다르다.
+    플러그인에서 가리키려면 절대경로가 필요하고, 무엇보다 등록 경로가
+    `Register-HarnessRuntimeClient.ps1` 과 플러그인 둘로 갈라져 **“적용하는 문은 하나”가 깨진다.**
+    등록은 계속 하네스 스크립트가 담당한다. 제안서보다 이 규칙이 우선한다
 
 ---
 

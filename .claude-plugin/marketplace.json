@@ -1,0 +1,23 @@
+{
+  "name": "ai-harness",
+  "owner": {
+    "name": "hacker943410-debug",
+    "url": "https://github.com/hacker943410-debug"
+  },
+  "metadata": {
+    "description": "AI Harness — 26개 전문 정책과 공용 런타임 관리를 파일 기반 Coding Agent 에 연결하는 하네스",
+    "version": "3.0.0"
+  },
+  "plugins": [
+    {
+      "name": "ai-harness",
+      "source": "./plugins/ai-harness",
+      "description": "AI Harness 절차를 Claude Code 에서 바로 부른다. 초기화·진단·런타임·Capability 획득. 정본은 저장소 루트의 Layer A 파일이며 플러그인은 그것을 가리키기만 한다.",
+      "version": "3.0.0",
+      "author": { "name": "hacker943410-debug" },
+      "homepage": "https://github.com/hacker943410-debug/ai-harness",
+      "keywords": ["harness", "policy", "jit", "mcp", "runtime", "korean"],
+      "category": "workflow"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "ai-harness",
+  "description": "AI Harness 절차를 Claude Code 에서 바로 부른다 — 프로젝트 초기화, Read-only 진단, 공용 런타임 수명주기, Capability 획득. 정책 원문은 담지 않고 Layer A 의 정본 파일을 가리킨다.",
+  "version": "3.0.0",
+  "author": { "name": "hacker943410-debug" },
+  "homepage": "https://github.com/hacker943410-debug/ai-harness",
+  "repository": "https://github.com/hacker943410-debug/ai-harness",
+  "license": "UNLICENSED",
+  "keywords": ["harness", "policy", "jit", "mcp", "runtime", "korean"]
+}
