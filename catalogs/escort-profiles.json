@@ -1,0 +1,105 @@
+{
+  "schema_version": "1.0",
+  "kind": "escort-profiles",
+  "updated_at": "2026-08-24",
+  "note": "'이 프로젝트에서 뭘 하려고 하는지'를 물어 추천 세트를 고르는 데이터. 새 추천을 넣을 때 스크립트를 고치지 않는다. recommend/consider 의 id 는 mcp-catalog.json / skill-catalog.json 에 실제로 있어야 하며 Test-HarnessRepo.ps1 이 검사한다.",
+
+  "question": "이 프로젝트에서 주로 뭘 하실 건가요?",
+  "hint": "여러 개면 쉼표로 (예: 1,4). 잘 모르겠으면 9번을 고르세요.",
+
+  "always": {
+    "recommend": ["context7", "markitdown"],
+    "why": "분야를 안 가리고 거의 항상 쓸모 있고, 둘 다 위험도가 낮아요. context7 은 쓰고 있는 라이브러리의 최신 설명서를 가져다주고, markitdown 은 PDF·오피스 문서를 읽을 수 있는 글로 바꿔줍니다."
+  },
+
+  "profiles": [
+    {
+      "id": "web-app",
+      "label": "웹 서비스를 만든다",
+      "plain": "브라우저에서 보는 화면과 그 뒤 서버를 같이 만드는 경우",
+      "domains": ["web", "backend", "database"],
+      "recommend": ["playwright", "chrome-devtools"],
+      "consider": ["supabase", "vercel", "figma", "storybook"],
+      "why": "화면이 실제로 되는지 사람이 매번 눌러 확인하면 금방 지칩니다. playwright 가 대신 눌러보고, chrome-devtools 는 왜 안 되는지 브라우저 안을 들여다봅니다."
+    },
+    {
+      "id": "mobile-app",
+      "label": "휴대폰 앱을 만든다",
+      "plain": "안드로이드 또는 아이폰 앱",
+      "domains": ["mobile", "ios", "android", "testing"],
+      "recommend": ["mobile-next"],
+      "consider": ["xcodebuildmcp", "android-mcp", "device-mcp", "sentry", "browserstack"],
+      "why": "모바일은 '내 폰에서는 되는데'가 가장 많이 나오는 분야예요. 시뮬레이터·실기기에서 자동으로 돌려보는 도구가 그 격차를 줄여줍니다."
+    },
+    {
+      "id": "backend-api",
+      "label": "서버·API 를 만든다",
+      "plain": "화면 없이 데이터를 처리하고 주고받는 쪽",
+      "domains": ["backend", "api", "database"],
+      "recommend": ["dbhub"],
+      "consider": ["postman", "openapi", "graphql", "redis", "mongodb"],
+      "why": "API 는 '약속'이라서 바뀌면 남이 깨집니다. 스키마와 계약을 들여다보는 도구를 먼저 붙이는 게 이득이에요."
+    },
+    {
+      "id": "data",
+      "label": "데이터베이스를 주로 다룬다",
+      "plain": "쿼리를 짜고 구조를 바꾸는 일이 많은 경우",
+      "domains": ["database", "backend"],
+      "recommend": ["dbhub"],
+      "consider": ["postgres", "mysql", "sqlite", "mongodb", "prisma", "neon"],
+      "why": "DB 도구는 대부분 위험도가 높습니다. 읽기 전용 계정으로 먼저 붙이고, 쓰기 권한은 정말 필요할 때만 주세요."
+    },
+    {
+      "id": "infra",
+      "label": "서버에 올리고 운영한다",
+      "plain": "배포, 인프라, 장애 대응",
+      "domains": ["devops", "cloud", "observability"],
+      "recommend": ["github"],
+      "consider": ["docker", "kubernetes", "terraform", "grafana", "sentry", "datadog"],
+      "why": "이 분야는 '매우 높음' 위험이 많아요. 클라우드 계정을 통째로 건드릴 수 있는 것들이라, 설치보다 권한 범위를 정하는 게 진짜 결정입니다."
+    },
+    {
+      "id": "quality",
+      "label": "테스트와 품질을 챙긴다",
+      "plain": "자동 테스트, 코드 검사, 보안 점검",
+      "domains": ["testing", "security"],
+      "recommend": ["playwright"],
+      "consider": ["semgrep", "sonarqube", "snyk", "puppeteer"],
+      "why": "테스트 도구는 대개 읽기 위주라 위험이 낮은 편입니다. 먼저 붙여도 손해가 적어요."
+    },
+    {
+      "id": "office",
+      "label": "문서·메일·일정 같은 업무를 자동화한다",
+      "plain": "코드보다 문서와 업무 처리가 중심",
+      "domains": ["documentation", "collaboration", "planning", "common"],
+      "recommend": ["google-workspace-local"],
+      "consider": ["notion", "slack", "linear", "confluence"],
+      "why": "google-workspace-local 은 이 PC 에 하나만 깔면 모든 프로젝트가 같이 쓰는 공용 런타임이에요. 로그인도 한 번만 하면 됩니다. 대신 메일과 드라이브를 실제로 건드릴 수 있으니 권한을 좁게 잡으세요."
+    },
+    {
+      "id": "research",
+      "label": "자료를 찾고 조사한다",
+      "plain": "웹에서 읽고 모으고 정리하는 일",
+      "domains": ["research", "documentation"],
+      "recommend": ["tavily", "markitdown"],
+      "consider": ["firecrawl", "apify"],
+      "why": "검색·수집 도구는 밖으로 질문을 내보냅니다. 회사 내부 내용을 그대로 검색어로 넣지 않도록 주의하세요."
+    },
+    {
+      "id": "unsure",
+      "label": "아직 잘 모르겠다 / 일단 둘러보고 싶다",
+      "plain": "지금 정하지 않아도 괜찮아요",
+      "domains": ["common"],
+      "recommend": [],
+      "consider": ["context7", "markitdown", "git"],
+      "why": "지금 아무것도 안 깔아도 됩니다. 필요해진 순간에 이 에스코트를 다시 부르면 돼요. 도구는 '미리' 까는 것보다 '막혔을 때' 까는 게 낫습니다."
+    }
+  ],
+
+  "closing_tips": [
+    "설치 승인 / 로그인 연결 / 실서비스 변경 승인은 서로 다른 결정입니다. 하나를 허락했다고 나머지가 따라오지 않아요.",
+    "'이름만 아는 것'(discovery_only)은 자동 설치하지 않습니다. 만든 사람이 다른 가짜가 있을 수 있어요.",
+    "설치가 끝났다고 되는 게 아닙니다. 실제로 한 번 호출해봐야 verified 예요.",
+    "새로 등록한 도구는 AI CLI 를 새로 띄워야 보입니다. 이미 떠 있는 창에는 안 나타나요."
+  ]
+}

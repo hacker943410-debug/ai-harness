@@ -71,7 +71,9 @@ ai-harness/                          ← Layer A. 이 저장소가 전부다
 │
 ├─ catalogs/                         필요할 때 검색하는 Metadata
 │  ├─ mcp-catalog.json
-│  └─ skill-catalog.json
+│  ├─ skill-catalog.json
+│  ├─ escort-glossary.json           설치 에스코트가 쓰는 '쉬운 말' 사전
+│  └─ escort-profiles.json           "뭘 하려고 하는지" → 추천 세트
 │
 ├─ runtimes/                         공용 런타임 "레시피" — 무엇을 어떤 버전으로
 │  ├─ google-workspace.runtime.json     설치 위치는 담지 않는다 (그건 Layer B)
@@ -86,10 +88,11 @@ ai-harness/                          ← Layer A. 이 저장소가 전부다
 │
 ├─ scripts/                          진단·설치·등록·인증·검증
 │  └─ 적용하는 스크립트는 Install-Harness.ps1 하나뿐이다 (§21)
-│
+│     Invoke-HarnessEscort.ps1 은 설치 에스코트 (§22)
 │
 ├─ workflows/                        절차서 — 필요할 때만 읽는다
 │  ├─ HARNESS_INSTALL.md             PC 환경별 최초 설치
+│  ├─ ESCORT.md                      설치 에스코트 — 도구를 설명받고 직접 고르기
 │  ├─ SHARED_RUNTIME.md              런타임 수명주기 install→auth→verify→sync→restart
 │  ├─ CAPABILITY_ACQUISITION.md      Capability 가 부족할 때의 획득 절차
 │  └─ GOOGLE_WORKSPACE_*.md          Google 연결·권한 절차
@@ -99,7 +102,7 @@ ai-harness/                          ← Layer A. 이 저장소가 전부다
 │  └─ HARNESS_V3_PROPOSAL.md
 │
 ├─ .claude-plugin/marketplace.json   (선택) Claude Code 플러그인 마켓플레이스 진입점
-├─ plugins/ai-harness/               (선택) Claude Code 전용 편의 계층 — §22
+├─ plugins/ai-harness/               (선택) Claude Code 전용 편의 계층 — §23
 └─ .githooks/pre-commit              비밀값·머신 상태 커밋 차단
 ```
 
@@ -113,6 +116,8 @@ ai-harness/                          ← Layer A. 이 저장소가 전부다
 - `HARNESS_DOCTOR.md` → 요청 시 진단용, 기본 Read-only
 - `PATCH_NOTES.md` → 버전별 변경 기록
 - `catalogs/*` → 필요할 때 검색하는 MCP/Skill Metadata
+- `catalogs/escort-*.json` → 설치 에스코트의 설명·추천 데이터 (스크립트가 아니라 여기를 고친다)
+- `workflows/ESCORT.md` → 설치 에스코트 절차
 - `workflows/CAPABILITY_ACQUISITION.md` → Capability가 부족할 때만 읽는 획득 절차
 - `runtimes/*.runtime.json` → 공용 런타임 선언 (무엇을 어떤 버전으로. 설치 위치는 담지 않는다)
 - `settings/clients/*.client.json` → AI 클라이언트별 등록 방식과 제약 선언
@@ -168,7 +173,7 @@ C:\AI-Harness\PROJECT_INIT.md를 읽고
 현재 프로젝트에 AI Harness를 초기화해줘.
 ```
 
-Claude Code 를 쓰고 플러그인을 설치했다면 이 한 줄 대신 `/harness-init` 만 쳐도 된다 (§22).
+Claude Code 를 쓰고 플러그인을 설치했다면 이 한 줄 대신 `/harness-init` 만 쳐도 된다 (§23).
 어느 쪽이든 **읽히는 파일은 같은 `PROJECT_INIT.md`** 다.
 
 ### macOS / Linux 예시
@@ -661,7 +666,49 @@ powershell ... -File '...\Install-Harness.ps1' -Rollback <저널경로>
 
 ---
 
-## 22. (선택) Claude Code 플러그인
+## 22. 설치 에스코트 — 도구를 알고 고르게 한다
+
+카탈로그에 109개가 있어도 그게 뭔지 모르면 0개다.
+에스코트는 **도구를 하나씩 설명하고, 깔지 말지 매번 묻고, 설치 방식까지 고르게** 한다.
+
+```powershell
+.\scripts\Invoke-HarnessEscort.ps1 -SavePlan .\escort.json
+```
+
+```
+0  인사 — 아무것도 안 깔고 나가도 된다고 먼저 말한다
+1  "이 프로젝트에서 주로 뭘 하실 건가요?"  → 추천 세트와 그 이유
+2  전체 카탈로그를 번호로 훑어보고, 번호를 치면 쉬운 말로 자세히
+3  항목마다  설치할까요? [y/n/나중에]
+             y → 자동? 직접?
+                 자동 = 계획에 담고 Install-Harness.ps1 이 확인받고 실행
+                 직접 = 명령을 순서대로 상세 안내하고 기록만 남김
+4  계획 파일 저장 → Install-Harness.ps1 로 넘김
+```
+
+읽기 전용 모드도 있다.
+
+```powershell
+.\scripts\Invoke-HarnessEscort.ps1 -List             # 전체 목록
+.\scripts\Invoke-HarnessEscort.ps1 -Explain 62       # 한 항목만 쉬운 말로
+.\scripts\Invoke-HarnessEscort.ps1 -Tips             # 카탈로그 보는 법
+```
+
+**AI 없이 돌아간다.** 하네스를 처음 까는 사람에게는 아직 AI 가 연결돼 있지 않을 수 있다.
+
+**에스코트도 적용하지 않는다.** 계획 파일을 낼 뿐이다 (§21).
+계획을 만드는 스크립트는 이제 셋이지만 적용하는 스크립트는 여전히 하나다.
+
+**자동 설치를 막는 경우가 있다.** `discovery_only` 처럼 어디서 받는지 확정되지 않은 항목,
+정확한 버전을 못 정한 npm/pypi, 준비물이 필요한 컨테이너·SDK 방식이다.
+막을 때는 **왜 막는지 말하고** 직접 설치 가이드로 넘어간다.
+
+설명 문구는 스크립트가 아니라 `catalogs/escort-glossary.json` 과 `escort-profiles.json` 에 있다.
+도구가 늘어도 스크립트를 고치지 않는다. 자세한 것은 `workflows/ESCORT.md`.
+
+---
+
+## 23. (선택) Claude Code 플러그인
 
 Claude Code 사용자는 같은 하네스를 **플러그인 채널**로도 쓸 수 있다.
 

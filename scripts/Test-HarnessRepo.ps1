@@ -177,6 +177,63 @@ if (-not $Quick) {
         }
     }
 
+    # -----------------------------------------------------------------------
+    # 5a. 에스코트 데이터 — 추천이 실재하는 항목을 가리키는지
+    # -----------------------------------------------------------------------
+    # 에스코트는 사용자에게 "이걸 권합니다" 라고 말한다.
+    # 그 id 가 카탈로그에 없으면 사용자는 존재하지 않는 도구를 권유받는다.
+    # 문서로 부탁할 일이 아니라 검사로 막을 일이다.
+    $escortProfilePath = Join-HarnessPath $root 'catalogs' 'escort-profiles.json'
+    $escortGlossaryPath = Join-HarnessPath $root 'catalogs' 'escort-glossary.json'
+    if (Test-Path -LiteralPath $escortProfilePath) {
+        try {
+            $ep = Read-HarnessJson -Path $escortProfilePath
+            $known = @{}
+            foreach ($n in @('mcp-catalog.json', 'skill-catalog.json')) {
+                $cp = Join-HarnessPath $root 'catalogs' $n
+                if (Test-Path -LiteralPath $cp) {
+                    foreach ($e in (Read-HarnessJson -Path $cp).entries) { $known[$e.id] = $true }
+                }
+            }
+            $refs = @()
+            $refs += @($ep.always.recommend)
+            foreach ($pr in $ep.profiles) { $refs += @($pr.recommend); $refs += @($pr.consider) }
+            $missing = @($refs | Where-Object { $_ } | Sort-Object -Unique | Where-Object { -not $known.ContainsKey($_) })
+            foreach ($miss in $missing) {
+                Add-Issue 'FAIL' 'ESCORT_UNKNOWN_ID' "escort-profiles.json 이 카탈로그에 없는 id 를 추천합니다: $miss"
+            }
+
+            # 프로필 id 가 겹치면 -ProfileId 로 지정했을 때 어느 쪽이 걸릴지 알 수 없다.
+            foreach ($d in @($ep.profiles | Group-Object id | Where-Object Count -gt 1)) {
+                Add-Issue 'FAIL' 'ESCORT_DUPLICATE_PROFILE' "escort-profiles.json 에 중복 프로필 id: $($d.Name)"
+            }
+
+            if ($missing.Count -eq 0) {
+                Add-Issue 'INFO' 'ESCORT_OK' "에스코트 프로필 $(@($ep.profiles).Count)개, 추천 id $(@($refs | Where-Object { $_ } | Sort-Object -Unique).Count)건이 모두 카탈로그에서 해석됩니다."
+            }
+        } catch {
+            Add-Issue 'FAIL' 'ESCORT_PARSE' "escort-profiles.json 파싱 실패: $($_.Exception.Message)"
+        }
+    }
+    if (Test-Path -LiteralPath $escortGlossaryPath) {
+        try {
+            $eg = Read-HarnessJson -Path $escortGlossaryPath
+            # 카탈로그가 쓰는 install.kind 중 사전에 없는 것이 있으면
+            # 그 항목은 "설치 방식을 모른다"고 안내된다. 조용히 넘어가면 안 된다.
+            $mcpPath = Join-HarnessPath $root 'catalogs' 'mcp-catalog.json'
+            if (Test-Path -LiteralPath $mcpPath) {
+                $kinds = @((Read-HarnessJson -Path $mcpPath).entries.install.kind | Sort-Object -Unique)
+                foreach ($k in $kinds) {
+                    if (-not $eg.install_kinds.PSObject.Properties[$k]) {
+                        Add-Issue 'WARN' 'ESCORT_UNKNOWN_INSTALL_KIND' "escort-glossary.json 에 설치 방식 '$k' 의 설명이 없습니다. 그 항목은 안내 없이 넘어갑니다."
+                    }
+                }
+            }
+        } catch {
+            Add-Issue 'FAIL' 'ESCORT_PARSE' "escort-glossary.json 파싱 실패: $($_.Exception.Message)"
+        }
+    }
+
     # 정확한 버전 고정만 허용한다. 자동으로 최신을 따라가지 않는다.
     foreach ($p in @(Get-ChildItem (Join-HarnessPath $root 'catalogs') -Filter '*.json' -File -ErrorAction SilentlyContinue) +
                    @(Get-ChildItem (Join-HarnessPath $root 'settings') -Recurse -Filter '*.json' -File -ErrorAction SilentlyContinue) +

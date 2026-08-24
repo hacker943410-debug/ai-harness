@@ -303,6 +303,33 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
    Layer B·계획 파일은 저장소 밖이라 손으로 돌린다 — 방법은 `schemas/README.md`
 8. ~~레거시 `C:\AI-Tools` 삭제~~ — **2026-08-23 결정: 지우지 않는다.** 사용 중이다.
    진단은 계속 `manual/선택` 단계로 제시하지만 이미 거절된 제안이다
+8b. ~~설치 에스코트~~ — **2026-08-24 완료. (신규 요구)**
+    `scripts/Invoke-HarnessEscort.ps1` + `catalogs/escort-glossary.json` +
+    `catalogs/escort-profiles.json` + `workflows/ESCORT.md` + `/harness-escort`.
+
+    **설계 결정 3건:**
+    - **대화 주체는 스크립트다.** 사용자가 "AI 가 없을 수도 있으니"라고 못박았다.
+      하네스를 처음 까는 시점에는 AI 가 아직 연결돼 있지 않을 수 있다. 그게 맞다
+    - **에스코트도 적용하지 않는다.** 계획 파일만 낸다.
+      계획 생산자는 이제 셋(`Get-HarnessEnvironment` / `Sync-HarnessClients` / `Invoke-HarnessEscort`)이고
+      적용자는 여전히 `Install-Harness.ps1` 하나다
+    - **설명은 데이터다.** 문구를 스크립트에 박으면 항목 추가마다 코드를 고쳐야 한다.
+      109개 항목의 capability 는 롱테일이라 전수 사전이 불가능해서,
+      `capability_terms`(정확 일치) → `capability_patterns`(정규식) → 명시적 fallback 3단으로 갔다.
+      모르는 항목은 조용히 넘어가지 않고 "설명이 없다"고 밝힌 뒤 공식 문서를 가리킨다
+
+    **검사로 강제:** `ESCORT_UNKNOWN_ID`(FAIL) / `ESCORT_DUPLICATE_PROFILE`(FAIL) /
+    `ESCORT_UNKNOWN_INSTALL_KIND`(WARN). 존재하지 않는 도구를 추천하면 검사가 막는다.
+    음성 테스트로 실제로 FAIL 이 나는 것까지 확인했다.
+
+    **실측 검증:** 에스코트 → 계획 파일 → `Install-Harness.ps1 -DryRun` 이 실제 명령을 표시 →
+    `change-plan.schema.json` 통과. 전 구간이 붙는다.
+
+    **한 번 틀렸다가 고친 것:** 처음에 에스코트 단계를 `optional: true` 로 냈더니
+    적용자가 전부 제외했다("적용할 단계가 없습니다"). 사용자가 **명시적으로 y 를 누른 것**을
+    "선택 사항"으로 모델링한 게 틀렸다. `optional: false` 로 바꿨다.
+    `enabled` 편집으로 빼는 길은 그대로 남아 있다.
+
 9. `POLICY_INDEX.compat.json` (기계가 읽는 계약은 YAML 금지 — PS 5.1에 파서 없음)
 10. ~~AGY 도구 통제 메커니즘 검증~~ — **조사 완료. 수단이 없다**(§5-29). 남은 것은 조사가 아니라 결정(§7-7)
 11. ~~(선택) `.claude-plugin/marketplace.json`~~ — **2026-08-24 완료.**
