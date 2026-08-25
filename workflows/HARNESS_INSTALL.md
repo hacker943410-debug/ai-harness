@@ -79,13 +79,25 @@ irm https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/install
 `install.ps1` 이 사전 조건 확인 → 경로 검증(§2.1 규칙) → 클론 → 비밀값 가드 → 저장소 검사까지 한다.
 **받기만 한다.** 도구 루트를 만들거나 MCP 를 설치·등록·인증하지 않는다. 그건 STEP 2 다.
 
-위치를 바꾸려면 (`irm | iex` 는 인자를 못 넘긴다):
+위치를 바꾸려면 환경변수를 먼저 준다. `irm | iex` 는 인자를 못 넘긴다.
 
 ```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/install.ps1))) -Path 'C:\dev\ai-harness'
+$env:AI_HARNESS_PATH = 'C:\dev\ai-harness'
+irm https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/install.ps1 | iex
 ```
 
-기본 위치는 `%LOCALAPPDATA%\AI-Harness` 다.
+| 환경변수 | 뜻 |
+|---|---|
+| `AI_HARNESS_PATH` | 설치 위치 (기본 `%LOCALAPPDATA%\AI-Harness`) |
+| `AI_HARNESS_REF` | 받을 태그/브랜치 (기본: 원격의 최신 태그) |
+| `AI_HARNESS_SKIP_CHECKS` | `1` 이면 사전 조건 미충족도 진행 |
+
+파일로 내려받아 실행할 때는 `-Path` / `-Ref` / `-SkipChecks` 도 받는다.
+
+> `install.ps1` 에 `param()` 블록이 없는 것은 실수가 아니다.
+> `.ps1` 은 UTF-8 BOM 이 필요한데(PS 5.1 은 BOM 이 없으면 ANSI 로 디코딩한다),
+> 그 BOM 이 `irm` 을 통과해 문자열 선두에 남으면 `param` 이 첫 statement 가 아니게 되어
+> `iex` 가 파싱에 실패한다. **BOM 은 `param` 블록만 깨뜨린다.** 그래서 환경변수와 `$args` 로 받는다.
 
 > 실행 전에 내용을 보고 싶으면 위 URL 을 브라우저로 열면 된다. 그게 이 방식을 쓰는 이유다.
 > 받은 것을 실행하기 전에 읽을 수 있어야 한다.

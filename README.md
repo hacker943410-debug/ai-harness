@@ -24,6 +24,13 @@ Windows PowerShell 에 붙여넣으면 된다. **업데이트도 같은 한 줄�
 | 필요한 것 | Windows 10/11 · PowerShell 5.1+ · git · Node 22+ |
 | 기본 위치 | `%LOCALAPPDATA%\AI-Harness` (`-Path` 로 바꿀 수 있다) |
 
+위치를 바꾸려면 환경변수를 먼저 준다 (`irm | iex` 는 인자를 못 넘긴다).
+
+```powershell
+$env:AI_HARNESS_PATH = 'C:\dev\ai-harness'
+irm https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/install.ps1 | iex
+```
+
 > 실행 전에 내용을 보고 싶으면 위 URL 을 브라우저로 열면 된다.
 > **받은 것을 실행하기 전에 읽을 수 있어야 한다** — 이 방식을 쓰는 이유다.
 > 이미 고쳐 둔 클론이 있으면 건드리지 않고 멈춘다.

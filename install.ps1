@@ -6,9 +6,12 @@
 
         irm https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/install.ps1 | iex
 
-    옵션을 주려면 (irm | iex 는 인자를 못 넘긴다):
+    옵션을 주려면 (irm | iex 는 인자를 못 넘긴다) 환경변수를 쓴다:
 
-        & ([scriptblock]::Create((irm https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/install.ps1))) -Path 'C:\dev\ai-harness'
+        $env:AI_HARNESS_PATH = 'C:\dev\ai-harness'
+        irm https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/install.ps1 | iex
+
+    파일로 내려받아 실행할 때는 -Path / -Ref / -SkipChecks 도 받는다.
 
     이 스크립트가 하는 일
         1. 사전 조건 확인 (PowerShell 5.1+ / git / Node 22+ / npm)
@@ -26,15 +29,16 @@
     사용자가 고쳐 둔 저장소는 건드리지 않는다.
     커밋 안 한 변경이 있거나 origin 보다 앞서 있으면 보고만 하고 멈춘다.
 
-    주의: 이 파일은 iex 로 실행될 수 있다. 그때는 호출자 세션에서 도는 것이므로
+    주의 1: 이 파일은 iex 로 실행될 수 있다. 그때는 호출자 세션에서 도는 것이므로
     `exit` 를 쓰면 사용자의 PowerShell 창이 닫힌다. 전부 함수 안에서 return 한다.
+
+    주의 2: **param() 블록을 쓰지 않는다.**
+    이 파일은 .ps1 이라 UTF-8 BOM 이 붙어야 하고(PS 5.1 은 BOM 이 없으면 ANSI 로 디코딩한다),
+    그 BOM 은 `irm` 을 통과해 문자열 선두에 U+FEFF 로 남는다.
+    선두 U+FEFF 가 있으면 `param` 이 더 이상 첫 statement 가 아니게 되어 iex 가 파싱에 실패한다.
+    실제로 실패했다 — BOM 은 param 블록만 깨뜨리고 나머지 구문은 멀쩡히 통과한다.
+    그래서 옵션은 환경변수와 $args 로 받는다.
 #>
-[CmdletBinding()]
-param(
-    [string]$Path,
-    [string]$Ref,
-    [switch]$SkipChecks
-)
 
 $RepoUrl = 'https://github.com/hacker943410-debug/ai-harness.git'
 $RepoWeb = 'https://github.com/hacker943410-debug/ai-harness'
@@ -284,4 +288,21 @@ function Invoke-HarnessBootstrap {
     Write-Output ''
 }
 
-Invoke-HarnessBootstrap -Path $Path -Ref $Ref -SkipChecks:$SkipChecks
+# ---------------------------------------------------------------------------
+# 옵션 해석 — param 블록 없이 (위 주의 2)
+#   irm | iex   : 환경변수
+#   파일 실행    : -Path / -Ref / -SkipChecks
+# ---------------------------------------------------------------------------
+$optPath = $env:AI_HARNESS_PATH
+$optRef = $env:AI_HARNESS_REF
+$optSkip = ($env:AI_HARNESS_SKIP_CHECKS -in @('1', 'true', 'True', 'yes'))
+
+$argv = @($args)
+for ($i = 0; $i -lt $argv.Count; $i++) {
+    $a = [string]$argv[$i]
+    if ($a -match '^-{1,2}Path$') { $i++; if ($i -lt $argv.Count) { $optPath = [string]$argv[$i] } }
+    elseif ($a -match '^-{1,2}Ref$') { $i++; if ($i -lt $argv.Count) { $optRef = [string]$argv[$i] } }
+    elseif ($a -match '^-{1,2}SkipChecks$') { $optSkip = $true }
+}
+
+Invoke-HarnessBootstrap -Path $optPath -Ref $optRef -SkipChecks:$optSkip
