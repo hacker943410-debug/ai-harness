@@ -70,16 +70,49 @@ Layer: A (git 추적)
 
 권장: `%LOCALAPPDATA%\AI-Harness` 또는 `C:\dev\ai-harness` 같은 **짧고 ASCII 인** 경로.
 
-### 2.2 클론
+### 2.2 받기 — 한 줄이면 된다
+
+```powershell
+irm https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/install.ps1 | iex
+```
+
+`install.ps1` 이 사전 조건 확인 → 경로 검증(§2.1 규칙) → 클론 → 비밀값 가드 → 저장소 검사까지 한다.
+**받기만 한다.** 도구 루트를 만들거나 MCP 를 설치·등록·인증하지 않는다. 그건 STEP 2 다.
+
+위치를 바꾸려면 (`irm | iex` 는 인자를 못 넘긴다):
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/install.ps1))) -Path 'C:\dev\ai-harness'
+```
+
+기본 위치는 `%LOCALAPPDATA%\AI-Harness` 다.
+
+> 실행 전에 내용을 보고 싶으면 위 URL 을 브라우저로 열면 된다. 그게 이 방식을 쓰는 이유다.
+> 받은 것을 실행하기 전에 읽을 수 있어야 한다.
+
+**같은 한 줄이 업데이트다.** 이미 있으면 clone 대신 갱신한다.
+
+| 상태 | 동작 |
+|---|---|
+| 없음 | 최신 태그로 clone (detached) |
+| 있음, detached | fetch 후 최신 태그로 이동 |
+| 있음, 브랜치 위 | `--ff-only` 로 fast-forward. **태그로 옮기지 않는다** — 작업용 클론이므로 |
+| 커밋 안 한 변경 있음 | **아무것도 하지 않고 멈춘다** |
+| origin 보다 앞서 있음 | **아무것도 하지 않고 멈춘다** (개발 중인 PC) |
+
+#### 손으로 하려면
 
 ```powershell
 git -c core.autocrlf=false -c core.longpaths=true clone `
-    --branch v2.2.0 `
-    https://github.com/<owner>/ai-harness.git `
+    --branch v3.0.0 `
+    https://github.com/hacker943410-debug/ai-harness.git `
     "$env:LOCALAPPDATA\AI-Harness"
+
+git -C "$env:LOCALAPPDATA\AI-Harness" config core.hooksPath .githooks
 ```
 
 > **태그를 지정한다.** 핀 고정을 강제하는 도구가 정작 자기 자신은 떠다니는 HEAD 로 받으면 앞뒤가 맞지 않는다.
+> 최신 태그는 `git ls-remote --tags` 로 확인한다. `install.ps1` 은 이것을 원격에서 읽으므로 버전이 박혀 있지 않다.
 > 받은 뒤 `git -C <경로> rev-parse HEAD` 로 커밋 SHA 를 기록해 두면 나중에 문제 추적이 쉽다.
 
 ---

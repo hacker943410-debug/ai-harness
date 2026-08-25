@@ -37,7 +37,10 @@ function Add-Issue([string]$severity, [string]$code, [string]$message) {
 }
 
 $selfName = 'Test-HarnessRepo.ps1'
-$scriptFiles = Get-ChildItem (Join-HarnessPath $root 'scripts') -Filter '*.ps1' -File |
+# 저장소 루트의 .ps1 도 대상이다. install.ps1 은 사용자가 가장 먼저 실행하는 파일인데
+# 검사 밖에 있으면 인코딩·경로 결함이 하필 첫인상에서 터진다.
+$scriptFiles = @(Get-ChildItem (Join-HarnessPath $root 'scripts') -Filter '*.ps1' -File) +
+               @(Get-ChildItem $root -Filter '*.ps1' -File) |
     Where-Object { $_.Name -ne $selfName }
 
 # ---------------------------------------------------------------------------

@@ -9,6 +9,52 @@ Version: 3.0 (Canonical Source: `POLICY_INDEX.yaml` 의 `harness_version`)
 
 ---
 
+## 빠른 시작 — 이 한 줄
+
+```powershell
+irm https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/install.ps1 | iex
+```
+
+Windows PowerShell 에 붙여넣으면 된다. **업데이트도 같은 한 줄이다.**
+
+| | |
+|---|---|
+| 하는 일 | 사전 조건 확인 → 경로 검증 → 최신 태그로 clone(또는 갱신) → 비밀값 가드 → 저장소 검사 |
+| 하지 않는 일 | 도구 루트를 만들지 않는다. MCP 를 설치·등록·인증하지 않는다. 프로젝트를 건드리지 않는다 |
+| 필요한 것 | Windows 10/11 · PowerShell 5.1+ · git · Node 22+ |
+| 기본 위치 | `%LOCALAPPDATA%\AI-Harness` (`-Path` 로 바꿀 수 있다) |
+
+> 실행 전에 내용을 보고 싶으면 위 URL 을 브라우저로 열면 된다.
+> **받은 것을 실행하기 전에 읽을 수 있어야 한다** — 이 방식을 쓰는 이유다.
+> 이미 고쳐 둔 클론이 있으면 건드리지 않고 멈춘다.
+
+받은 다음은 목적에 따라 갈린다. **입구가 두 개다.**
+
+```
+새 PC 에 하네스를 놓는다          →  install.ps1  (Layer A 클론 + Layer B 도구 루트)
+                                      PC 당 한 번. §15 · workflows/HARNESS_INSTALL.md
+
+프로젝트를 하네스에 연결한다      →  PROJECT_INIT.md  또는  /harness-init
+                                      프로젝트마다 한 번. .ai/ 만 생긴다. §4
+```
+
+**Layer A 를 프로젝트마다 두지 않는다.** 프로젝트마다 26개 정책을 복사하지 않는 것이 이 설계의 핵심이다.
+
+무슨 도구를 쓸지 모르겠으면 설치 에스코트가 하나씩 설명하고 물어본다 (§22).
+
+```powershell
+.\scripts\Invoke-HarnessEscort.ps1 -SavePlan .\escort.json
+```
+
+Claude Code 사용자는 플러그인이 더 짧다 (§23).
+
+```text
+/plugin marketplace add hacker943410-debug/ai-harness
+/plugin install ai-harness@ai-harness
+```
+
+---
+
 ## 0. 3계층 — 이 저장소가 무엇이고 무엇이 아닌가
 
 무엇을 / 어디에 / 어떤 ID를 **절대 한 곳에 섞지 않는다.**
