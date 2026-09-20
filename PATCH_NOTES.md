@@ -2,6 +2,35 @@
 
 이 문서는 AI Harness의 사용자 관점 변경사항과 검증 결과를 누적 기록한다. 최신 항목을 위에 추가한다.
 
+## 3.1 — 2026-09-20
+
+### 목표
+
+기존 CORE·ROUTER·JIT·Agent/Model Hierarchy를 유지하면서 Jev를 선택형 경량 Decision Advisor로 추가한다. 판단 순서는 `Deterministic → Optional Jev → Existing Router / Reasoning Model`이며 Runtime Core가 최종 Policy Authority다.
+
+### 추가 및 변경
+
+- `workflows/DECISION_ENGINE.md`: 제한된 의미 분류, Compact Context, typed 결과, 보안 경계, Fallback, Shadow, Trace와 단계 도입 계약을 한곳에 정의했다.
+- `POLICY_INDEX.yaml`: Harness 3.1, Decision Engine Metadata, Global 기본 비활성, Shadow, `CONFIG_REQUIRED` 신뢰도 기준, `existing_router` Fallback을 추가했다.
+- CORE·ROUTER·README·PROJECT_INIT·Doctor를 같은 계약으로 맞췄다. 새 P27이나 새 Agent/Model Hierarchy는 만들지 않았다.
+- `scripts/jev-decision.mjs`와 `scripts/test-jev-scenarios.mjs`를 추가했다. Vercel AI Gateway의 `typesafe-ai/jev`를 사용하고 인증은 `AI_GATEWAY_API_KEY` 환경변수로만 참조한다.
+- 실행기는 `non_sensitive` 입력만 허용하고, 질문·후보·typed 응답·사용량을 엄격히 검증하며 안전하게 추린 결과만 반환한다. timeout·형식 오류·Provider 실패는 기존 Router 복귀로 닫힌다.
+- Global 기본값은 계속 비활성이다. 검증을 마친 프로젝트가 명시적으로 선택한 Shadow만 활성화할 수 있고, Calibration 전 신뢰도 기준은 `CONFIG_REQUIRED`로 유지한다.
+- 가격 정보는 참고 문서에만 두고 Runtime 분기에 사용하지 않는다.
+
+### 호환성
+
+Jev는 Global 기본 비활성이다. 비활성·미설정·실패·저신뢰 상태에서는 기존 Router와 Reasoning 경로가 그대로 동작한다. 프로젝트별 Shadow를 활성화해도 기존 Router가 실제 경로를 결정한다.
+
+### 검증
+
+- R0 비민감 실제 Canary 3건은 선택 3/3·복귀 0, 평균 684ms·중앙 448ms·최대 1185ms, 합계 1463토큰, 해당 세 호출 보고 비용 0이었다. 이를 일반 성능·정확도·향후 무료 보장으로 해석하지 않는다.
+- R1 오프라인 입력·응답 검사 22/22와 Codex 추가 반례 2/2를 통과했다. 후보 소유 여부, 빈 사용량, 비용 미제공 표기, 응답 본문까지의 시간 제한을 국소 보완했으며 R1·독립 검토 중 외부 호출은 0건이다.
+- `Test-HarnessRepo.ps1 -HarnessRoot C:\AI-Harness -Json` → `PASS_WITH_WARNING` (`2026-09-20T13:46:08.8738217+00:00`). 정책 파일 매핑, Catalog, Schema, 공용 Runtime 검사는 통과했다.
+- 경고는 이번 변경 전에도 있던 `markitdown 0.0.1a4` prerelease 고정 1건이며 Jev 변경으로 새로 생긴 오류는 없다.
+- Global/Project `git diff --check` 통과, Project `.ai/harness.yaml` YAML 파싱과 Global 참조 경로 존재 확인을 통과했다.
+- 응답 계약은 Vercel 공식 Jev 가이드와 R0 실제 응답으로 확인했다. 가격은 Runtime 분기에 사용하지 않는다.
+
 ## 3.0 — 2026-08-24
 
 `POLICY_INDEX.yaml` 의 `harness_version` 이 `3.0` 이다. 그 값이 버전의 정본이다.

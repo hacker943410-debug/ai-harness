@@ -1,6 +1,6 @@
 # AI Harness CORE
 
-Document Version: 1.1
+Document Version: 1.2
 Harness Version Source: `POLICY_INDEX.yaml`의 `harness_version`
 Purpose: 모든 CLI 작업에서 항상 유지할 최소 공통 계약.
 Scope: 상세 규칙을 대신하지 않는다. 상세 내용은 ROUTER가 선택한 정책 원문이 소유한다.
@@ -61,6 +61,24 @@ Runtime 시작 시 정책 원문을 열기 전에 Metadata 수준에서 다음�
 - `BLOCKED`: 핵심 Runtime을 신뢰할 수 없거나 현재 Task의 Critical Policy가 누락됨
 
 누락된 Critical Policy의 내용을 추측해 계속하지 않는다. 제한 작업이 가능한 경우에도 발견한 Harness 오류와 제한을 사용자에게 명시한다.
+
+## 2.2 Decision Hierarchy
+
+판단 비용과 권한을 다음 순서로 분리한다.
+
+```text
+Deterministic Rule / Tool
+        ↓ 제한된 의미 판단이 필요하고 설정·실행기가 검증된 경우에만
+Optional Jev Decision Advisor
+        ↓ 복잡한 추론, 낮은 신뢰도, 실패 또는 권한 경계
+Existing Router / Reasoning Model
+```
+
+- exit code, 파일 존재, Schema, Test/Lint/Type Check처럼 코드로 정확히 판정할 수 있는 것은 Jev에 묻지 않는다.
+- Jev는 미리 정한 후보 중 하나를 고르는 Router·Classifier·Judge·Guardrail 보조에만 사용한다. Coding, Architecture 설계, 복잡한 Debugging은 맡기지 않는다.
+- Jev는 추천만 제공한다. Runtime Core와 Project Rule이 Policy, Permission, Budget, Security, Provider Availability, 승인과 실행의 최종 권한을 가진다.
+- Jev가 비활성·미설정·실패·저신뢰 상태이면 기존 Router와 Reasoning 경로가 그대로 동작한다.
+- 기본값과 세부 계약은 `POLICY_INDEX.yaml`과 `workflows/DECISION_ENGINE.md`가 소유한다.
 
 ## 3. Source of Truth
 

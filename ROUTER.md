@@ -1,6 +1,6 @@
 # AI Harness ROUTER
 
-Document Version: 1.1
+Document Version: 1.2
 Harness Version Source: `POLICY_INDEX.yaml`의 `harness_version`
 Purpose: 26개 정책 원문을 매번 읽지 않고 현재 Task에 필요한 정책만 JIT로 선택한다.
 Canonical detail: 정책 03이 Router 자체의 상세 설계를 소유한다.
@@ -102,6 +102,19 @@ Runtime Health 판정:
 
 ### Step B — Task 후보 선택
 POLICY_INDEX.yaml의 `triggers`와 `candidate_bundles`를 사용해 후보를 만든다.
+
+### Step B-1 — Optional Semantic Decision Advisor
+
+Deterministic 분류만으로 후보가 하나로 확정되지 않고, 선택지가 제한된 의미 판단인 경우에만 `POLICY_INDEX.yaml`의 `decision_engine` 계약을 확인한다.
+
+- Global 기본값이 `enabled_by_default: false`, Project 설정이 `enabled: false`이거나 실행기가 없으면 호출하지 않고 기존 Step C로 간다.
+- `mode: shadow`에서는 기존 Router가 실제 경로를 정한다. Jev 결과는 비교용 Evidence일 뿐 실행을 통제하지 않는다.
+- Jev에는 Task 요약, 현재 Phase/Risk, 허용된 후보, 활성 제약, 사용 가능한 Capability ID만 전달한다. 정책 전문·Agent 전문·전체 저장소·긴 이력은 전달하지 않는다.
+- 반환값이 후보 밖이거나 형식 오류, API 실패, timeout, 인증 실패, Provider 장애, 신뢰도 미달이면 기존 Router 또는 Reasoning 경로로 Fallback한다.
+- Security, Permission, Secret, Production, Destructive Operation, Budget, Provider Availability의 승인 권한을 Jev에 주지 않는다.
+- Shadow 호출 전에는 Provider·Model·인증·응답 계약과 실제 실행 Evidence가 검증되어야 한다. Shadow는 경로를 바꾸지 않으므로 Calibration 전 Threshold가 `CONFIG_REQUIRED`여도 비교 실행할 수 있다. Advisory 또는 자동 수용은 조정된 Threshold 없이는 비활성으로 취급한다.
+
+세부 입력·출력·Trace·단계 도입 계약은 필요할 때 `workflows/DECISION_ENGINE.md`를 JIT로 읽는다.
 
 ### Step C — Materiality Filter
 각 후보에 질문한다.

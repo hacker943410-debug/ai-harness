@@ -1,6 +1,6 @@
 # AI Harness — 사용자 설치·운영 설명서
 
-Version: 3.0 (Canonical Source: `POLICY_INDEX.yaml` 의 `harness_version`)
+Version: 3.1 (Canonical Source: `POLICY_INDEX.yaml` 의 `harness_version`)
 구성: 26개 전문 정책 + CORE + ROUTER + POLICY_INDEX + PROJECT_INIT + HARNESS_DOCTOR
       + 공용 런타임 / 클라이언트 계약 / 스키마 / 설치·진단 스크립트
 대상: Claude Code, Codex CLI, Antigravity(AGY) 및 유사한 파일 기반 Coding Agent
@@ -148,6 +148,7 @@ ai-harness/                          ← Layer A. 이 저장소가 전부다
 │  ├─ ESCORT.md                      설치 에스코트 — 도구를 설명받고 직접 고르기
 │  ├─ SHARED_RUNTIME.md              런타임 수명주기 install→auth→verify→sync→restart
 │  ├─ CAPABILITY_ACQUISITION.md      Capability 가 부족할 때의 획득 절차
+│  ├─ DECISION_ENGINE.md             선택형 Jev 판단 계층의 계약·Fallback·단계 도입
 │  └─ GOOGLE_WORKSPACE_*.md          Google 연결·권한 절차
 │
 ├─ proposals/                        v3 설계 근거와 인수인계
@@ -172,6 +173,7 @@ ai-harness/                          ← Layer A. 이 저장소가 전부다
 - `catalogs/escort-*.json` → 설치 에스코트의 설명·추천 데이터 (스크립트가 아니라 여기를 고친다)
 - `workflows/ESCORT.md` → 설치 에스코트 절차
 - `workflows/CAPABILITY_ACQUISITION.md` → Capability가 부족할 때만 읽는 획득 절차
+- `workflows/DECISION_ENGINE.md` → Jev를 사용할 수 있을 때만 읽는 선택형 판단 계약
 - `runtimes/*.runtime.json` → 공용 런타임 선언 (무엇을 어떤 버전으로. 설치 위치는 담지 않는다)
 - `settings/clients/*.client.json` → AI 클라이언트별 등록 방식과 제약 선언
 - `schemas/*.schema.json` → 위 선언들의 기계가 읽는 계약. `Test-HarnessRepo.ps1` 이 매번 검증한다
@@ -427,6 +429,20 @@ External SDK 도입:
 ```text
 + P15 Dependency / External Contract
 ```
+
+---
+
+## 10.1 선택형 Jev Decision Engine
+
+Jev는 고비용 Reasoning Model을 대체하는 Coding Model이 아니라, 미리 정한 후보 중 하나를 고르는 가벼운 Decision Advisor다.
+
+```text
+Deterministic Rule → Optional Jev → Existing Router / Reasoning Model
+```
+
+Global 기본값은 비활성이고 최초 활성 단계도 Shadow다. 프로젝트가 명시적으로 활성화한 Shadow에서도 기존 Router가 실제 경로를 정하며 Jev는 비교 결과만 남긴다. Jev가 없거나 실패해도 기존 흐름이 그대로 동작한다. JIT Loader, Agent/Model Hierarchy, 보안·권한·예산·승인 권한은 바뀌지 않는다.
+
+현재 저장소에는 외부 SDK가 필요 없는 `scripts/jev-decision.mjs` 실행기와 오프라인 기본 검사기 `scripts/test-jev-scenarios.mjs`가 있다. Vercel AI Gateway의 `typesafe-ai/jev`, `AI_GATEWAY_API_KEY` 환경변수 참조, typed 응답 계약을 사용하며 비민감 합성·축약 입력만 허용한다. 실제 외부 Canary는 `--live`와 `JEV_ALLOW_LIVE_CANARY=1`을 함께 지정할 때만 실행된다. 신뢰도 기준은 Calibration 전 `CONFIG_REQUIRED`이고 Shadow 결과를 자동 수용하지 않는다. 세부 계약은 `workflows/DECISION_ENGINE.md`가 소유한다.
 
 ---
 

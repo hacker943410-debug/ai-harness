@@ -1,5 +1,5 @@
 schema_version: "1.0"
-harness_version: "3.0"
+harness_version: "3.1"
 policy_count: 26
 
 paths:
@@ -13,6 +13,7 @@ paths:
   mcp_catalog: "catalogs/mcp-catalog.json"
   skill_catalog: "catalogs/skill-catalog.json"
   capability_schema: "schemas/capability-lock.schema.json"
+  decision_engine_workflow: "workflows/DECISION_ENGINE.md"
   patch_notes: "PATCH_NOTES.md"
 
 runtime:
@@ -26,6 +27,27 @@ runtime:
   policy_load_trace: "record_only"
   default_target_active_policies: "2-5"
   note: "2-5는 일반적인 목표이며 위험/복잡도에 따른 강제 상한이 아니다."
+
+decision_engine:
+  hierarchy: [deterministic, semantic_decision, reasoning_model]
+  engine: "jev"
+  type: "decision_model"
+  enabled_by_default: false
+  initial_mode: "shadow"
+  provider: "vercel_ai_gateway"
+  model: "typesafe-ai/jev"
+  executor: "scripts/jev-decision.mjs"
+  credential_env: "AI_GATEWAY_API_KEY"
+  timeout_ms: 8000
+  max_retries: 0
+  data_policy: "non_sensitive_only"
+  zero_data_retention: false
+  confidence:
+    auto_accept: "CONFIG_REQUIRED"
+    reasoning_review: "CONFIG_REQUIRED"
+  fallback: "existing_router"
+  workflow: "workflows/DECISION_ENGINE.md"
+  note: "실행기는 있으나 Global 기본 비활성이고 프로젝트별 Shadow 승인 후 사용한다."
 
 policies:
   - id: P01

@@ -1,6 +1,6 @@
 # AI Harness — PROJECT INIT
 
-Version: 2.2
+Version: 3.1
 Mode: One-time project initializer
 Audience: Coding Agent / CLI Agent
 Execution: 새 프로젝트 또는 Harness 연결을 재설정할 때만 실행
@@ -184,6 +184,18 @@ runtime:
   policy_load_trace: "record_only"
   default_target_active_policies: "2-5"
 
+decision_engine:
+  workflow: "workflows/DECISION_ENGINE.md"
+  engine: "jev"
+  enabled: false
+  mode: "shadow"
+  provider: "CONFIG_REQUIRED"
+  model: "CONFIG_REQUIRED"
+  confidence:
+    auto_accept: "CONFIG_REQUIRED"
+    reasoning_review: "CONFIG_REQUIRED"
+  fallback: "existing_router"
+
 project:
   harness_bridge: ".ai/HARNESS.md"
   current_state: ".ai/current-state.md"
@@ -233,6 +245,11 @@ policies directory만 Fast Health Check한다.
 그 후 현재 Task를 Task / Phase / Risk / Boundary로 분류하고
 POLICY_INDEX와 ROUTER를 사용해 현재 행동에 실제 필요한 정책만
 <HARNESS_ROOT>/policies/에서 JIT로 읽는다.
+
+판단은 Deterministic Rule을 먼저 사용한다. 제한된 의미 판단에 Jev를 사용할 수 있지만
+기본값은 비활성이고 최초 모드는 shadow다. Jev는 추천만 하며 Runtime Core가 최종 권한을 가진다.
+Jev가 비활성·미설정·실패·저신뢰 상태이면 기존 Router/Reasoning 경로로 Fallback한다.
+실제 Provider 호출 계약은 필요할 때 <HARNESS_ROOT>/workflows/DECISION_ENGINE.md를 JIT로 읽는다.
 
 기본 목표는 보통 2~5개의 전문 정책이며 강제 상한은 아니다.
 
@@ -575,6 +592,9 @@ OAuth credential과 token은 PC 사용자 profile에만 존재해야 하며 Goog
 - new boundary에서 re-route가 명시됨
 - Policy Load Trace 기본값이 `record_only`
 - Runtime Fast Health Check가 가능함
+- Decision Engine 기본값이 비활성이고 Fallback이 `existing_router`임
+- Jev가 Permission·Security·Budget·승인 권한을 갖지 않음
+- Provider 호출기가 없으면 Shadow 실행이 구현되었다고 보고하지 않음
 
 ## Preservation
 - 기존 Instruction 삭제 없음

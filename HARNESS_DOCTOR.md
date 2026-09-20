@@ -1,6 +1,6 @@
 # AI Harness Doctor
 
-Document Version: 1.0
+Document Version: 1.1
 Harness Version Source: `POLICY_INDEX.yaml`의 `harness_version`
 Mode: Read-only diagnostic by default
 Scope: Global Harness와 Project Bridge의 운영 상태 진단
@@ -99,6 +99,14 @@ Doctor 요청 시 아래 목록을 검사한다. 파일 존재·Metadata·참조
 38. `runtimes/*.runtime.json`이 유효하고 `scripts/Resolve-HarnessRuntime.ps1`이 선언된 런타임의 command를 찾는가 (exit 4 = 미설치이며 오류가 아니다)
 39. Google OAuth credential/token이 Harness, 프로젝트 또는 Drive 동기화 설정 폴더에 복제되지 않았는가
 40. 현재 설치된 MCP 지원 AI 클라이언트에 `google-workspace`가 사용자/전역 범위로 등록되어 있는가
+41. Index가 가리키는 `workflows/DECISION_ENGINE.md`가 존재하고 읽기 가능한가
+42. Global Decision Engine 기본값이 `enabled: false`이며 Project 활성화가 명시적 opt-in인가
+43. Decision Engine Fallback이 기존 Router를 보존하는가
+44. Shadow Mode에서 기존 Router가 실제 경로를 계속 결정하는가
+45. Shadow 활성화를 주장하는 경우 Provider·Model·인증·응답 계약과 실제 실행 Evidence가 있으며, Advisory 또는 자동 수용을 주장하는 경우 Threshold도 `CONFIG_REQUIRED`가 아닌가
+46. Jev에 Permission·Security·Budget·Production·Destructive Operation 승인 권한이 부여되지 않았는가
+47. Decision Trace에 Secret, Credential, 전체 Prompt, 전체 Source Code가 기록되지 않는가
+48. 가격이나 근거 없는 confidence 숫자가 Runtime 분기에 Hard Coding되지 않았는가
 
 Policy Reference 검사는 YAML과 명시적인 Routing 표기처럼 구조적으로 정책을 가리키는 위치를 대상으로 한다. 성능 지표의 `P95` 같은 일반 용례를 정책 ID 오류로 오인하지 않는다.
 
