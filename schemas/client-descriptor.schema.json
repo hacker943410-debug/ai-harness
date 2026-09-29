@@ -112,6 +112,18 @@
       "items": { "$ref": "#/$defs/limitation" }
     },
 
+    "skill_support": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "native": { "type": "boolean" },
+        "project_path_template": { "type": ["string", "null"] },
+        "global_path_hint": { "type": ["string", "null"] },
+        "verified_on": { "type": ["string", "null"] },
+        "verification_source": { "type": ["string", "null"] }
+      }
+    },
+
     "notes": { "type": "string" }
   },
 

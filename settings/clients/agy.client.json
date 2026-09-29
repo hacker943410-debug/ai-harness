@@ -97,5 +97,13 @@
     }
   ],
 
+  "skill_support": {
+    "native": true,
+    "project_path_template": ".agents/skills/{skill_id}",
+    "global_path_hint": "~/.gemini/antigravity-cli/skills/{skill_id}",
+    "verified_on": "2026-09-29",
+    "verification_source": "https://codelabs.developers.google.com/antigravity/how-to-create-agent-skills-for-antigravity-cli"
+  },
+
   "notes": "mcp list 에 --json 이 없어 표 텍스트를 파싱한다. 형식이 바뀌면 drift 탐지가 조용히 깨질 수 있으므로 파싱 실패는 OK 가 아니라 UNKNOWN 으로 보고한다."
 }

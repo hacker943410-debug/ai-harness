@@ -1,0 +1,13 @@
+{
+  "title": "Operations Dashboard",
+  "audience": "Operations managers",
+  "data": {
+    "type": "xlsx",
+    "url": "./data.xlsx",
+    "sheet": null,
+    "refreshSeconds": 60
+  },
+  "filters": [],
+  "kpis": [],
+  "charts": []
+}

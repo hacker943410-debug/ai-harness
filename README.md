@@ -1,6 +1,6 @@
 # AI Harness — 사용자 설치·운영 설명서
 
-Version: 3.1 (Canonical Source: `POLICY_INDEX.yaml` 의 `harness_version`)
+Version: 5.0 (Canonical Source: `POLICY_INDEX.yaml` 의 `harness_version`)
 구성: 26개 전문 정책 + CORE + ROUTER + POLICY_INDEX + PROJECT_INIT + HARNESS_DOCTOR
       + 공용 런타임 / 클라이언트 계약 / 스키마 / 설치·진단 스크립트
 대상: Claude Code, Codex CLI, Antigravity(AGY) 및 유사한 파일 기반 Coding Agent
@@ -19,7 +19,7 @@ Windows PowerShell 에 붙여넣으면 된다. **업데이트도 같은 한 줄�
 
 | | |
 |---|---|
-| 하는 일 | 사전 조건 확인 → 경로 검증 → 최신 태그로 clone(또는 갱신) → 비밀값 가드 → 저장소 검사 |
+| 하는 일 | 사전 조건 확인 → 경로 검증 → GitHub `main` 정본으로 clone/갱신 → 비밀값 가드 → 저장소 검사 |
 | 하지 않는 일 | 도구 루트를 만들지 않는다. MCP 를 설치·등록·인증하지 않는다. 프로젝트를 건드리지 않는다 |
 | 필요한 것 | Windows 10/11 · PowerShell 5.1+ · git · Node 22+ |
 | 기본 위치 | `%LOCALAPPDATA%\AI-Harness` (`-Path` 로 바꿀 수 있다) |
@@ -121,6 +121,12 @@ ai-harness/                          ← Layer A. 이 저장소가 전부다
 │
 ├─ policies/                         26개 전문 정책 — 전체 preload 금지, JIT 로만
 │  ├─ 01_....md  …  26_....md
+├─ skills/                           하네스 번들 Agent Skills — 역시 JIT
+│  └─ dashboard-builder/             Excel/Data → KPI/Chart → Web Dashboard
+│     ├─ SKILL.md
+│     ├─ references/
+│     ├─ templates/
+│     └─ scripts/
 │
 ├─ catalogs/                         필요할 때 검색하는 Metadata
 │  ├─ mcp-catalog.json
@@ -170,6 +176,7 @@ ai-harness/                          ← Layer A. 이 저장소가 전부다
 - `HARNESS_DOCTOR.md` → 요청 시 진단용, 기본 Read-only
 - `PATCH_NOTES.md` → 버전별 변경 기록
 - `catalogs/*` → 필요할 때 검색하는 MCP/Skill Metadata
+- `skills/dashboard-builder/SKILL.md` → Excel/CSV/JSON 기반 웹 대시보드 생성의 공용 실행 절차
 - `catalogs/escort-*.json` → 설치 에스코트의 설명·추천 데이터 (스크립트가 아니라 여기를 고친다)
 - `workflows/ESCORT.md` → 설치 에스코트 절차
 - `workflows/CAPABILITY_ACQUISITION.md` → Capability가 부족할 때만 읽는 획득 절차
@@ -861,3 +868,39 @@ fork 해서 쓰거나 기여할 때도 규칙은 같다.
 - Layer A(이 저장소)에 **설치 경로·토큰·머신 상태를 적지 않는다**
 - 훅을 켠다: `git config core.hooksPath .githooks`
 - `--no-verify` 로 우회하지 않는다
+
+
+---
+
+## 24. v5.0 — Unified Skill Layer
+
+v5.0은 기존 26개 정책/JIT Router 구조를 유지하면서 **하네스가 직접 소유하는 번들 Skill 계층**을 추가한다.
+
+첫 번들 Skill은 `dashboard-builder`다.
+
+```text
+Excel / CSV / JSON
+        ↓
+Data Profile
+        ↓
+KPI / Business Questions
+        ↓
+Chart / Filter / Layout Plan
+        ↓
+Design System
+        ↓
+HTML Dashboard
+        ↓
+Data / UI / Responsive QA
+```
+
+### CLI별 동작
+
+| CLI | v5.0 동작 |
+|---|---|
+| Claude Code | 기존 ai-harness 플러그인에 dashboard-builder wrapper를 추가해 정본 Skill로 연결 |
+| Codex CLI | `Install-ProjectSkill.ps1 -Id dashboard-builder` 또는 Agent Skill 설치 후 사용. 미설치 시 Router JIT fallback 가능 |
+| AGY (Antigravity CLI) | 프로젝트 `.agents/skills/dashboard-builder/`에 native 설치. 미설치 시 Router JIT fallback |
+| 기타 CLI | native Skill 규격이 검증되면 Adapter로 연결하고, 그 전에는 동일한 JIT fallback 사용 |
+
+Skill을 도입해도 `CORE → ROUTER → POLICY_INDEX → 필요한 Policy/Skill만 JIT` 순서는 유지된다.

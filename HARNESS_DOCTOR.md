@@ -1,6 +1,6 @@
 # AI Harness Doctor
 
-Document Version: 1.1
+Document Version: 1.2
 Harness Version Source: `POLICY_INDEX.yaml`의 `harness_version`
 Mode: Read-only diagnostic by default
 Scope: Global Harness와 Project Bridge의 운영 상태 진단
@@ -107,6 +107,11 @@ Doctor 요청 시 아래 목록을 검사한다. 파일 존재·Metadata·참조
 46. Jev에 Permission·Security·Budget·Production·Destructive Operation 승인 권한이 부여되지 않았는가
 47. Decision Trace에 Secret, Credential, 전체 Prompt, 전체 Source Code가 기록되지 않는가
 48. 가격이나 근거 없는 confidence 숫자가 Runtime 분기에 Hard Coding되지 않았는가
+49. `use_jit_skill_loading == true`이고 Index의 `paths.skills_dir`가 실제 디렉터리를 가리키는가
+50. `catalogs/skill-catalog.json`의 `bundled_path`가 안전한 상대경로이며 각 경로에 `SKILL.md`가 존재하는가
+51. `settings/clients/*.client.json`의 `skill_support.native == true` 항목이 안전한 `project_path_template`과 `{skill_id}` placeholder를 갖는가
+52. Project `.ai/capability-lock.json`의 Skill `config_path`가 머신 절대경로가 아니라 프로젝트 상대경로인가
+53. 현재 Task가 번들 Skill에 해당하면 Router가 외부 Capability Acquisition 전에 해당 Skill을 JIT로 선택하는가
 
 Policy Reference 검사는 YAML과 명시적인 Routing 표기처럼 구조적으로 정책을 가리키는 위치를 대상으로 한다. 성능 지표의 `P95` 같은 일반 용례를 정책 ID 오류로 오인하지 않는다.
 
@@ -186,6 +191,8 @@ JIT Loading: PASS | WARNING | FAIL
 Full Policy Preload: NOT DETECTED | WARNING | FAIL
 Secrets: PASS | WARNING | FAIL (값은 표시하지 않음)
 Capability Catalogs: PASS | WARNING | FAIL
+Bundled Skills: PASS | WARNING | FAIL
+Client Skill Adapters: PASS | WARNING | FAIL
 Project Capabilities: PASS | WARNING | FAIL | NOT INSTALLED
 Broken References: ...
 Runtime Health: HEALTHY | DEGRADED | BLOCKED

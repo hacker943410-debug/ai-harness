@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-08-23",
+  "updated_at": "2026-09-29",
   "discovery_sources": [
     "https://www.skills.sh/",
     "https://www.skills.sh/docs/api"
@@ -13,6 +13,7 @@
     "disable_install_telemetry_by_default": true
   },
   "entries": [
+    {"id":"dashboard-builder","source":"hacker943410-debug/ai-harness","status":"verified","official":true,"bundled_path":"skills/dashboard-builder","capabilities":["dashboard","excel_dashboard","data_visualization","kpi_design","chart_selection","sheetjs","chartjs"],"domains":["data","spreadsheet","design","web","operations"],"risk":"low","notes":"AI Harness v5.0 bundled skill. Canonical source is skills/dashboard-builder/SKILL.md; load JIT."},
     {"id":"vercel-react-best-practices","source":"vercel-labs/agent-skills","status":"verified","official":true,"capabilities":["react","nextjs","performance"],"domains":["web"]},
     {"id":"vercel-composition-patterns","source":"vercel-labs/agent-skills","status":"verified","official":true,"capabilities":["react_composition","component_architecture"],"domains":["web"]},
     {"id":"web-design-guidelines","source":"vercel-labs/agent-skills","status":"verified","official":true,"capabilities":["web_design","ui_review"],"domains":["web","design"]},

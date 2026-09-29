@@ -1,5 +1,5 @@
 schema_version: "1.0"
-harness_version: "3.1"
+harness_version: "5.0"
 policy_count: 26
 
 paths:
@@ -12,6 +12,8 @@ paths:
   capability_workflow: "workflows/CAPABILITY_ACQUISITION.md"
   mcp_catalog: "catalogs/mcp-catalog.json"
   skill_catalog: "catalogs/skill-catalog.json"
+  skills_dir: "skills"
+  dashboard_builder_skill: "skills/dashboard-builder/SKILL.md"
   capability_schema: "schemas/capability-lock.schema.json"
   decision_engine_workflow: "workflows/DECISION_ENGINE.md"
   patch_notes: "PATCH_NOTES.md"
@@ -23,6 +25,7 @@ runtime:
     - POLICY_INDEX.yaml
   preload_all_policies: false
   use_jit_policy_loading: true
+  use_jit_skill_loading: true
   fast_health_check: true
   policy_load_trace: "record_only"
   default_target_active_policies: "2-5"

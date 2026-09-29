@@ -180,6 +180,7 @@ harness:
 runtime:
   preload_all_policies: false
   use_jit_policy_loading: true
+  use_jit_skill_loading: true
   fast_health_check: true
   policy_load_trace: "record_only"
   default_target_active_policies: "2-5"
@@ -225,6 +226,7 @@ GLOBAL HARNESS ROOT:
 이 프로젝트는 Global AI Harness를 사용한다.
 
 일반 Task 시작 시 26개 정책 원문을 전부 읽지 않는다.
+현재 Goal이 하네스 번들 Skill과 일치하면 `<HARNESS_ROOT>/skills/<skill-id>/SKILL.md`를 필요한 경우에만 JIT로 읽는다. Skill은 정책·보안·사용자 의도를 대체하지 않는다.
 
 먼저:
 1. <HARNESS_ROOT>/CORE.md
@@ -562,6 +564,19 @@ Harness 초기화 시 `runtimes/google-workspace.runtime.json`이 존재하면 �
 새 AI 클라이언트가 처음 발견되면 사용자가 경로를 다시 말하게 하지 않는다. `settings/clients/<id>.client.json`의 등록 방식으로 command를 찾아 연결한다. 디스크립터가 없거나 MCP를 지원하지 않으면 임의 파일을 만들지 않고 `PARTIAL`로 보고한다.
 
 OAuth credential과 token은 PC 사용자 profile에만 존재해야 하며 Google Drive MASTER, Harness, 프로젝트, Git 저장소에 업로드하지 않는다.
+
+# 17.2 Bundled Skill 연결
+
+Initializer는 모든 Skill을 프로젝트로 복사하거나 preload하지 않는다.
+
+- `<HARNESS_ROOT>/skills/`는 하네스가 직접 소유하는 번들 Skill의 정본이다.
+- 현재 Task가 dashboard 생성/개선이면 Router가 `dashboard-builder`를 JIT로 선택한다.
+- Codex CLI는 프로젝트 `.codex/skills/<skill-id>/`에 native Skill을 설치할 수 있다.
+- Claude Code는 프로젝트 `.claude/skills/<skill-id>/` 또는 ai-harness plugin wrapper로 연결할 수 있다.
+- AGY(Antigravity CLI)는 프로젝트 `.agents/skills/<skill-id>/`에 native Skill을 설치할 수 있다.
+- native 설치가 없거나 다른 CLI의 Skill 규격이 검증되지 않은 경우에도 Router가 정본 `SKILL.md`를 JIT 절차서로 읽는 fallback을 유지한다.
+- 프로젝트 Adapter에 Skill 전문을 복사하지 않는다.
+- Skill은 Policy, Security, 사용자 의도보다 높은 권한을 갖지 않는다.
 
 # 18. 검증
 

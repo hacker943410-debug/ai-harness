@@ -16,7 +16,7 @@
     이 스크립트가 하는 일
         1. 사전 조건 확인 (PowerShell 5.1+ / git / Node 22+ / npm)
         2. 클론 위치 검증 (비ASCII·동기화 폴더·깊은 경로·UNC 를 거른다)
-        3. 없으면 clone, 있으면 fetch 후 최신 태그로 이동  ← 설치와 업데이트가 같은 명령
+        3. 없으면 clone, 있으면 fetch 후 정본 main으로 갱신  ← 설치와 업데이트가 같은 명령
         4. 비밀값 가드 활성화 (core.hooksPath)
         5. 저장소 자체 검사 실행
         6. 다음 단계 안내
@@ -57,21 +57,6 @@ function Write-Item {
 function Test-AsciiPath {
     param([string]$Value)
     return ($Value -notmatch '[^\x00-\x7F]')
-}
-
-function Get-LatestRemoteTag {
-    param([string]$Url)
-    # 핀 고정을 강제하는 도구가 자기 자신은 떠다니는 HEAD 로 받으면 앞뒤가 맞지 않는다.
-    # 태그를 원격에서 직접 읽으므로 이 스크립트에 버전을 박지 않는다.
-    $lines = @(& git ls-remote --tags --refs $Url 2>$null)
-    if ($LASTEXITCODE -ne 0) { return $null }
-    $tags = @()
-    foreach ($line in $lines) {
-        if ($line -match 'refs/tags/(v\d+\.\d+(\.\d+)?)$') { $tags += $Matches[1] }
-    }
-    if ($tags.Count -eq 0) { return $null }
-    $sorted = @($tags | Sort-Object -Property @{ Expression = { [version]($_ -replace '^v', '') } })
-    return $sorted[-1]
 }
 
 function Invoke-HarnessBootstrap {
@@ -178,14 +163,9 @@ function Invoke-HarnessBootstrap {
     $gitDir = Join-Path $Path '.git'
     $exists = Test-Path -LiteralPath $gitDir
 
-    if (-not $Ref) {
-        $Ref = Get-LatestRemoteTag $RepoUrl
-        if (-not $Ref) {
-            Write-Output ''
-            Write-Output '  원격 태그를 읽지 못했습니다. 네트워크 또는 접근 권한을 확인하세요.'
-            return
-        }
-    }
+    # v5.0부터 GitHub main이 Canonical update channel이다.
+    # 특정 release/tag/branch를 고정하려면 -Ref 또는 AI_HARNESS_REF를 명시한다.
+    if (-not $Ref) { $Ref = 'main' }
 
     if ($exists) {
         Write-Step "업데이트  (이미 있습니다)"
@@ -200,7 +180,7 @@ function Invoke-HarnessBootstrap {
         $before = ((& git -C $Path describe --tags --always 2>$null) -join '').Trim()
         & git -C $Path fetch --tags --prune origin 2>&1 | Out-Null
 
-        # HEAD 가 브랜치면 그것은 **작업용 클론**이다. 태그로 detach 시키면
+        # HEAD 가 브랜치면 그것은 **작업용 클론**이다. 지정 Ref로 강제 이동시키면
         # 사용자가 작업하던 자리를 조용히 옮기는 것이 된다.
         # 소비용 설치는 detached 로 두므로, 이 구분이 곧 "누구의 저장소인가"의 판정이다.
         $branch = ((& git -C $Path rev-parse --abbrev-ref HEAD 2>$null) -join '').Trim()
@@ -215,7 +195,7 @@ function Invoke-HarnessBootstrap {
             & git -C $Path merge --ff-only "origin/$branch" 2>&1 | Out-Null
             $after = ((& git -C $Path describe --tags --always 2>$null) -join '').Trim()
             Write-Item 'ok' "브랜치 '$branch' 를 fast-forward 했습니다.  $before -> $after"
-            Write-Item '  ' "작업용 클론으로 보여 태그($Ref)로 옮기지 않았습니다. 브랜치 그대로 둡니다."
+            Write-Item '  ' "작업용 클론으로 보여 Ref($Ref)로 강제 이동하지 않았습니다. 브랜치 그대로 둡니다."
         }
         else {
             & git -C $Path checkout --quiet $Ref 2>&1 | Out-Null

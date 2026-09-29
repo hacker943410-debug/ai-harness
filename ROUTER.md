@@ -1,6 +1,6 @@
 # AI Harness ROUTER
 
-Document Version: 1.2
+Document Version: 2.0
 Harness Version Source: `POLICY_INDEX.yaml`의 `harness_version`
 Purpose: 26개 정책 원문을 매번 읽지 않고 현재 Task에 필요한 정책만 JIT로 선택한다.
 Canonical detail: 정책 03이 Router 자체의 상세 설계를 소유한다.
@@ -340,6 +340,39 @@ Materiality Filter를 적용해 실제 ACTIVE 정책은 더 적을 수 있다.
 실제 획득 절차는 `<HARNESS_ROOT>/workflows/CAPABILITY_ACQUISITION.md`를 JIT로 읽는다. Catalog 전문은 preload하지 않고 `<HARNESS_ROOT>/catalogs/`를 검색한다. 기존 Capability로 충분하면 새 MCP/Skill을 설치하지 않는다.
 
 ---
+
+## 7.1 Bundled Skill Routing
+
+정책 후보를 고른 뒤, 현재 Task가 반복 가능한 전문 산출물 생성 절차와 일치하면 `POLICY_INDEX.yaml.paths.skills_dir`의 번들 Skill을 검색한다.
+
+우선순위:
+
+```text
+현재 Goal
+→ 하네스 번들 Skill로 충족 가능한가?
+→ YES: 해당 SKILL.md만 JIT Load
+→ NO: 프로젝트에 이미 설치된 Skill 확인
+→ 그래도 없음: TOOL_CAPABILITY_GAP → CAPABILITY_ACQUISITION
+```
+
+Skill은 정책 선택을 대체하지 않는다. 예를 들어 대시보드 구현은 `dashboard-builder`를 사용하면서 코드 변경이면 P04/P06/P26, 디자인 판단이면 P12가 함께 ACTIVE가 될 수 있다.
+
+### dashboard-builder trigger
+
+다음과 같은 요청이면 `<HARNESS_ROOT>/skills/dashboard-builder/SKILL.md`를 JIT로 읽는다.
+
+- Excel/CSV/JSON을 분석해 웹 대시보드 생성/개선
+- KPI·차트·필터·레이아웃을 설계하는 운영/경영 대시보드
+- SheetJS/Chart.js 기반 단일 HTML dashboard
+- Excel 보고서를 실시간/정적 웹 시각화로 변환
+
+단순 셀 수식·서식 수정만이면 우선 사용하지 않는다.
+
+클라이언트별 노출:
+- **Claude Code**: 플러그인 설치 시 얇은 Skill wrapper가 정본 Skill을 연결한다.
+- **Codex CLI**: 프로젝트 Agent Skill로 설치할 수 있으며, 미설치 상태에서도 Router가 정본 Skill을 JIT 절차로 읽을 수 있다.
+- **AGY (Antigravity CLI)**: 프로젝트 범위 `<project>/.agents/skills/<skill-id>/`에 native Skill을 설치할 수 있다. 설치하지 않은 경우에도 Router의 정본 SKILL.md JIT fallback은 유지한다.
+- 새 CLI도 native Skill 규격이 검증되기 전에는 같은 fallback을 사용한다.
 
 ## 8. Routing 출력 형식
 

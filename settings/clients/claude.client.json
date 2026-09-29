@@ -87,5 +87,13 @@
         }
       ]
     }
-  ]
+  ],
+
+  "skill_support": {
+    "native": true,
+    "project_path_template": ".claude/skills/{skill_id}",
+    "global_path_hint": "~/.claude/skills/{skill_id}",
+    "verified_on": "2026-09-29",
+    "verification_source": "https://code.claude.com/docs/en/skills"
+  }
 }
