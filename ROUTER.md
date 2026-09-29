@@ -371,7 +371,7 @@ Skill은 정책 선택을 대체하지 않는다. 예를 들어 대시보드 구
 클라이언트별 노출:
 - **Claude Code**: 플러그인 설치 시 얇은 Skill wrapper가 정본 Skill을 연결한다.
 - **Codex CLI**: 프로젝트 Agent Skill로 설치할 수 있으며, 미설치 상태에서도 Router가 정본 Skill을 JIT 절차로 읽을 수 있다.
-- **AGY**: native Agent Skill 호환성을 검증했다고 가정하지 않는다. Router의 정본 SKILL.md 직접 JIT fallback을 사용한다.
+- **AGY (Antigravity CLI)**: 프로젝트 범위 `<project>/.agents/skills/<skill-id>/`에 native Skill을 설치할 수 있다. 설치하지 않은 경우에도 Router의 정본 SKILL.md JIT fallback은 유지한다.
 - 새 CLI도 native Skill 규격이 검증되기 전에는 같은 fallback을 사용한다.
 
 ## 8. Routing 출력 형식
