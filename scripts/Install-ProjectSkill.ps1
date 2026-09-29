@@ -6,6 +6,8 @@ param(
     [string]$ProjectRoot,
     [string]$Reason = 'capability_gap',
     [string]$HarnessRoot,
+    [ValidateSet('AllNative','Codex','Claude')]
+    [string]$Client = 'AllNative',
     [switch]$AllowDiscoveryOnly
 )
 
@@ -28,18 +30,52 @@ if (-not $entry.source) { throw "Skill '$Id' has no verified source." }
 
 $aiDir = Join-HarnessPath $project '.ai'
 $lockPath = Join-HarnessPath $aiDir 'capability-lock.json'
-$commandText = "npx skills add $($entry.source) --skill $Id"
-if (-not $PSCmdlet.ShouldProcess($project, $commandText)) { return }
-
 New-Item -ItemType Directory -Force -Path $aiDir | Out-Null
-$previousTelemetry = $env:DISABLE_TELEMETRY
-try {
-    $env:DISABLE_TELEMETRY = '1'
-    Push-Location -LiteralPath $project
-    try { & npx skills add $entry.source --skill $Id } finally { Pop-Location }
-    if ($LASTEXITCODE -ne 0) { throw "Skills CLI exited with code $LASTEXITCODE." }
-} finally {
-    $env:DISABLE_TELEMETRY = $previousTelemetry
+
+$installedPaths = @()
+$contentHash = $null
+
+if ($entry.PSObject.Properties.Name -contains 'bundled_path' -and $entry.bundled_path) {
+    $source = Join-Path (Resolve-Path -LiteralPath $HarnessRoot).Path ($entry.bundled_path -replace '/', [IO.Path]::DirectorySeparatorChar)
+    if (-not (Test-Path -LiteralPath (Join-Path $source 'SKILL.md'))) {
+        throw "Bundled Skill source is invalid: $source"
+    }
+
+    $targets = @()
+    if ($Client -in @('AllNative','Codex')) {
+        $targets += (Join-HarnessPath $project '.codex' 'skills' $Id)
+    }
+    if ($Client -in @('AllNative','Claude')) {
+        $targets += (Join-HarnessPath $project '.claude' 'skills' $Id)
+    }
+
+    $commandText = "copy bundled skill '$Id' to: " + ($targets -join ', ')
+    if (-not $PSCmdlet.ShouldProcess($project, $commandText)) { return }
+
+    foreach ($dest in $targets) {
+        if (Test-Path -LiteralPath $dest) { Remove-Item -Recurse -Force -LiteralPath $dest }
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dest) | Out-Null
+        Copy-Item -Recurse -Force -LiteralPath $source -Destination $dest
+        if (-not (Test-Path -LiteralPath (Join-Path $dest 'SKILL.md'))) {
+            throw "Bundled Skill install verification failed: $dest"
+        }
+        $installedPaths += $dest
+    }
+
+    $contentHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $source 'SKILL.md')).Hash.ToLowerInvariant()
+} else {
+    $commandText = "npx skills add $($entry.source) --skill $Id"
+    if (-not $PSCmdlet.ShouldProcess($project, $commandText)) { return }
+
+    $previousTelemetry = $env:DISABLE_TELEMETRY
+    try {
+        $env:DISABLE_TELEMETRY = '1'
+        Push-Location -LiteralPath $project
+        try { & npx skills add $entry.source --skill $Id } finally { Pop-Location }
+        if ($LASTEXITCODE -ne 0) { throw "Skills CLI exited with code $LASTEXITCODE." }
+    } finally {
+        $env:DISABLE_TELEMETRY = $previousTelemetry
+    }
 }
 
 if (Test-Path -LiteralPath $lockPath) {
@@ -50,10 +86,11 @@ if (Test-Path -LiteralPath $lockPath) {
 }
 $remaining = @($lock.capabilities | Where-Object { -not ($_.type -eq 'skill' -and $_.id -eq $Id) })
 $record = [pscustomobject]@{
-    type = 'skill'; id = $Id; source = $entry.source; version = $null; content_hash = $null
-    scope = 'project'; reason = $Reason; status = 'installed'; config_path = $null
+    type = 'skill'; id = $Id; source = $entry.source; version = $null; content_hash = $contentHash
+    scope = 'project'; reason = $Reason; status = 'installed'
+    config_path = if ($installedPaths.Count -gt 0) { $installedPaths -join ';' } else { $null }
     recorded_at = (Get-HarnessUtcStamp)
 }
 $lock.capabilities = @($remaining + $record)
 Write-HarnessJson -Path $lockPath -InputObject $lock -Depth 8
-Write-Output "Installed project skill '$Id'. Restart the agent session if the client requires rediscovery."
+Write-Output "Installed project skill '$Id' for $Client. Restart the agent session if the client requires rediscovery."
