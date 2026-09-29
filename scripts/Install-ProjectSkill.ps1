@@ -6,7 +6,7 @@ param(
     [string]$ProjectRoot,
     [string]$Reason = 'capability_gap',
     [string]$HarnessRoot,
-    [ValidateSet('AllNative','Codex','Claude')]
+    [ValidateSet('AllNative','Codex','Claude','AGY')]
     [string]$Client = 'AllNative',
     [switch]$AllowDiscoveryOnly
 )
@@ -47,6 +47,9 @@ if ($entry.PSObject.Properties.Name -contains 'bundled_path' -and $entry.bundled
     }
     if ($Client -in @('AllNative','Claude')) {
         $targets += (Join-HarnessPath $project '.claude' 'skills' $Id)
+    }
+    if ($Client -in @('AllNative','AGY')) {
+        $targets += (Join-HarnessPath $project '.agents' 'skills' $Id)
     }
 
     $commandText = "copy bundled skill '$Id' to: " + ($targets -join ', ')
