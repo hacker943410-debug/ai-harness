@@ -64,7 +64,7 @@ Purpose: 현재 프로젝트에 필요한 MCP 또는 Agent Skill을 필요할 �
 
 - Codex → `<project>/.codex/skills/<id>/`
 - Claude Code → `<project>/.claude/skills/<id>/`
-- AGY → native Skill 경로가 검증되기 전에는 복사 설치하지 않고 Router JIT fallback을 사용
+- AGY → `<project>/.agents/skills/<id>/` (프로젝트 범위). Router JIT fallback도 유지
 
 ### External Skill
 
