@@ -5,12 +5,13 @@
   "display_name": "AGY (Google Antigravity)",
   "adapter_kind": "argv_cli",
   "verified_on": "2026-08-23",
-  "detect": {
-    "command": "agy"
-  },
+
+  "detect": { "command": "agy" },
+
   "config_path_is_authoritative": false,
   "config_home_env": null,
   "config_hint": "~/.gemini/config/mcp_config.json (전역), .agents/mcp_config.json (워크스페이스)",
+
   "supports": {
     "scopes": [],
     "default_scope": null,
@@ -18,62 +19,36 @@
     "drift_detection": true,
     "json_probe": false
   },
+
   "$argv_note": "help 원문: 'Flags must come before <name>; a flag placed after it is rejected.' 그리고 add 는 'Add or update' 이므로 upsert 다.",
   "argv": {
-    "probe": [
-      "mcp",
-      "list"
-    ],
-    "register": [
-      "mcp",
-      "add",
-      "{env_flags}",
-      "{server_name}",
-      "{command}",
-      "{args}"
-    ],
-    "remove": [
-      "mcp",
-      "remove",
-      "{server_name}"
-    ],
-    "list": [
-      "mcp",
-      "list"
-    ]
+    "probe":    ["mcp", "list"],
+    "register": ["mcp", "add", "{env_flags}", "{server_name}", "{command}", "{args}"],
+    "remove":   ["mcp", "remove", "{server_name}"],
+    "list":     ["mcp", "list"]
   },
-  "env_flag_template": [
-    "-e",
-    "{key}={value}"
-  ],
+  "env_flag_template": ["-e", "{key}={value}"],
+
   "$enabled_note": "등록돼 있다와 켜져 있다는 다르다. mcp disable 로 끈 서버도 목록에는 남는다. 그 차이를 못 보면 권장 완화를 적용해도 진단이 같은 경고를 계속 낸다.",
   "probe_semantics": {
     "present_exit_code": 0,
     "absent_exit_code": 0,
     "parse": {
-      "kind": "table_text",
-      "match_column": "NAME",
-      "command_column": "COMMAND/URL",
-      "enabled_markers": [
-        "enabled"
-      ],
-      "disabled_markers": [
-        "disabled"
-      ]
+      "kind": "table_text", "match_column": "NAME", "command_column": "COMMAND/URL",
+      "enabled_markers": ["enabled"],
+      "disabled_markers": ["disabled"]
     }
   },
+
   "register_is_upsert": true,
   "flags_must_precede_name": true,
+
   "$tool_policy_note": "2026-08-23 조사 완료. 도구 단위 통제 수단이 없다. agy --help 에 tool/exclude/include/allow/deny/approve 관련 플래그가 --dangerously-skip-permissions(전부 자동 승인) 하나뿐이고, ~/.gemini/config/mcp_config.json 은 서버별로 command/args/env/disabled 만 받으며, ~/.gemini/antigravity-cli/settings.json 에도 도구 정책 키가 없다. Gemini CLI 의 excludeTools/includeTools 를 여기 적용하면 안 된다 — 별개 제품이고 스키마가 다르다.",
   "tool_policy_support": {
     "deny": null,
     "approve": null,
     "server_level_disable": {
-      "command": [
-        "mcp",
-        "disable",
-        "{server_name}"
-      ],
+      "command": ["mcp", "disable", "{server_name}"],
       "file": "~/.gemini/config/mcp_config.json",
       "key": "mcpServers.{server_name}.disabled",
       "reduces_context": true
@@ -82,17 +57,13 @@
     "verified_on": "2026-08-23",
     "consequence": "risk=high 런타임을 AGY 에 등록하면 매니페스트의 tool_policy.deny 가 강제되지 않는다. 통제 단위는 서버 전체 on/off 뿐이다."
   },
+
   "$limitations_note": "기술적으로 불가능한 것은 최초 설치 시점에 알려야 한다. 등록한 뒤에 경고하면 사용자는 이미 노출된 상태에서 그것을 읽는다. how 안의 {server_name} {client_id} {runtime_id} 는 해석 시 치환된다.",
   "limitations": [
     {
       "id": "no_per_tool_policy",
       "severity": "high",
-      "applies_when": {
-        "runtime_risk": [
-          "high",
-          "critical"
-        ]
-      },
+      "applies_when": { "runtime_risk": ["high", "critical"] },
       "what": "도구 단위 차단·승인 수단이 없다",
       "why": "도구 관련 플래그는 --dangerously-skip-permissions(전부 자동 승인) 하나뿐이고, ~/.gemini/config/mcp_config.json 은 서버별 command/args/env/disabled 만 받으며, ~/.gemini/antigravity-cli/settings.json 에도 도구 정책 키가 없다 (2026-08-23 확인).",
       "consequence": "매니페스트의 tool_policy.deny 가 강제되지 않는다. 통제 단위는 서버 전체 on/off 뿐이다. AGY 를 --dangerously-skip-permissions 로 띄우면 되돌릴 수 없는 도구도 확인 없이 실행된다.",
@@ -125,12 +96,14 @@
       ]
     }
   ],
-  "notes": "mcp list 에 --json 이 없어 표 텍스트를 파싱한다. 형식이 바뀌면 drift 탐지가 조용히 깨질 수 있으므로 파싱 실패는 OK 가 아니라 UNKNOWN 으로 보고한다.",
+
   "skill_support": {
     "native": true,
     "project_path_template": ".agents/skills/{skill_id}",
     "global_path_hint": "~/.gemini/antigravity-cli/skills/{skill_id}",
     "verified_on": "2026-09-29",
     "verification_source": "https://codelabs.developers.google.com/antigravity/how-to-create-agent-skills-for-antigravity-cli"
-  }
+  },
+
+  "notes": "mcp list 에 --json 이 없어 표 텍스트를 파싱한다. 형식이 바뀌면 drift 탐지가 조용히 깨질 수 있으므로 파싱 실패는 OK 가 아니라 UNKNOWN 으로 보고한다."
 }
