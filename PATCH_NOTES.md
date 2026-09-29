@@ -27,8 +27,9 @@ Release scope: 기존 26개 정책과 3계층 구조는 보존하고, 재사용 
 - 기존 MCP 전역 등록/도구 정책 계약에는 변경 없음.
 
 ### AGY (Google Antigravity)
-- native Agent Skill 호환성을 검증했다고 간주하지 않음.
-- 5.0에서는 별도 가짜 설치 경로를 만들지 않고 Router가 정본 `SKILL.md`를 JIT로 읽는 fallback을 공식화.
+- 현재 공식 Google 가이드에 맞춰 프로젝트 범위 `<project>/.agents/skills/<skill-id>/` native Skill 설치를 지원.
+- `Install-ProjectSkill.ps1 -Client AGY` 및 `-Client AllNative` 대상에 포함.
+- native 설치를 하지 않은 프로젝트에서도 Router의 정본 `SKILL.md` JIT fallback을 유지.
 - 기존 MCP server-level on/off 및 per-tool policy 부재 제한은 그대로 유지.
 
 ### 기타 CLI
@@ -50,7 +51,7 @@ Release scope: 기존 26개 정책과 3계층 구조는 보존하고, 재사용 
 - `catalogs/skill-catalog.json`에서 dashboard-builder가 유일하게 1개 존재
 - Claude plugin metadata version == 5.0.0
 - Router가 bundled Skill → installed Skill → capability acquisition 순서를 명시
-- AGY에 검증되지 않은 native Skill 지원을 주장하지 않음
+- AGY 프로젝트 native Skill 경로가 `.agents/skills/<skill-id>/`로 반영됐는지 확인
 
 ---
 
