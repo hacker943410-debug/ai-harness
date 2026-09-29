@@ -180,6 +180,7 @@ harness:
 runtime:
   preload_all_policies: false
   use_jit_policy_loading: true
+  use_jit_skill_loading: true
   fast_health_check: true
   policy_load_trace: "record_only"
   default_target_active_policies: "2-5"
@@ -225,6 +226,7 @@ GLOBAL HARNESS ROOT:
 이 프로젝트는 Global AI Harness를 사용한다.
 
 일반 Task 시작 시 26개 정책 원문을 전부 읽지 않는다.
+현재 Goal이 하네스 번들 Skill과 일치하면 `<HARNESS_ROOT>/skills/<skill-id>/SKILL.md`를 필요한 경우에만 JIT로 읽는다. Skill은 정책·보안·사용자 의도를 대체하지 않는다.
 
 먼저:
 1. <HARNESS_ROOT>/CORE.md
