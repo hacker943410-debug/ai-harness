@@ -5,70 +5,40 @@
   "display_name": "Claude Code",
   "adapter_kind": "argv_cli",
   "verified_on": "2026-08-23",
-  "detect": {
-    "command": "claude"
-  },
+
+  "detect": { "command": "claude" },
+
   "$config_note": "설정 파일 경로를 판정 근거로 쓰지 않는다. 권위는 CLI 의 probe 다. 아래는 사용자 안내용.",
   "config_path_is_authoritative": false,
   "config_home_env": null,
   "config_hint": "~/.claude.json (user/local scope), <project>/.mcp.json (project scope)",
+
   "supports": {
-    "scopes": [
-      "local",
-      "project",
-      "user"
-    ],
+    "scopes": ["local", "project", "user"],
     "default_scope": "user",
     "env_flag": true,
     "drift_detection": true,
     "json_probe": false
   },
+
   "$argv_note": "-e 는 commander 의 가변 인자(<env...>)다. 뒤따르는 토큰을 계속 환경변수로 먹기 때문에 {server_name} 이 {env_flags} 앞에 와야 하고, 가변 인자는 -- 로 끊어야 한다. 반대로 두면 'Invalid environment variable format: <서버이름>' 으로 실패한다(실측). CLI 자신의 예시도 같은 순서다: claude mcp add my-server -e KEY=v -- npx my-mcp-server",
   "argv": {
-    "probe": [
-      "mcp",
-      "get",
-      "{server_name}"
-    ],
-    "register": [
-      "mcp",
-      "add",
-      "-s",
-      "{scope}",
-      "{server_name}",
-      "{env_flags}",
-      "--",
-      "{command}",
-      "{args}"
-    ],
-    "remove": [
-      "mcp",
-      "remove",
-      "{server_name}",
-      "-s",
-      "{scope}"
-    ],
-    "list": [
-      "mcp",
-      "list"
-    ]
+    "probe":    ["mcp", "get", "{server_name}"],
+    "register": ["mcp", "add", "-s", "{scope}", "{server_name}", "{env_flags}", "--", "{command}", "{args}"],
+    "remove":   ["mcp", "remove", "{server_name}", "-s", "{scope}"],
+    "list":     ["mcp", "list"]
   },
-  "env_flag_template": [
-    "-e",
-    "{key}={value}"
-  ],
+  "env_flag_template": ["-e", "{key}={value}"],
+
   "$probe_note": "probe 는 존재 여부만이 아니라 실제 등록된 command 를 읽어와야 한다. 원장이 기록한 값과 클라이언트의 실제 값이 갈라져도 모르게 되기 때문이다.",
   "probe_semantics": {
     "present_exit_code": 0,
     "absent_exit_code": 1,
-    "parse": {
-      "kind": "kv_text",
-      "command_key": "Command:",
-      "args_key": "Args:",
-      "env_key": "Environment:"
-    }
+    "parse": { "kind": "kv_text", "command_key": "Command:", "args_key": "Args:", "env_key": "Environment:" }
   },
+
   "register_is_upsert": false,
+
   "$tool_policy_note": "bare deny(mcp__server)는 스키마를 컨텍스트에서 제거하지만, scoped deny(mcp__server__tool)는 스키마를 남기고 실행만 막는다. 즉 도구 단위로는 토큰이 줄지 않는다.",
   "tool_policy_support": {
     "deny": {
@@ -91,6 +61,7 @@
       "hint": "/mcp 토글로 프로젝트별 on/off. Google 과 무관한 프로젝트에서 토큰을 줄이는 유일한 수단."
     }
   },
+
   "$limitations_note": "기술적으로 불가능한 것은 최초 설치 시점에 알려야 한다. how 안의 {server_name} {client_id} {runtime_id} 는 해석 시 치환된다.",
   "limitations": [
     {
@@ -117,6 +88,7 @@
       ]
     }
   ],
+
   "skill_support": {
     "native": true,
     "project_path_template": ".claude/skills/{skill_id}",
