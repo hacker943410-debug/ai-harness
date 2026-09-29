@@ -36,6 +36,13 @@ Release scope: 기존 26개 정책과 3계층 구조는 보존하고, 재사용 
 - 클라이언트가 Agent Skill discovery 규격을 제공하면 해당 Adapter에서 native 노출 가능.
 - 검증 전에는 프로젝트 Adapter에 Skill 원문을 복제하지 않고 정본 JIT fallback을 사용.
 
+## 배포 채널 변경
+
+- 기존 installer의 “최신 Git tag” 기본 선택을 **GitHub `main` 정본** 기본 선택으로 변경.
+- 이유: Canonical Source가 main인데 release tag가 늦게 생성되면 정본과 설치본이 갈리는 문제를 제거.
+- 특정 tag/branch를 고정하려면 기존처럼 `-Ref` 또는 `AI_HARNESS_REF`를 명시.
+- 작업용 branch clone은 기존 보호 규칙대로 임의로 다른 Ref로 이동시키지 않는다.
+
 ## 호환성
 
 - P01~P26 번호, 파일명, 의미 유지.
