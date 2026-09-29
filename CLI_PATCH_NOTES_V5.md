@@ -56,9 +56,10 @@
 ## AGY (Google Antigravity)
 
 ### 변경
-- v5에서 dashboard-builder를 사용할 수 있지만 **native Agent Skill 지원을 검증했다고 주장하지 않음**.
-- 별도 `.agents/skills` 같은 추정 경로를 만들지 않음.
-- Router가 Global Harness의 `skills/dashboard-builder/SKILL.md`를 JIT 절차서로 직접 읽는 fallback을 공식 지원.
+- Google의 현재 공식 Codelab 기준 프로젝트 범위 Agent Skill 경로 `<project-root>/.agents/skills/`를 native 설치 대상으로 지원.
+- `dashboard-builder` 설치 위치: `<project>/.agents/skills/dashboard-builder/`.
+- `Install-ProjectSkill.ps1 -Client AGY`를 지원하고 `-Client AllNative`에도 포함.
+- 설치하지 않은 프로젝트에서는 Router가 Global Harness의 `skills/dashboard-builder/SKILL.md`를 JIT 절차서로 읽는 fallback도 유지.
 
 ### 그대로인 부분
 - MCP per-tool deny/approval 부재라는 기존 limitation 유지.
@@ -66,7 +67,7 @@
 
 ## 여러 CLI를 함께 사용하는 프로젝트
 
-Codex + Claude를 같이 쓰면:
+Codex + Claude + AGY를 같이 쓰면:
 
 ```powershell
 .\scripts\Install-ProjectSkill.ps1 -Id dashboard-builder -ProjectRoot <project> -Client AllNative
@@ -77,7 +78,8 @@ Codex + Claude를 같이 쓰면:
 ```text
 <project>/
 ├─ .codex/skills/dashboard-builder/
-└─ .claude/skills/dashboard-builder/
+├─ .claude/skills/dashboard-builder/
+└─ .agents/skills/dashboard-builder/
 ```
 
 둘은 같은 Harness 원본에서 복사되며 capability-lock에 hash가 남는다.
