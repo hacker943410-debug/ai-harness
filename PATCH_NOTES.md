@@ -6,6 +6,7 @@ Release scope: 기존 26개 정책과 3계층 구조는 보존하고, 재사용 
 
 - `POLICY_INDEX.yaml`의 `harness_version`을 **5.0**으로 상향.
 - `skills/`를 Layer A의 공식 경로로 추가하고 JIT Skill Loading을 명시.
+- Client descriptor의 `skill_support`가 native Skill 지원 여부와 프로젝트 설치 경로를 소유하도록 일반화. 새 CLI는 installer 코드 수정 없이 descriptor 추가로 확장 가능.
 - 첫 공식 번들 Skill `dashboard-builder` 추가.
 - 외부 Skill 검색 전에 번들 Skill을 먼저 확인하도록 Router 순서 변경.
 - Skill은 Policy를 대체하지 않고, 해당 작업의 실행 절차만 제공하도록 권한 경계 확정.
