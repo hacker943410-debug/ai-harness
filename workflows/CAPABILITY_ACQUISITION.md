@@ -39,10 +39,11 @@ Purpose: 현재 프로젝트에 필요한 MCP 또는 Agent Skill을 필요할 �
 
 ### Skill
 
-1. `catalogs/skill-catalog.json`을 검색한다.
-2. Skills.sh 상세/API에서 source, slug, file tree, content hash, duplicate 여부, audit 결과를 확인한다.
-3. 설치 전 `SKILL.md` 전체와 포함 Script를 검토한다.
-4. Official/first-party를 우선하되 Audit가 안전성을 완전히 보증한다고 간주하지 않는다.
+1. 먼저 `<HARNESS_ROOT>/skills/`의 번들 Skill이 현재 Goal을 충족하는지 확인한다. 있으면 외부 검색 없이 정본 `SKILL.md`를 JIT로 사용한다.
+2. 번들 Skill로 부족할 때 `catalogs/skill-catalog.json`을 검색한다.
+3. 외부 Skill은 Skills.sh 상세/API에서 source, slug, file tree, content hash, duplicate 여부, audit 결과를 확인한다.
+4. 설치 전 `SKILL.md` 전체와 포함 Script를 검토한다.
+5. Official/first-party를 우선하되 Audit가 안전성을 완전히 보증한다고 간주하지 않는다.
 
 ## 4. Risk Gate
 
@@ -53,7 +54,19 @@ Purpose: 현재 프로젝트에 필요한 MCP 또는 Agent Skill을 필요할 �
 
 ## 5. 프로젝트 로컬 설치
 
-### Skill
+### Bundled Skill
+
+하네스 자체가 제공하는 Skill은 외부 다운로드 없이 설치할 수 있다.
+
+```powershell
+.\scripts\Install-ProjectSkill.ps1 -Id dashboard-builder -ProjectRoot <project> -Client AllNative
+```
+
+- Codex → `<project>/.codex/skills/<id>/`
+- Claude Code → `<project>/.claude/skills/<id>/`
+- AGY → native Skill 경로가 검증되기 전에는 복사 설치하지 않고 Router JIT fallback을 사용
+
+### External Skill
 
 프로젝트 Root에서 Skills CLI를 실행한다. 기본적으로 Telemetry를 끈다.
 
