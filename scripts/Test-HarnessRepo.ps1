@@ -181,6 +181,51 @@ if (-not $Quick) {
     }
 
     # -----------------------------------------------------------------------
+    # 5-skill. v5 번들 Skill / Client native Skill 계약
+    # -----------------------------------------------------------------------
+    $skillCatalogPath = Join-HarnessPath $root 'catalogs' 'skill-catalog.json'
+    if (Test-Path -LiteralPath $skillCatalogPath) {
+        try {
+            $skillCatalog = Read-HarnessJson -Path $skillCatalogPath
+            foreach ($e in @($skillCatalog.entries | Where-Object { $_.bundled_path })) {
+                $rel = [string]$e.bundled_path
+                if ([IO.Path]::IsPathRooted($rel) -or $rel -match '(^|[\\/])\.\.([\\/]|$)') {
+                    Add-Issue 'FAIL' 'BUNDLED_SKILL_UNSAFE_PATH' "$($e.id): bundled_path가 안전한 상대경로가 아닙니다: $rel"
+                    continue
+                }
+                $dir = Join-Path $root ($rel -replace '/', [IO.Path]::DirectorySeparatorChar)
+                $skillFile = Join-Path $dir 'SKILL.md'
+                if (-not (Test-Path -LiteralPath $skillFile)) {
+                    Add-Issue 'FAIL' 'BUNDLED_SKILL_MISSING' "$($e.id): $rel/SKILL.md 가 없습니다."
+                } else {
+                    Add-Issue 'INFO' 'BUNDLED_SKILL_OK' "$($e.id): $rel"
+                }
+            }
+        } catch {
+            Add-Issue 'FAIL' 'BUNDLED_SKILL_CATALOG_PARSE' "skill-catalog.json 번들 Skill 검사 실패: $($_.Exception.Message)"
+        }
+    }
+
+    $clientDirForSkills = Join-HarnessPath $root 'settings' 'clients'
+    foreach ($cf in @(Get-ChildItem -LiteralPath $clientDirForSkills -Filter '*.client.json' -File -ErrorAction SilentlyContinue)) {
+        try {
+            $cd = Read-HarnessJson -Path $cf.FullName
+            if ($cd.skill_support -and $cd.skill_support.native) {
+                $tpl = [string]$cd.skill_support.project_path_template
+                if (-not $tpl -or $tpl -notmatch '\{skill_id\}') {
+                    Add-Issue 'FAIL' 'CLIENT_SKILL_PATH_INVALID' "$($cd.client_id): native Skill인데 project_path_template에 {skill_id}가 없습니다."
+                } elseif ([IO.Path]::IsPathRooted($tpl) -or $tpl -match '(^|[\\/])\.\.([\\/]|$)') {
+                    Add-Issue 'FAIL' 'CLIENT_SKILL_PATH_UNSAFE' "$($cd.client_id): project_path_template가 안전한 상대경로가 아닙니다: $tpl"
+                } else {
+                    Add-Issue 'INFO' 'CLIENT_SKILL_SUPPORT_OK' "$($cd.client_id): $tpl"
+                }
+            }
+        } catch {
+            Add-Issue 'FAIL' 'CLIENT_SKILL_DESCRIPTOR_PARSE' "$($cf.Name): Skill 지원 검사 실패: $($_.Exception.Message)"
+        }
+    }
+
+    # -----------------------------------------------------------------------
     # 5a. 에스코트 데이터 — 추천이 실재하는 항목을 가리키는지
     # -----------------------------------------------------------------------
     # 에스코트는 사용자에게 "이걸 권합니다" 라고 말한다.
