@@ -900,7 +900,7 @@ Data / UI / Responsive QA
 |---|---|
 | Claude Code | 기존 ai-harness 플러그인에 dashboard-builder wrapper를 추가해 정본 Skill로 연결 |
 | Codex CLI | `Install-ProjectSkill.ps1 -Id dashboard-builder` 또는 Agent Skill 설치 후 사용. 미설치 시 Router JIT fallback 가능 |
-| AGY | native Agent Skill 호환을 검증했다고 가정하지 않음. 정본 `SKILL.md`를 Router가 JIT 절차서로 사용 |
+| AGY (Antigravity CLI) | 프로젝트 `.agents/skills/dashboard-builder/`에 native 설치. 미설치 시 Router JIT fallback |
 | 기타 CLI | native Skill 규격이 검증되면 Adapter로 연결하고, 그 전에는 동일한 JIT fallback 사용 |
 
 Skill을 도입해도 `CORE → ROUTER → POLICY_INDEX → 필요한 Policy/Skill만 JIT` 순서는 유지된다.
