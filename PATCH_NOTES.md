@@ -1,3 +1,59 @@
+# v5.0.0 — Unified Skill Layer + Dashboard Builder
+
+Release scope: 기존 26개 정책과 3계층 구조는 보존하고, 재사용 가능한 전문 실행 절차를 **번들 Agent Skill**로 승격한다.
+
+## 핵심 변경
+
+- `POLICY_INDEX.yaml`의 `harness_version`을 **5.0**으로 상향.
+- `skills/`를 Layer A의 공식 경로로 추가하고 JIT Skill Loading을 명시.
+- 첫 공식 번들 Skill `dashboard-builder` 추가.
+- 외부 Skill 검색 전에 번들 Skill을 먼저 확인하도록 Router 순서 변경.
+- Skill은 Policy를 대체하지 않고, 해당 작업의 실행 절차만 제공하도록 권한 경계 확정.
+- Excel/CSV/JSON → Data Profile → KPI/Chart → Design System → HTML Dashboard → QA 흐름을 표준화.
+- 오빠두엑셀의 공개 Dashboard workflow에서 확인되는 방법론을 참고했지만, 공개 프롬프트를 복제하지 않고 독립 Agent Skill 구조로 재작성.
+
+## CLI별 변경점
+
+### Claude Code
+- 기존 `plugins/ai-harness` 플러그인에 `dashboard-builder` wrapper Skill 추가.
+- wrapper는 정책/Skill 원문을 복제하지 않고 저장소 루트의 `skills/dashboard-builder/SKILL.md`를 정본으로 참조.
+- 플러그인 버전을 5.0.0으로 맞춤.
+- 기존 `/harness-init`, `/harness-doctor`, runtime/capability Skill은 유지.
+
+### OpenAI Codex CLI
+- `catalogs/skill-catalog.json`에 `dashboard-builder`를 공식 하네스 Skill로 등록.
+- 기존 `Install-ProjectSkill.ps1` 경로에서 프로젝트 Agent Skill 설치 가능.
+- native 설치가 아직 안 된 프로젝트에서도 Router가 하네스 정본 SKILL.md를 JIT 절차로 읽는 fallback을 정의.
+- 기존 MCP 전역 등록/도구 정책 계약에는 변경 없음.
+
+### AGY (Google Antigravity)
+- native Agent Skill 호환성을 검증했다고 간주하지 않음.
+- 5.0에서는 별도 가짜 설치 경로를 만들지 않고 Router가 정본 `SKILL.md`를 JIT로 읽는 fallback을 공식화.
+- 기존 MCP server-level on/off 및 per-tool policy 부재 제한은 그대로 유지.
+
+### 기타 CLI
+- 클라이언트가 Agent Skill discovery 규격을 제공하면 해당 Adapter에서 native 노출 가능.
+- 검증 전에는 프로젝트 Adapter에 Skill 원문을 복제하지 않고 정본 JIT fallback을 사용.
+
+## 호환성
+
+- P01~P26 번호, 파일명, 의미 유지.
+- 기존 `.ai/HARNESS.md`, `.ai/harness.yaml`은 재초기화 없이도 기본 정책 Runtime을 계속 사용 가능.
+- v5 기능을 명시적으로 반영하려면 `PROJECT_INIT.md`를 재실행해 `use_jit_skill_loading` bridge를 갱신하는 것을 권장.
+- 기존 MCP/Runtime/Google 인증 상태를 변경하지 않음.
+- 새로운 Secret/credential 저장 위치를 만들지 않음.
+
+## 검증 포인트
+
+- `POLICY_INDEX.yaml.harness_version == 5.0`
+- `skills/dashboard-builder/SKILL.md` 존재
+- `catalogs/skill-catalog.json`에서 dashboard-builder가 유일하게 1개 존재
+- Claude plugin metadata version == 5.0.0
+- Router가 bundled Skill → installed Skill → capability acquisition 순서를 명시
+- AGY에 검증되지 않은 native Skill 지원을 주장하지 않음
+
+---
+
 # AI Harness Patch Notes
 
 이 문서는 AI Harness의 사용자 관점 변경사항과 검증 결과를 누적 기록한다. 최신 항목을 위에 추가한다.
