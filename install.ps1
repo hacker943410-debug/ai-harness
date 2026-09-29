@@ -59,21 +59,6 @@ function Test-AsciiPath {
     return ($Value -notmatch '[^\x00-\x7F]')
 }
 
-function Get-LatestRemoteTag {
-    param([string]$Url)
-    # 핀 고정을 강제하는 도구가 자기 자신은 떠다니는 HEAD 로 받으면 앞뒤가 맞지 않는다.
-    # 태그를 원격에서 직접 읽으므로 이 스크립트에 버전을 박지 않는다.
-    $lines = @(& git ls-remote --tags --refs $Url 2>$null)
-    if ($LASTEXITCODE -ne 0) { return $null }
-    $tags = @()
-    foreach ($line in $lines) {
-        if ($line -match 'refs/tags/(v\d+\.\d+(\.\d+)?)$') { $tags += $Matches[1] }
-    }
-    if ($tags.Count -eq 0) { return $null }
-    $sorted = @($tags | Sort-Object -Property @{ Expression = { [version]($_ -replace '^v', '') } })
-    return $sorted[-1]
-}
-
 function Invoke-HarnessBootstrap {
     param([string]$Path, [string]$Ref, [switch]$SkipChecks)
 
