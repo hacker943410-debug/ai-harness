@@ -20,6 +20,7 @@ Scope: 상세 규칙을 대신하지 않는다. 상세 내용은 ROUTER가 선�
 11. 읽지 못한 Harness 파일이나 정책의 내용을 추측하거나 읽었다고 주장하지 않는다.
 12. 검증하지 않은 Harness 상태를 `HEALTHY`라고 보고하지 않는다.
 13. 현재 작업에 필요한 도구 능력이 없을 때만 Capability Acquisition을 시작하며, MCP·Skill은 프로젝트 범위·최소 권한·검증된 출처를 기본값으로 한다.
+14. 외부 Skill을 검색·설치하기 전에 `<HARNESS_ROOT>/skills/`의 번들 Skill이 현재 Goal을 충족하는지 먼저 확인한다. 번들 Skill도 필요할 때만 JIT로 읽고 일반 작업에 preload하지 않는다.
 
 ## 2. JIT Policy 원칙
 
@@ -79,6 +80,20 @@ Existing Router / Reasoning Model
 - Jev는 추천만 제공한다. Runtime Core와 Project Rule이 Policy, Permission, Budget, Security, Provider Availability, 승인과 실행의 최종 권한을 가진다.
 - Jev가 비활성·미설정·실패·저신뢰 상태이면 기존 Router와 Reasoning 경로가 그대로 동작한다.
 - 기본값과 세부 계약은 `POLICY_INDEX.yaml`과 `workflows/DECISION_ENGINE.md`가 소유한다.
+
+## 2.3 Bundled Skill Layer
+
+하네스가 직접 제공하는 재사용 절차는 `skills/<skill-id>/SKILL.md`에 둔다.
+
+- 정책(Policy)은 행동 경계와 판단 규칙을 정의한다.
+- Skill은 특정 산출물을 만드는 재사용 가능한 실행 절차를 정의한다.
+- Skill은 CORE/ROUTER/POLICY_INDEX보다 아래 계층이며 상위 정책·사용자 의도·보안 경계를 바꿀 수 없다.
+- 현재 Task와 관련 없는 Skill은 읽지 않는다.
+- 클라이언트가 native Agent Skill을 지원하면 해당 형식으로 설치/노출할 수 있다.
+- native Skill을 지원하지 않거나 검증되지 않은 클라이언트에서는 Router가 정본 `SKILL.md`를 JIT 절차서로 직접 읽는 fallback을 사용한다.
+
+현재 번들 Skill:
+- `dashboard-builder` — Excel/CSV/JSON 데이터에서 KPI·차트·디자인 시스템·웹 대시보드를 설계/구현/검증
 
 ## 3. Source of Truth
 
