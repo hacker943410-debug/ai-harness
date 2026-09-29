@@ -48,6 +48,13 @@ if (-not (Test-Path -LiteralPath $lockPath)) {
             if ($capability.PSObject.Properties.Name -contains 'project_root' -and $capability.project_root) {
                 Add-Issue 'FAIL' 'MACHINE_PATH_IN_LOCK' "$($capability.id) records a machine-specific project_root; it is wrong on every other machine."
             }
+            if ($capability.PSObject.Properties.Name -contains 'config_path' -and $capability.config_path) {
+                foreach ($cp in @("$($capability.config_path)" -split ';' | Where-Object { $_ })) {
+                    if ([IO.Path]::IsPathRooted($cp) -or $cp -match '(^|[\\/])\.\.([\\/]|$)') {
+                        Add-Issue 'FAIL' 'MACHINE_PATH_IN_LOCK' "$($capability.id) config_path must be project-relative: $cp"
+                    }
+                }
+            }
             if ($capability.version -eq 'latest' -or "$($capability.version)" -match '[\*\^~]') { Add-Issue 'FAIL' 'UNPINNED_VERSION' "$($capability.id) is not pinned to an exact version." }
             if ("$($capability.source)" -match '(?i)(token|password|secret|api[_-]?key)=') { Add-Issue 'FAIL' 'SECRET_PATTERN' "$($capability.id) source appears to contain a credential." }
         }
