@@ -22,6 +22,7 @@ HARNESS_ROOT = ${CLAUDE_PLUGIN_ROOT}/../..
 | `/harness-status` | 저장소·이 PC 상태 점검 (읽기 전용) | `scripts/*.ps1` |
 | Skill `harness-runtime` | 공용 런타임 수명주기 | `workflows/SHARED_RUNTIME.md` |
 | Skill `harness-capability` | Capability 획득 절차 | `workflows/CAPABILITY_ACQUISITION.md` |
+| Skill `dashboard-builder` | Excel/Data 기반 KPI·차트·HTML 대시보드 생성 | `skills/dashboard-builder/SKILL.md` |
 
 ## 설계 제약
 
@@ -45,3 +46,9 @@ HARNESS_ROOT = ${CLAUDE_PLUGIN_ROOT}/../..
 `plugin.json` 의 `version` 은 하네스 버전을 따라간다.
 하네스 버전의 Canonical Source 는 `POLICY_INDEX.yaml` 의 `harness_version` 이다.
 두 곳을 함께 올린다.
+
+
+## v5.0 Skill wrapper
+
+`plugins/ai-harness/skills/dashboard-builder/SKILL.md`는 Claude Code discovery용 얇은 wrapper다.
+실제 규칙의 정본은 저장소 루트 `skills/dashboard-builder/SKILL.md`이며 wrapper에 전문을 복사하지 않는다.
