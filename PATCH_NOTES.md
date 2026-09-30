@@ -1,3 +1,30 @@
+# v5.0.1 — Bundled Skill 설치 무결성 패치 (병합 전)
+
+## 수정
+- 동일 번들 Skill을 Codex·Claude·AGY에 따로 설치할 때 기존 클라이언트의 설치 경로가 Lock에서 누락되는 문제를 수정했다.
+- `installations`에 경로별 전체 해시와 설치 시각을 기록한다. 재설치는 대상 경로만 갱신하고 다른 클라이언트와 다른 Capability 기록은 보존한다.
+- 해시를 SKILL.md 단일 파일에서 번들 전체 파일로 확대했다. `sha256-tree-v1`은 Ordinal 정렬한 상대경로 + NUL + 파일별 SHA-256 + LF manifest를 UTF-8 BOM 없이 해시한다. 파일 바이트·이름·추가·삭제는 반영하고 절대경로·수정시각은 제외한다.
+- 복사 후 원본과 목적지 전체 해시를 비교한다. 링크/reparse point는 해시 전에 거부한다.
+- 프로젝트 검사에 설치 경로 누락·중복·콘텐츠 변조 검사를 추가했다.
+- `-WhatIf`가 `.ai` 디렉터리를 생성하지 않도록 변경했다.
+- 설치기가 생성하지 않는 최상위 `project_root`의 Schema 필수 요구를 제거했다.
+
+## 호환성
+- 기존 `config_path`의 상대경로·세미콜론 형식을 유지한다.
+- 설치본 버전이 서로 다르거나 기존 전체 해시가 없으면 상위 `content_hash`는 null이며 설치별 기록을 사용한다.
+- 기존 단일 파일 해시는 전체 콘텐츠 해시로 간주하지 않는다. 미갱신 경로는 `SKILL_HASH_MIGRATION_REQUIRED`로 안내한다.
+- 과거 Lock에서 이미 누락된 경로는 해당 클라이언트 또는 `-Client AllNative` 재설치로 복구한다.
+- 설치 상태는 `installed`이며 실제 CLI 발견·실행 검증을 의미하지 않는다.
+
+## 실제 검증 — 2026-09-30
+- Linux x64 / PowerShell 7.4.13: `scripts/Test-ProjectSkillInstall.ps1` 28/28 assertion 통과. 설치 Lock Schema 검증 포함.
+- `scripts/Test-HarnessRepo.ps1 -HarnessRoot . -Json`: PASS_WITH_WARNING. 기존 markitdown 0.0.1a4 경고 1건, FAIL 0건.
+- 기존 Jev 오프라인 검사: 22/22 통과, 실제 외부 호출 0건.
+- Windows PowerShell 5.1 및 Windows PowerShell 7에서의 실행은 미검증이다. Windows 링크 테스트는 별도 권한이 필요해 기본 회귀 실행에서 SKIP을 명시한다.
+- GitHub main 반영은 이 패치 PR 병합 후 이루어진다. Drive 새 스냅샷은 병합된 커밋으로 별도 생성해야 한다.
+
+---
+
 # v5.0.0 — Unified Skill Layer + Dashboard Builder
 
 Release scope: 기존 26개 정책과 3계층 구조는 보존하고, 재사용 가능한 전문 실행 절차를 **번들 Agent Skill**로 승격한다.

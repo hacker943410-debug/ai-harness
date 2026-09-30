@@ -15,6 +15,7 @@ if (-not $HarnessRoot) { $HarnessRoot = Split-Path -Parent $PSScriptRoot }
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '_Harness.Common.ps1')
+. (Join-Path $PSScriptRoot '_Harness.SkillContent.ps1')
 
 $project = (Resolve-Path -LiteralPath $ProjectRoot).Path
 $catalogPath = Join-HarnessPath (Resolve-Path -LiteralPath $HarnessRoot).Path 'catalogs' 'skill-catalog.json'
@@ -29,14 +30,38 @@ if (-not $entry.source) { throw "Skill '$Id' has no verified source." }
 
 $aiDir = Join-HarnessPath $project '.ai'
 $lockPath = Join-HarnessPath $aiDir 'capability-lock.json'
-New-Item -ItemType Directory -Force -Path $aiDir | Out-Null
+# Read persisted state before mutating any installed files.
+if (Test-Path -LiteralPath $lockPath) {
+    $lock = Read-HarnessJson -Path $lockPath
+} else {
+    $lock = [pscustomobject]@{ schema_version = '1.0'; capabilities = @() }
+}
+$prior = @($lock.capabilities | Where-Object { $_.type -eq 'skill' -and $_.id -eq $Id })
+$installations = @()
+foreach ($old in $prior) {
+    foreach ($installation in @($old.installations)) {
+        if ($null -eq $installation) { continue }
+        $installation.config_path = ConvertTo-HarnessSkillPath $installation.config_path
+        $installations += $installation
+    }
+    foreach ($path in @(([string]$old.config_path).Split(';') | Where-Object { $_ })) {
+        $path = ConvertTo-HarnessSkillPath $path
+        if (@($installations | Where-Object config_path -eq $path).Count -eq 0) {
+            # Preserve legacy paths without relabeling the old SKILL.md hash.
+            $installations += [pscustomobject]@{
+                client_id = 'legacy'; config_path = $path; content_hash = $null
+                content_hash_algorithm = $null; status = 'installed'; recorded_at = $old.recorded_at
+            }
+        }
+    }
+}
 
 $installedPaths = @()
 $installedRelativePaths = @()
 $contentHash = $null
 
 if ($entry.PSObject.Properties.Name -contains 'bundled_path' -and $entry.bundled_path) {
-    $source = Join-Path (Resolve-Path -LiteralPath $HarnessRoot).Path ($entry.bundled_path -replace '/', [IO.Path]::DirectorySeparatorChar)
+    $source = Join-HarnessPath (Resolve-Path -LiteralPath $HarnessRoot).Path $entry.bundled_path
     if (-not (Test-Path -LiteralPath (Join-Path $source 'SKILL.md'))) {
         throw "Bundled Skill source is invalid: $source"
     }
@@ -71,11 +96,11 @@ if ($entry.PSObject.Properties.Name -contains 'bundled_path' -and $entry.bundled
     $targetSpecs = @()
     foreach ($d in $descriptors) {
         $rel = ([string]$d.skill_support.project_path_template).Replace('{skill_id}', $Id)
-        $rel = $rel -replace '/', [IO.Path]::DirectorySeparatorChar
+        $rel = ConvertTo-HarnessSkillPath $rel
         if ([IO.Path]::IsPathRooted($rel) -or $rel -match '(^|[\\/])\.\.([\\/]|$)') {
             throw "Unsafe project_path_template for client '$($d.client_id)': $rel"
         }
-        $targetSpecs += [pscustomobject]@{ path = (Join-Path $project $rel); rel = $rel; client_id = $d.client_id }
+        $targetSpecs += [pscustomobject]@{ path = (Join-HarnessPath $project $rel); rel = $rel; client_id = $d.client_id }
     }
     $targetSpecs = @($targetSpecs | Sort-Object path -Unique)
     $targets = @($targetSpecs | ForEach-Object { $_.path })
@@ -83,6 +108,7 @@ if ($entry.PSObject.Properties.Name -contains 'bundled_path' -and $entry.bundled
     $commandText = "copy bundled skill '$Id' to: " + ($targets -join ', ')
     if (-not $PSCmdlet.ShouldProcess($project, $commandText)) { return }
 
+    $contentHash = Get-HarnessSkillContentHash -Root $source
     foreach ($spec in $targetSpecs) {
         $dest = $spec.path
         if (Test-Path -LiteralPath $dest) { Remove-Item -Recurse -Force -LiteralPath $dest }
@@ -91,11 +117,18 @@ if ($entry.PSObject.Properties.Name -contains 'bundled_path' -and $entry.bundled
         if (-not (Test-Path -LiteralPath (Join-Path $dest 'SKILL.md'))) {
             throw "Bundled Skill install verification failed: $dest"
         }
+        $destinationHash = Get-HarnessSkillContentHash -Root $dest
+        if ($destinationHash -ne $contentHash) { throw "Bundled Skill content verification failed: $dest" }
+        $installations = @($installations | Where-Object config_path -ne $spec.rel)
+        $installations += [pscustomobject]@{
+            client_id = $spec.client_id; config_path = $spec.rel; content_hash = $destinationHash
+            content_hash_algorithm = 'sha256-tree-v1'; status = 'installed'; recorded_at = (Get-HarnessUtcStamp)
+        }
         $installedPaths += $dest
         $installedRelativePaths += $spec.rel
     }
 
-    $contentHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $source 'SKILL.md')).Hash.ToLowerInvariant()
+
 } else {
     $commandText = "npx skills add $($entry.source) --skill $Id"
     if (-not $PSCmdlet.ShouldProcess($project, $commandText)) { return }
@@ -111,21 +144,27 @@ if ($entry.PSObject.Properties.Name -contains 'bundled_path' -and $entry.bundled
     }
 }
 
-if (Test-Path -LiteralPath $lockPath) {
-    $lock = Read-HarnessJson -Path $lockPath
-} else {
-    # project_root 를 기록하지 않는다 (머신 절대경로가 커밋되면 다른 PC 에서 틀린 값이 된다).
-    $lock = [pscustomobject]@{ schema_version = '1.0'; capabilities = @() }
-}
 $remaining = @($lock.capabilities | Where-Object { -not ($_.type -eq 'skill' -and $_.id -eq $Id) })
 $configPathValue = $null
-if ($installedRelativePaths.Count -gt 0) { $configPathValue = $installedRelativePaths -join ';' }
+if ($installedRelativePaths.Count -gt 0) {
+    $installations = @($installations | Sort-Object config_path -Unique)
+    $configPathValue = ($installations.config_path -join ';')
+    $hashes = @($installations.content_hash | Sort-Object -Unique)
+    if (@($installations | Where-Object { $_.content_hash_algorithm -ne 'sha256-tree-v1' -or -not $_.content_hash }).Count -gt 0 -or $hashes.Count -ne 1) {
+        $contentHash = $null
+    } else { $contentHash = $hashes[0] }
+}
 $record = [pscustomobject]@{
     type = 'skill'; id = $Id; source = $entry.source; version = $null; content_hash = $contentHash
     scope = 'project'; reason = $Reason; status = 'installed'
     config_path = $configPathValue
     recorded_at = (Get-HarnessUtcStamp)
 }
+if ($installedRelativePaths.Count -gt 0) {
+    $record | Add-Member -NotePropertyName installations -NotePropertyValue @($installations)
+    $record | Add-Member -NotePropertyName content_hash_algorithm -NotePropertyValue 'sha256-tree-v1'
+}
+New-Item -ItemType Directory -Force -Path $aiDir | Out-Null
 $lock.capabilities = @($remaining + $record)
 Write-HarnessJson -Path $lockPath -InputObject $lock -Depth 8
 Write-Output "Installed project skill '$Id' for $Client. Restart the agent session if the client requires rediscovery."

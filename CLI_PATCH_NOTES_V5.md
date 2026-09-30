@@ -2,6 +2,15 @@
 
 기준: v3.1 정본에서 v5.0으로의 변경. 기존 P01~P26 정책 번호와 3계층 구조는 유지한다.
 
+## v5.0.1 후속 패치
+
+- Codex·Claude·AGY 분리 설치에서도 기존 설치 경로를 보존한다.
+- 전체 번들 파일을 `sha256-tree-v1`으로 해시하고 설치 경로별로 기록한다.
+- 원본 변경 후 한 클라이언트만 재설치해도 다른 설치본의 기존 해시를 보존한다.
+- 기존 설치는 해당 클라이언트 또는 `-Client AllNative`로 재설치해 전체 해시 기록을 갱신한다.
+- 실제 CLI discovery는 별도 확인한다. PowerShell 설치 검증을 CLI 동작 검증으로 간주하지 않는다.
+- 회귀 명령: `.\scripts\Test-ProjectSkillInstall.ps1 -HarnessRoot .` (Node 필요).
+
 ## 공통
 
 ### 추가

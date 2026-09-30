@@ -3,26 +3,144 @@
   "$id": "https://local.ai-harness/schemas/capability-lock.schema.json",
   "title": "AI Harness project capability lock",
   "type": "object",
-  "required": ["schema_version", "project_root", "capabilities"],
+  "required": [
+    "schema_version",
+    "capabilities"
+  ],
   "properties": {
-    "schema_version": {"const": "1.0"},
-    "project_root": {"type": "string"},
+    "schema_version": {
+      "const": "1.0"
+    },
+    "project_root": {
+      "type": "string"
+    },
     "capabilities": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["type", "id", "source", "scope", "status", "recorded_at"],
+        "required": [
+          "type",
+          "id",
+          "source",
+          "scope",
+          "status",
+          "recorded_at"
+        ],
         "properties": {
-          "type": {"enum": ["mcp", "skill"]},
-          "id": {"type": "string", "minLength": 1},
-          "source": {"type": "string", "minLength": 1},
-          "version": {"type": ["string", "null"]},
-          "content_hash": {"type": ["string", "null"]},
-          "scope": {"const": "project"},
-          "reason": {"type": ["string", "null"]},
-          "status": {"enum": ["planned", "installed", "configured", "verified", "disabled", "failed"]},
-          "config_path": {"type": ["string", "null"]},
-          "recorded_at": {"type": "string"}
+          "type": {
+            "enum": [
+              "mcp",
+              "skill"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "content_hash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scope": {
+            "const": "project"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "planned",
+              "installed",
+              "configured",
+              "verified",
+              "disabled",
+              "failed"
+            ]
+          },
+          "config_path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recorded_at": {
+            "type": "string"
+          },
+          "content_hash_algorithm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "sha256-tree-v1",
+              null
+            ]
+          },
+          "installations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "client_id",
+                "config_path",
+                "content_hash",
+                "content_hash_algorithm",
+                "status",
+                "recorded_at"
+              ],
+              "properties": {
+                "client_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "config_path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "content_hash": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "content_hash_algorithm": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "sha256-tree-v1",
+                    null
+                  ]
+                },
+                "status": {
+                  "enum": [
+                    "installed"
+                  ]
+                },
+                "recorded_at": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
         },
         "additionalProperties": true
       }
