@@ -1,5 +1,7 @@
 # AI Harness v5.0 — CLI별 패치노트
 
+> v5.1 경로 정정 반영. 최신 변경은 CLI_PATCH_NOTES_V5_1.md를 참조한다.
+
 기준: v3.1 정본에서 v5.0으로의 변경. 기존 P01~P26 정책 번호와 3계층 구조는 유지한다.
 
 ## 공통
@@ -22,7 +24,7 @@
 
 ### 변경
 - `dashboard-builder`를 프로젝트 native Agent Skill로 설치 가능.
-- 기본 설치 위치: `<project>/.codex/skills/dashboard-builder/`.
+- 기본 설치 위치: `<project>/.agents/skills/dashboard-builder/`.
 - 명령:
   ```powershell
   .\scripts\Install-ProjectSkill.ps1 -Id dashboard-builder -ProjectRoot <project> -Client Codex
@@ -77,7 +79,7 @@ Codex + Claude + AGY를 같이 쓰면:
 
 ```text
 <project>/
-├─ .codex/skills/dashboard-builder/
+├─ .agents/skills/dashboard-builder/
 ├─ .claude/skills/dashboard-builder/
 └─ .agents/skills/dashboard-builder/
 ```

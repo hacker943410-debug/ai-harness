@@ -1,6 +1,6 @@
 # AI Harness — 사용자 설치·운영 설명서
 
-Version: 5.0 (Canonical Source: `POLICY_INDEX.yaml` 의 `harness_version`)
+Version: 5.1 (Canonical Source: `POLICY_INDEX.yaml` 의 `harness_version`)
 구성: 26개 전문 정책 + CORE + ROUTER + POLICY_INDEX + PROJECT_INIT + HARNESS_DOCTOR
       + 공용 런타임 / 클라이언트 계약 / 스키마 / 설치·진단 스크립트
 대상: Claude Code, Codex CLI, Antigravity(AGY) 및 유사한 파일 기반 Coding Agent
@@ -872,7 +872,7 @@ fork 해서 쓰거나 기여할 때도 규칙은 같다.
 
 ---
 
-## 24. v5.0 — Unified Skill Layer
+## 24. v5.1 — Unified Skill Layer
 
 v5.0은 기존 26개 정책/JIT Router 구조를 유지하면서 **하네스가 직접 소유하는 번들 Skill 계층**을 추가한다.
 
@@ -896,11 +896,13 @@ Data / UI / Responsive QA
 
 ### CLI별 동작
 
-| CLI | v5.0 동작 |
+| CLI | v5.1 동작 |
 |---|---|
 | Claude Code | 기존 ai-harness 플러그인에 dashboard-builder wrapper를 추가해 정본 Skill로 연결 |
-| Codex CLI | `Install-ProjectSkill.ps1 -Id dashboard-builder` 또는 Agent Skill 설치 후 사용. 미설치 시 Router JIT fallback 가능 |
+| Codex CLI | 프로젝트 `.agents/skills/dashboard-builder/`에 native 설치. 미설치 시 Router JIT fallback 가능 |
 | AGY (Antigravity CLI) | 프로젝트 `.agents/skills/dashboard-builder/`에 native 설치. 미설치 시 Router JIT fallback |
 | 기타 CLI | native Skill 규격이 검증되면 Adapter로 연결하고, 그 전에는 동일한 JIT fallback 사용 |
 
 Skill을 도입해도 `CORE → ROUTER → POLICY_INDEX → 필요한 Policy/Skill만 JIT` 순서는 유지된다.
+
+v5.1은 업데이트 실패 판정, native Skill의 준비·검증·복원, 전체 파일 무결성 검사와 잠금 파일 스키마를 수정한다. 기본 채널은 GitHub `main`이며 `-Ref v5.1.0`으로 출시 버전을 고정할 수 있다. 변경과 검증 명령은 [v5.1 패치노트](CLI_PATCH_NOTES_V5_1.md)를 참조한다.

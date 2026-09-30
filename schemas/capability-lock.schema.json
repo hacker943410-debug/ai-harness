@@ -3,7 +3,7 @@
   "$id": "https://local.ai-harness/schemas/capability-lock.schema.json",
   "title": "AI Harness project capability lock",
   "type": "object",
-  "required": ["schema_version", "project_root", "capabilities"],
+  "required": ["schema_version", "capabilities"],
   "properties": {
     "schema_version": {"const": "1.0"},
     "project_root": {"type": "string"},
@@ -18,12 +18,35 @@
           "source": {"type": "string", "minLength": 1},
           "version": {"type": ["string", "null"]},
           "content_hash": {"type": ["string", "null"]},
-          "scope": {"const": "project"},
+          "bundle_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "hash_algorithm": {"const": "sha256-tree-v1"},
+          "files": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["path", "sha256"],
+              "properties": {
+                "path": {"type": "string", "minLength": 1},
+                "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+              },
+              "additionalProperties": false
+            }
+          },
+          "scope": {"enum": ["project", "machine_user", "client_user"]},
           "reason": {"type": ["string", "null"]},
           "status": {"enum": ["planned", "installed", "configured", "verified", "disabled", "failed"]},
           "config_path": {"type": ["string", "null"]},
           "recorded_at": {"type": "string"}
         },
+        "allOf": [
+          {
+            "anyOf": [
+              {"not": {"anyOf": [{"required": ["bundle_hash"]}, {"required": ["hash_algorithm"]}, {"required": ["files"]}]}},
+              {"required": ["bundle_hash", "hash_algorithm", "files"]}
+            ]
+          }
+        ],
         "additionalProperties": true
       }
     }

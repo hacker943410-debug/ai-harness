@@ -109,10 +109,10 @@
 
   "skill_support": {
     "native": true,
-    "project_path_template": ".codex/skills/{skill_id}",
-    "global_path_hint": "~/.codex/skills/{skill_id}",
-    "verified_on": "2026-09-29",
-    "verification_source": "https://developers.openai.com/blog/eval-skills"
+    "project_path_template": ".agents/skills/{skill_id}",
+    "global_path_hint": "~/.agents/skills/{skill_id}",
+    "verified_on": "2026-09-30",
+    "verification_source": "https://learn.chatgpt.com/docs/build-skills"
   },
 
   "notes": "scope 플래그가 없다. 등록은 항상 전역이다. 프로젝트별 .codex/config.toml 은 신뢰된 프로젝트에서만 읽히며 수동 편집이 필요하다."

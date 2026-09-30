@@ -1,6 +1,6 @@
 # AI Harness — 최초 설치 가이드 (PC 환경별)
 
-Document Version: 1.0
+Document Version: 1.1 (Harness 5.1)
 Layer: A (git 추적)
 대상: 이 하네스를 **처음 받는 PC**에 설치하는 사람
 소요: 진단 1분 / 적용 2~5분 / 런타임 설치는 별도 (npm 다운로드 수 분)
@@ -89,8 +89,8 @@ irm https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/install
 | 환경변수 | 뜻 |
 |---|---|
 | `AI_HARNESS_PATH` | 설치 위치 (기본 `%LOCALAPPDATA%\AI-Harness`) |
-| `AI_HARNESS_REF` | 받을 태그/브랜치 (기본: 원격의 최신 태그) |
-| `AI_HARNESS_SKIP_CHECKS` | `1` 이면 사전 조건 미충족도 진행 |
+| `AI_HARNESS_REF` | 받을 원격 브랜치/태그/전체 40자리 SHA (기본: `main`) |
+| `AI_HARNESS_SKIP_CHECKS` | `1` 이면 일부 사전 조건 미충족도 진행. git과 저장소 검사는 생략하지 않음 |
 
 파일로 내려받아 실행할 때는 `-Path` / `-Ref` / `-SkipChecks` 도 받는다.
 
@@ -106,26 +106,27 @@ irm https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/install
 
 | 상태 | 동작 |
 |---|---|
-| 없음 | 최신 태그로 clone (detached) |
-| 있음, detached | fetch 후 최신 태그로 이동 |
-| 있음, 브랜치 위 | `--ff-only` 로 fast-forward. **태그로 옮기지 않는다** — 작업용 클론이므로 |
+| 없음 | 기본 `main` 또는 명시한 Ref를 원격에서 확인 후 clone (detached) |
+| 있음, detached | fetch 후 원격 `main` 또는 명시한 Ref의 정확한 커밋으로 이동 |
+| 있음, 브랜치 위 | 같은 원격 브랜치로 `--ff-only` fast-forward. 지정 Ref로 강제 이동하지 않음 |
 | 커밋 안 한 변경 있음 | **아무것도 하지 않고 멈춘다** |
-| origin 보다 앞서 있음 | **아무것도 하지 않고 멈춘다** (개발 중인 PC) |
+| origin 보다 앞서 있거나 분기함 | fetch 후 HEAD를 보존하고 멈춘다 |
+| Git 명령 또는 저장소 검사 실패 | 오류로 중단하며 성공 안내를 출력하지 않음 |
 
 #### 손으로 하려면
 
 ```powershell
 git -c core.autocrlf=false -c core.longpaths=true clone `
-    --branch v3.0.0 `
+    --branch v5.1.0 `
     https://github.com/hacker943410-debug/ai-harness.git `
     "$env:LOCALAPPDATA\AI-Harness"
 
 git -C "$env:LOCALAPPDATA\AI-Harness" config core.hooksPath .githooks
 ```
 
-> **태그를 지정한다.** 핀 고정을 강제하는 도구가 정작 자기 자신은 떠다니는 HEAD 로 받으면 앞뒤가 맞지 않는다.
-> 최신 태그는 `git ls-remote --tags` 로 확인한다. `install.ps1` 은 이것을 원격에서 읽으므로 버전이 박혀 있지 않다.
-> 받은 뒤 `git -C <경로> rev-parse HEAD` 로 커밋 SHA 를 기록해 두면 나중에 문제 추적이 쉽다.
+> v5부터 기본 업데이트 채널은 GitHub `main`이다. 출시 버전을 고정하려면 `-Ref v5.1.0` 또는 `AI_HARNESS_REF`를 명시한다.
+> 동명 브랜치/태그는 모호하므로 거부한다. `refs/tags/<이름>` 또는 `refs/heads/<이름>`으로 종류를 명시할 수 있다.
+> 설치기는 받은 전체 커밋 SHA를 출력하고 적용된 HEAD와 비교한다. 재현할 때는 그 SHA를 `-Ref`로 지정할 수 있다.
 
 ---
 

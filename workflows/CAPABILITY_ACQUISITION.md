@@ -62,7 +62,7 @@ Purpose: 현재 프로젝트에 필요한 MCP 또는 Agent Skill을 필요할 �
 .\scripts\Install-ProjectSkill.ps1 -Id dashboard-builder -ProjectRoot <project> -Client AllNative
 ```
 
-- Codex → `<project>/.codex/skills/<id>/`
+- Codex → `<project>/.agents/skills/<id>/`
 - Claude Code → `<project>/.claude/skills/<id>/`
 - AGY → `<project>/.agents/skills/<id>/` (프로젝트 범위). Router JIT fallback도 유지
 

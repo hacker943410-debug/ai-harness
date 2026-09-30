@@ -1,3 +1,20 @@
+# v5.1.0 — 설치·업데이트 안정성 수정
+
+2026-09-30
+
+- Git fetch/merge/checkout과 저장소 검사 실패를 명시적으로 중단한다.
+- 기본 `main`의 원격 커밋을 검증하고 소비용 설치를 detached HEAD로 유지한다. 태그·전체 SHA pin 및 모호한 Ref 거부를 지원한다.
+- Codex native Skill 경로를 `.agents/skills/`로 정정한다.
+- native Skill을 준비·검증한 뒤 교체하고 실패 시 복원한다. 수정본 교체는 명시적 `-Force`를 요구한다.
+- `-WhatIf` 무변경, 전체 파일 해시·잠금 파일 원자 교체, 설치 파일 무결성 및 중복 capability 검사를 추가한다.
+- capability lock 스키마를 실제 생성 형식·scope와 일치시킨다.
+- 임시 Git 원격과 임시 프로젝트를 사용하는 `scripts/Test-HarnessRelease.ps1` 회귀 검사를 추가한다.
+- 정책 P01~P26과 Jev 기본 설정은 변경하지 않는다.
+
+CLI별 경로, 기존 설치 이동과 검증 명령: [v5.1 패치노트](CLI_PATCH_NOTES_V5_1.md).
+
+---
+
 # v5.0.0 — Unified Skill Layer + Dashboard Builder
 
 Release scope: 기존 26개 정책과 3계층 구조는 보존하고, 재사용 가능한 전문 실행 절차를 **번들 Agent Skill**로 승격한다.

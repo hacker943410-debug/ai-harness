@@ -59,6 +59,41 @@ function Test-AsciiPath {
     return ($Value -notmatch '[^\x00-\x7F]')
 }
 
+# PS 5.1의 native stderr가 호출자의 ErrorActionPreference를 바꾸지 않게 격리한다.
+function Invoke-HarnessGit {
+    param([string[]]$Arguments)
+    $ErrorActionPreference = 'Continue'
+    $output = @(& git @Arguments 2>&1 | ForEach-Object { $_.ToString() })
+    return [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output }
+}
+
+function Resolve-HarnessRevision {
+    param([string]$Path, [string]$Ref)
+    if ($Ref -match '^[0-9a-fA-F]{40}$') {
+        $candidates = @($Ref)
+    } elseif ($Ref -match '^refs/(tags|heads)/(.+)$') {
+        $valid = Invoke-HarnessGit -Arguments @('check-ref-format', $Ref)
+        if ($valid.ExitCode -ne 0) { throw '올바르지 않은 명시적 Ref입니다.' }
+        if ($Ref.StartsWith('refs/heads/')) { $candidates = @('refs/remotes/origin/' + $Ref.Substring(11)) }
+        else { $candidates = @($Ref) }
+    } else {
+        $valid = Invoke-HarnessGit -Arguments @('check-ref-format', "refs/heads/$Ref")
+        if ($valid.ExitCode -ne 0) { throw 'Ref는 원격 브랜치, 태그 또는 전체 커밋 SHA여야 합니다.' }
+        # 로컬의 오래된 main은 후보에서 제외한다. 동명 브랜치/태그는 모호하므로 거부한다.
+        $candidates = @("refs/remotes/origin/$Ref", "refs/tags/$Ref")
+    }
+    $resolvedCommits = @()
+    foreach ($candidate in $candidates) {
+        $resolved = Invoke-HarnessGit -Arguments @('-C', $Path, 'rev-parse', '--verify', '--end-of-options', ($candidate + '^{commit}'))
+        if ($resolved.ExitCode -eq 0 -and $resolved.Output.Count -eq 1 -and $resolved.Output[0] -match '^[0-9a-fA-F]{40}$') {
+            $resolvedCommits += $resolved.Output[0].ToLowerInvariant()
+        }
+    }
+    if ($resolvedCommits.Count -gt 1) { throw '동명 브랜치와 태그가 있습니다. refs/tags/<이름> 또는 refs/heads/<이름>을 명시하세요.' }
+    if ($resolvedCommits.Count -eq 1) { return $resolvedCommits[0] }
+    throw '요청한 Ref의 커밋을 찾지 못했습니다. 다른 버전으로 대신 적용하지 않습니다.'
+}
+
 function Invoke-HarnessBootstrap {
     param([string]$Path, [string]$Ref, [switch]$SkipChecks)
 
@@ -109,14 +144,12 @@ function Invoke-HarnessBootstrap {
     }
 
     if ($blocked.Count -gt 0) {
-        if ($SkipChecks) {
+        if ($blocked -contains 'git') {
+            throw 'git 없이는 하네스를 받을 수 없습니다. git 설치 후 다시 실행하세요.'
+        }
+        elseif ($SkipChecks) {
             Write-Output ''
             Write-Output "  -SkipChecks 가 지정돼 계속합니다. 빠진 것: $($blocked -join ', ')"
-        }
-        elseif ($blocked -contains 'git') {
-            Write-Output ''
-            Write-Output '  git 없이는 받을 수 없습니다. 설치 후 다시 실행하세요.'
-            return
         }
         else {
             Write-Output ''
@@ -154,7 +187,7 @@ function Invoke-HarnessBootstrap {
         Write-Output ''
         Write-Output '  다른 위치를 지정하세요. 예:'
         Write-Output "    & ([scriptblock]::Create((irm $RepoWeb/raw/main/install.ps1))) -Path 'C:\dev\ai-harness'"
-        return
+        throw '설치 위치 검증에 실패했습니다.'
     }
 
     # -----------------------------------------------------------------------
@@ -170,64 +203,74 @@ function Invoke-HarnessBootstrap {
     if ($exists) {
         Write-Step "업데이트  (이미 있습니다)"
 
-        $status = @(& git -C $Path status --porcelain 2>$null)
-        if ($status.Count -gt 0) {
-            Write-Item '!!' "커밋하지 않은 변경이 $($status.Count)건 있습니다. 건드리지 않겠습니다."
+        $status = Invoke-HarnessGit -Arguments @('-C', $Path, 'status', '--porcelain')
+        if ($status.ExitCode -ne 0) { throw '기존 저장소 상태를 확인하지 못했습니다.' }
+        if ($status.Output.Count -gt 0) {
+            Write-Item '!!' "커밋하지 않은 변경이 $($status.Output.Count)건 있습니다."
             Write-Item '  ' "git -C `"$Path`" status"
-            return
+            throw '추적 변경과 untracked 파일을 먼저 보존·정리하세요. 업데이트를 중단했습니다.'
         }
 
-        $before = ((& git -C $Path describe --tags --always 2>$null) -join '').Trim()
-        & git -C $Path fetch --tags --prune origin 2>&1 | Out-Null
+        $beforeResult = Invoke-HarnessGit -Arguments @('-C', $Path, 'rev-parse', 'HEAD')
+        if ($beforeResult.ExitCode -ne 0) { throw '기존 HEAD를 확인하지 못했습니다.' }
+        $before = ($beforeResult.Output -join '').Trim()
+        $fetch = Invoke-HarnessGit -Arguments @('-C', $Path, 'fetch', '--tags', '--prune', 'origin')
+        if ($fetch.ExitCode -ne 0) { throw '원격 fetch에 실패했습니다. HEAD를 변경하지 않았습니다.' }
 
         # HEAD 가 브랜치면 그것은 **작업용 클론**이다. 지정 Ref로 강제 이동시키면
         # 사용자가 작업하던 자리를 조용히 옮기는 것이 된다.
         # 소비용 설치는 detached 로 두므로, 이 구분이 곧 "누구의 저장소인가"의 판정이다.
-        $branch = ((& git -C $Path rev-parse --abbrev-ref HEAD 2>$null) -join '').Trim()
+        $branchResult = Invoke-HarnessGit -Arguments @('-C', $Path, 'rev-parse', '--abbrev-ref', 'HEAD')
+        if ($branchResult.ExitCode -ne 0) { throw '현재 브랜치를 확인하지 못했습니다.' }
+        $branch = ($branchResult.Output -join '').Trim()
 
         if ($branch -ne 'HEAD') {
-            $ahead = ((& git -C $Path rev-list --count "origin/$branch..$branch" 2>$null) -join '').Trim()
-            if ($ahead -and ($ahead -ne '0')) {
-                Write-Item '!!' "로컬 '$branch' 가 origin 보다 $ahead 커밋 앞서 있습니다. 건드리지 않겠습니다."
-                Write-Item '  ' '하네스를 직접 개발 중인 PC 로 보입니다. git push 로 올리세요.'
-                return
+            $remoteBranch = Invoke-HarnessGit -Arguments @('-C', $Path, 'rev-parse', '--verify', '--end-of-options', ("refs/remotes/origin/$branch" + '^{commit}'))
+            if ($remoteBranch.ExitCode -ne 0 -or $remoteBranch.Output.Count -ne 1 -or $remoteBranch.Output[0] -notmatch '^[0-9a-fA-F]{40}$') {
+                throw '현재 브랜치와 같은 원격 브랜치를 찾지 못했습니다. 브랜치를 보존했습니다.'
             }
-            & git -C $Path merge --ff-only "origin/$branch" 2>&1 | Out-Null
-            $after = ((& git -C $Path describe --tags --always 2>$null) -join '').Trim()
-            Write-Item 'ok' "브랜치 '$branch' 를 fast-forward 했습니다.  $before -> $after"
+            $target = $remoteBranch.Output[0].ToLowerInvariant()
+            $aheadResult = Invoke-HarnessGit -Arguments @('-C', $Path, 'rev-list', '--count', "$target..HEAD")
+            $ahead = 0
+            if ($aheadResult.ExitCode -ne 0 -or -not [int]::TryParse(($aheadResult.Output -join '').Trim(), [ref]$ahead)) {
+                throw '브랜치 선행 커밋을 확인하지 못했습니다.'
+            }
+            if ($ahead -gt 0) { throw "로컬 '$branch'가 원격보다 앞서거나 분기했습니다. 브랜치와 HEAD를 보존했습니다." }
+            $merge = Invoke-HarnessGit -Arguments @('-C', $Path, 'merge', '--ff-only', $target)
+            if ($merge.ExitCode -ne 0) { throw 'fast-forward에 실패했습니다. 업데이트 성공으로 판정하지 않습니다.' }
+            Write-Item 'ok' "브랜치 '$branch' 를 fast-forward 했습니다.  $before -> $target"
             Write-Item '  ' "작업용 클론으로 보여 Ref($Ref)로 강제 이동하지 않았습니다. 브랜치 그대로 둡니다."
         }
         else {
-            & git -C $Path checkout --quiet $Ref 2>&1 | Out-Null
-            if ($LASTEXITCODE -ne 0) {
-                Write-Item '!!' "'$Ref' 로 이동하지 못했습니다."
-                return
-            }
-            $after = ((& git -C $Path describe --tags --always 2>$null) -join '').Trim()
-            if ($before -eq $after) { Write-Item 'ok' "이미 최신입니다 ($after)" }
-            else { Write-Item 'ok' "$before  ->  $after" }
+            $target = Resolve-HarnessRevision -Path $Path -Ref $Ref
+            $checkout = Invoke-HarnessGit -Arguments @('-C', $Path, 'checkout', '--quiet', '--detach', $target)
+            if ($checkout.ExitCode -ne 0) { throw '확인한 커밋으로 이동하지 못했습니다.' }
+            if ($before -eq $target) { Write-Item 'ok' "요청한 Ref와 일치합니다 ($target)" }
+            else { Write-Item 'ok' "$before  ->  $target  (detached)" }
         }
     }
     else {
         Write-Step "받기  ($Ref)"
-        & git -c core.autocrlf=false -c core.longpaths=true clone --quiet --branch $Ref $RepoUrl $Path 2>&1 | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-            Write-Item '!!' '클론에 실패했습니다. 네트워크와 경로를 확인하세요.'
-            return
-        }
-        Write-Item 'ok' "$Path  ($Ref)"
+        $clone = Invoke-HarnessGit -Arguments @('-c', 'core.autocrlf=false', '-c', 'core.longpaths=true', 'clone', '--quiet', '--no-checkout', $RepoUrl, $Path)
+        if ($clone.ExitCode -ne 0) { throw '클론에 실패했습니다. 네트워크와 경로를 확인하세요.' }
+        $target = Resolve-HarnessRevision -Path $Path -Ref $Ref
+        $checkout = Invoke-HarnessGit -Arguments @('-C', $Path, 'checkout', '--quiet', '--detach', $target)
+        if ($checkout.ExitCode -ne 0) { throw '확인한 커밋을 체크아웃하지 못했습니다.' }
+        Write-Item 'ok' "$Path  ($Ref, detached)"
     }
 
-    $head = ((& git -C $Path rev-parse --short HEAD 2>$null) -join '').Trim()
+    $headResult = Invoke-HarnessGit -Arguments @('-C', $Path, 'rev-parse', 'HEAD')
+    $head = ($headResult.Output -join '').Trim()
+    if ($headResult.ExitCode -ne 0 -or $head -ne $target) { throw '적용된 HEAD가 확인한 목표 커밋과 다릅니다.' }
     Write-Item '  ' "HEAD $head"
 
     # -----------------------------------------------------------------------
     # 4. 비밀값 가드
     # -----------------------------------------------------------------------
     Write-Step '비밀값 가드'
-    & git -C $Path config core.hooksPath .githooks 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { Write-Item 'ok' 'core.hooksPath = .githooks  (커밋 전 비밀값·머신 상태 차단)' }
-    else { Write-Item '!!' '설정하지 못했습니다. 수동: git -C "' + $Path + '" config core.hooksPath .githooks' }
+    $hooks = Invoke-HarnessGit -Arguments @('-C', $Path, 'config', 'core.hooksPath', '.githooks')
+    if ($hooks.ExitCode -ne 0) { throw '비밀값 가드를 활성화하지 못했습니다.' }
+    Write-Item 'ok' 'core.hooksPath = .githooks  (커밋 전 비밀값·머신 상태 차단)'
 
     # -----------------------------------------------------------------------
     # 5. 저장소 자체 검사
@@ -235,10 +278,11 @@ function Invoke-HarnessBootstrap {
     Write-Step '저장소 검사'
     $checker = Join-Path (Join-Path $Path 'scripts') 'Test-HarnessRepo.ps1'
     if (Test-Path -LiteralPath $checker) {
-        & powershell -NoProfile -ExecutionPolicy Bypass -File $checker
+        & powershell -NoProfile -ExecutionPolicy Bypass -File $checker -HarnessRoot $Path
+        if ($LASTEXITCODE -ne 0) { throw '저장소 검사가 실패했습니다. 받은 HEAD를 사용하기 전에 오류를 해소하세요.' }
     }
     else {
-        Write-Item '!!' 'Test-HarnessRepo.ps1 을 찾지 못했습니다.'
+        throw 'Test-HarnessRepo.ps1을 찾지 못했습니다. 저장소 검증을 완료할 수 없습니다.'
     }
 
     # -----------------------------------------------------------------------

@@ -1,5 +1,5 @@
 schema_version: "1.0"
-harness_version: "5.0"
+harness_version: "5.1"
 policy_count: 26
 
 paths:
