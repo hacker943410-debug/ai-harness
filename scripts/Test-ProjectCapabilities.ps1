@@ -10,6 +10,7 @@ if (-not $HarnessRoot) { $HarnessRoot = Split-Path -Parent $PSScriptRoot }
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '_Harness.Common.ps1')
+. (Join-Path $PSScriptRoot '_Harness.SkillContent.ps1')
 
 $project = (Resolve-Path -LiteralPath $ProjectRoot).Path
 $harness = (Resolve-Path -LiteralPath $HarnessRoot).Path
@@ -53,6 +54,37 @@ if (-not (Test-Path -LiteralPath $lockPath)) {
                     if ([IO.Path]::IsPathRooted($cp) -or $cp -match '(^|[\\/])\.\.([\\/]|$)') {
                         Add-Issue 'FAIL' 'MACHINE_PATH_IN_LOCK' "$($capability.id) config_path must be project-relative: $cp"
                     }
+                }
+            }
+            if ($capability.type -eq 'skill' -and $capability.scope -eq 'project') {
+                $installs = @($capability.installations | Where-Object { $null -ne $_ })
+                if ($installs.Count -eq 0 -and $capability.config_path) {
+                    Add-Issue 'INFO' 'SKILL_HASH_MIGRATION_REQUIRED' "$($capability.id): reinstall to record complete Skill content hashes."
+                }
+                $seen = @{}
+                foreach ($installation in $installs) {
+                    try { $relative = ConvertTo-HarnessSkillPath $installation.config_path } catch {
+                        Add-Issue 'FAIL' 'MACHINE_PATH_IN_LOCK' "$($capability.id): $($_.Exception.Message)"
+                        continue
+                    }
+                    if ($seen.ContainsKey($relative)) { Add-Issue 'FAIL' 'DUPLICATE_SKILL_PATH' "$($capability.id): duplicate installation $relative" }
+                    $seen[$relative] = $true
+                    $installed = Join-HarnessPath $project $relative
+                    if (-not (Test-Path -LiteralPath (Join-HarnessPath $installed 'SKILL.md'))) {
+                        Add-Issue 'FAIL' 'SKILL_PATH_MISSING' "$($capability.id): missing installation $relative"
+                    } elseif ($installation.content_hash_algorithm -ne 'sha256-tree-v1' -or -not $installation.content_hash) {
+                        Add-Issue 'INFO' 'SKILL_HASH_MIGRATION_REQUIRED' "$($capability.id): reinstall $relative to record a complete content hash."
+                    } else {
+                        try {
+                            $actual = Get-HarnessSkillContentHash -Root $installed
+                            if ($actual -ne $installation.content_hash) { Add-Issue 'FAIL' 'SKILL_CONTENT_HASH_MISMATCH' "$($capability.id): content differs at $relative" }
+                        } catch { Add-Issue 'FAIL' 'SKILL_CONTENT_CHECK_FAILED' "$($capability.id): $($_.Exception.Message)" }
+                    }
+                }
+                if ($installs.Count -gt 0) {
+                    $summary = @(([string]$capability.config_path).Split(';') | Where-Object { $_ } | ForEach-Object { ConvertTo-HarnessSkillPath $_ } | Sort-Object -Unique)
+                    $paths = @($installs.config_path | ForEach-Object { ConvertTo-HarnessSkillPath $_ } | Sort-Object -Unique)
+                    if (($summary -join ';') -ne ($paths -join ';')) { Add-Issue 'FAIL' 'SKILL_PATH_SUMMARY_MISMATCH' "$($capability.id): config_path does not match installations." }
                 }
             }
             if ($capability.version -eq 'latest' -or "$($capability.version)" -match '[\*\^~]') { Add-Issue 'FAIL' 'UNPINNED_VERSION' "$($capability.id) is not pinned to an exact version." }
