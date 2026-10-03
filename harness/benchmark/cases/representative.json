@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "scope": "Local harness routing, safety gates and project-binding fixtures; product outcomes are unavailable.",
+  "cases": [
+    {"id":"01","name":"Small Bug Fix","request":"Fix the small bug in the existing application","kind":"bug","mode":"MAINTENANCE"},
+    {"id":"02","name":"UI Feature","request":"기존 앱에 UI 검색 화면 기능 추가","kind":"ui","mode":"MAINTENANCE"},
+    {"id":"03","name":"API Feature","request":"Add an API endpoint to the existing project","kind":"api","mode":"MAINTENANCE"},
+    {"id":"04","name":"DB Migration","request":"Migrate the database schema with rollback","kind":"database","mode":"MIGRATION"},
+    {"id":"05","name":"Full-stack Vertical Slice","request":"새 프로젝트 full-stack vertical slice 구축","kind":"vertical","mode":"GREENFIELD"},
+    {"id":"06","name":"Refactoring","request":"Refactor the existing module without behavior changes","kind":"refactor","mode":"MAINTENANCE"},
+    {"id":"07","name":"Security Fix","request":"Fix authentication security permissions","kind":"security","mode":"MAINTENANCE"},
+    {"id":"08","name":"Performance Improvement","request":"기존 서비스 성능 병목 개선","kind":"performance","mode":"MAINTENANCE"},
+    {"id":"09","name":"Documentation Change","request":"Update documentation for the existing project","kind":"documentation","mode":"MAINTENANCE"},
+    {"id":"10","name":"Deployment Change","request":"Change deployment configuration of existing production service","kind":"deployment","mode":"MAINTENANCE"},
+    {"id":"11","name":"Beginner New Project","request":"초보자 새 프로젝트 만들어줘","kind":"beginner","mode":"GREENFIELD","beginner":true},
+    {"id":"12","name":"Beginner Existing Project Modification","request":"초보자 기존 프로젝트 기능 추가 도와줘","kind":"beginner","mode":"MAINTENANCE","beginner":true},
+    {"id":"13","name":"Failed Build Recovery","request":"Recover the failed build in existing project","kind":"build_recovery","mode":"MAINTENANCE"},
+    {"id":"14","name":"Production Deployment Recovery","request":"기존 서비스 운영 배포 장애 복구 hotfix","kind":"production_recovery","mode":"HOTFIX"}
+  ]
+}

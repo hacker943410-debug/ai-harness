@@ -1,0 +1,72 @@
+{
+  "overall": "PASS_WITH_WARNING",
+  "harness_root": "v6 source checkout",
+  "checked_at": "2026-10-03T01:21:51.3249989+00:00",
+  "issues": [
+    {
+      "severity": "INFO",
+      "code": "POLICY_INDEX_OK",
+      "message": "정책 26개가 모두 디스크에서 해석됩니다 (policy_count=26)."
+    },
+    {
+      "severity": "INFO",
+      "code": "CATALOG_OK",
+      "message": "mcp-catalog.json : 65 항목"
+    },
+    {
+      "severity": "INFO",
+      "code": "CATALOG_OK",
+      "message": "skill-catalog.json : 45 항목"
+    },
+    {
+      "severity": "INFO",
+      "code": "BUNDLED_SKILL_OK",
+      "message": "dashboard-builder: skills/dashboard-builder"
+    },
+    {
+      "severity": "INFO",
+      "code": "CLIENT_SKILL_SUPPORT_OK",
+      "message": "agy: .agents/skills/{skill_id}"
+    },
+    {
+      "severity": "INFO",
+      "code": "CLIENT_SKILL_SUPPORT_OK",
+      "message": "claude: .claude/skills/{skill_id}"
+    },
+    {
+      "severity": "INFO",
+      "code": "CLIENT_SKILL_SUPPORT_OK",
+      "message": "codex: .agents/skills/{skill_id}"
+    },
+    {
+      "severity": "INFO",
+      "code": "ESCORT_OK",
+      "message": "에스코트 프로필 9개, 추천 id 44건이 모두 카탈로그에서 해석됩니다."
+    },
+    {
+      "severity": "WARN",
+      "code": "PRERELEASE_VERSION",
+      "message": "mcp-catalog.json 에 프리릴리스 버전이 고정돼 있습니다: 0.0.1a4. 의도한 것인지 확인하세요."
+    },
+    {
+      "severity": "INFO",
+      "code": "SCHEMA_OK",
+      "message": "스키마 검증 5 개 파일 (schemas/ 6개)"
+    },
+    {
+      "severity": "INFO",
+      "code": "SHARED_RUNTIME_OK",
+      "message": "공용 런타임 1개 / shared_runtime 카탈로그 항목 1개"
+    },
+    {
+      "severity": "INFO",
+      "code": "TRACKED_FILES",
+      "message": "추적 파일 114개"
+    },
+    {
+      "severity": "INFO",
+      "code": "V6_CONTRACT",
+      "message": "Manifest, version, runtime references and representative routing validated."
+    }
+  ]
+}

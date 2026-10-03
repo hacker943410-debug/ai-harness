@@ -1,0 +1,31 @@
+PASS default clone uses remote main and detached HEAD
+PASS detached update ignores stale local main
+PASS dirty untracked file blocks update and preserves bytes
+PASS fetch failure preserves HEAD and stops success
+PASS merge failure preserves development branch
+PASS development branch fast-forwards and stays on its branch
+PASS local ahead branch is preserved
+PASS tag pin selects exact detached commit
+PASS full commit SHA works for a new install
+PASS unavailable full SHA fails without fallback
+PASS ambiguous tag and branch require an explicit ref
+PASS major source update stages v6 without changing shared v5 HEAD or bytes
+PASS repository checker failure blocks success
+PASS missing repository checker blocks success
+What if: Performing the operation "Install verified Skill 'dashboard-builder' into .agents/skills/dashboard-builder, .claude/skills/dashboard-builder" on target "C:\Users\pangyo\AppData\Local\Temp\h51-a34f9c\한글프로젝트".
+PASS WhatIf leaves a Korean project and environment unchanged
+PASS AllNative installs two unique destinations with full hashes
+PASS reference tampering is detected and overwrite requires Force
+PASS multi-client move failure restores originals and the lock
+PASS Force replacement succeeds and leaves no transaction directory
+PASS staging failure preserves all installed files and lock bytes
+PASS locked capability file causes replacement rollback
+PASS reference deletion is detected
+PASS additional unrecorded file is detected
+PASS legacy SKILL.md hash remains compatible
+PASS duplicate capability record is rejected
+PASS empty path list cannot bypass bundle verification
+PASS partial bundle metadata is rejected by validator and schema
+PASS outside project paths are rejected
+PASS junction destination cannot reach outside the project
+RESULT 29/29 passed; external AI calls: 0

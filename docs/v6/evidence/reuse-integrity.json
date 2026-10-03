@@ -1,0 +1,228 @@
+{
+  "status": "PASS",
+  "timestamp": "2026-10-03T01:29:20.814532+00:00",
+  "files": [
+    {
+      "file": "policies/01_코드베이스 지도 및 탐색 체계 설계서.md",
+      "baseline_sha256": "54e515e3845dcf50788c48a40d14514cdf3739a1b71ddb8b800c5b72c6664c9f",
+      "current_sha256": "54e515e3845dcf50788c48a40d14514cdf3739a1b71ddb8b800c5b72c6664c9f",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/02_적응형 멀티에이전트 하네스 설계서.md",
+      "baseline_sha256": "3067ce03624a85d002618deea5ddbb432711c32868697100c4c0adb42e98731c",
+      "current_sha256": "3067ce03624a85d002618deea5ddbb432711c32868697100c4c0adb42e98731c",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/03_상황별 지침 라우팅 및 컨텍스트 제어 지침.md",
+      "baseline_sha256": "9299604f07923fa6eec01575cf5c233263e42d2596d320439531e11006d6c935",
+      "current_sha256": "9299604f07923fa6eec01575cf5c233263e42d2596d320439531e11006d6c935",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+      "baseline_sha256": "906937b872369e7126d584553214b1f13db61c858071addd7b894da62520adcf",
+      "current_sha256": "906937b872369e7126d584553214b1f13db61c858071addd7b894da62520adcf",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/05_장기 작업 상태 압축·체크포인트·인수인계 지침.md",
+      "baseline_sha256": "2b0cd2713820035988afd8080bc245480362a1d1e5cb0b5b58d769479c446d88",
+      "current_sha256": "2b0cd2713820035988afd8080bc245480362a1d1e5cb0b5b58d769479c446d88",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+      "baseline_sha256": "25ba862c0bc7b93a47ad8c26e16985a03a789d75f82c7649308be2b9ab66d320",
+      "current_sha256": "25ba862c0bc7b93a47ad8c26e16985a03a789d75f82c7649308be2b9ab66d320",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/07_모호한 요구사항 정량화·예시화·확정 지침.md",
+      "baseline_sha256": "6489a58bd9647733f1a520b5d991c58483bde9e8dbf7b1e8ea0b028bcf3c8b25",
+      "current_sha256": "6489a58bd9647733f1a520b5d991c58483bde9e8dbf7b1e8ea0b028bcf3c8b25",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/08_AI 실수 학습 및 재발 방지 지침.md",
+      "baseline_sha256": "ed83e5c8594f86163acf8f4bff111c902449b0edf21327387117c42d5a16d023",
+      "current_sha256": "ed83e5c8594f86163acf8f4bff111c902449b0edf21327387117c42d5a16d023",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/09_일반인 중심 설명·예시·수치 기반 소통 지침.md",
+      "baseline_sha256": "968c52d19c8477ddfd049a9573c74d633a2bfee15f33dee67a9051491c949fce",
+      "current_sha256": "968c52d19c8477ddfd049a9573c74d633a2bfee15f33dee67a9051491c949fce",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/10_자연어 요구사항 정규화 및 명세 잠금 지침.md",
+      "baseline_sha256": "db90187c8db20fc971f4e2d6219945af442a7f1df1c353e893cf838a5a60c4fb",
+      "current_sha256": "db90187c8db20fc971f4e2d6219945af442a7f1df1c353e893cf838a5a60c4fb",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/11_사실·추론·가정·불확실성 구분 지침.md",
+      "baseline_sha256": "feca0287314ca5aa2a502712992c68b5bf6261d84487810f96ed4676d3864354",
+      "current_sha256": "feca0287314ca5aa2a502712992c68b5bf6261d84487810f96ed4676d3864354",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/12_주관적 디자인 표현 보정 및 디자인 기준 확정 지침.md",
+      "baseline_sha256": "fa751590206d34ab965010a076ab88e40524e8ba10b3a48d41fb8cbd88e389d2",
+      "current_sha256": "fa751590206d34ab965010a076ab88e40524e8ba10b3a48d41fb8cbd88e389d2",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/13_경험·교훈의 규칙·검증·자동화 승격 지침.md",
+      "baseline_sha256": "22b61b6932cadae5e8ecf878f19128cdb3cd82bb10062fc876f15417467bbe75",
+      "current_sha256": "22b61b6932cadae5e8ecf878f19128cdb3cd82bb10062fc876f15417467bbe75",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/14_사용자 의도 보존 및 결정권 보호 지침.md",
+      "baseline_sha256": "db661b2bbee43a2cee55284242cd7933b0850ccbe1205cab33133e06bda96043",
+      "current_sha256": "db661b2bbee43a2cee55284242cd7933b0850ccbe1205cab33133e06bda96043",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/15_의존성 및 외부 계약 관리 지침.md",
+      "baseline_sha256": "e4500adb7a4bf7bb40cdd81a0f34b4dcae0767a357b49ae58bba8966f40dce20",
+      "current_sha256": "e4500adb7a4bf7bb40cdd81a0f34b4dcae0767a357b49ae58bba8966f40dce20",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/16_마이그레이션 및 롤백 관리 지침.md",
+      "baseline_sha256": "d8d0ddc0d5183461f9845f1de8257a8a31ff517b98e5ccb99e48ad14d9231132",
+      "current_sha256": "d8d0ddc0d5183461f9845f1de8257a8a31ff517b98e5ccb99e48ad14d9231132",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/17_보안 및 권한 경계 관리 지침.md",
+      "baseline_sha256": "6dba011a45150c3149633fd2f87d5d5311a31e2a954ed121eccfadabd8026a9f",
+      "current_sha256": "6dba011a45150c3149633fd2f87d5d5311a31e2a954ed121eccfadabd8026a9f",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/18_설계 결정 기록 및 의사결정 기억 지침.md",
+      "baseline_sha256": "8602c35c218b868bfd648c4b8608b5a705ea0a0788ce050e43bf02e56b3c9f16",
+      "current_sha256": "8602c35c218b868bfd648c4b8608b5a705ea0a0788ce050e43bf02e56b3c9f16",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/19_AI 하네스 평가 및 지속 개선 지침.md",
+      "baseline_sha256": "c637c6c58d7513c256554bf4d8b3a30e999f9c0f34dfbfaa9273c276d452a796",
+      "current_sha256": "c637c6c58d7513c256554bf4d8b3a30e999f9c0f34dfbfaa9273c276d452a796",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/20_프로젝트 로드맵 및 마일스톤 관리 지침.md",
+      "baseline_sha256": "3b94c274428ead840d917088c3c12091a09374b6e9bcc2679e1670cb204e0ca2",
+      "current_sha256": "3b94c274428ead840d917088c3c12091a09374b6e9bcc2679e1670cb204e0ca2",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/21_현재 작업 계획 및 실행 추적 지침.md",
+      "baseline_sha256": "254179bc6e34aa62845d6e56ecc7bea9ff3e5d90c321ddf5f93a7acb4c5fd6ad",
+      "current_sha256": "254179bc6e34aa62845d6e56ecc7bea9ff3e5d90c321ddf5f93a7acb4c5fd6ad",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/22_작업 의존성·선행조건·병렬 실행 관리 지침.md",
+      "baseline_sha256": "7d94ebcdf1f460a8f78151b446d09b32579dc40df8db9b6b4e93f3088a336da6",
+      "current_sha256": "7d94ebcdf1f460a8f78151b446d09b32579dc40df8db9b6b4e93f3088a336da6",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/23_작업 이탈·범위 확장·사이드퀘스트 차단 지침.md",
+      "baseline_sha256": "c8016690c2dcbb5e6f03503c141cf887efbebef133ec072f83dfafed7cdfef01",
+      "current_sha256": "c8016690c2dcbb5e6f03503c141cf887efbebef133ec072f83dfafed7cdfef01",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/24_프로젝트 진행상태 및 완료근거 관리 지침.md",
+      "baseline_sha256": "c80a4700179022340103beb94d2d1ddd58d1a5789c8bf40af7aa1fe87eabd8ed",
+      "current_sha256": "c80a4700179022340103beb94d2d1ddd58d1a5789c8bf40af7aa1fe87eabd8ed",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/25_계획 이탈 판정 및 재계획 관리 지침.md",
+      "baseline_sha256": "cdda5c1af734c1e0a4d20d4ad91fd7c6dfac11855e8e4bf15bcbd382fca875b1",
+      "current_sha256": "cdda5c1af734c1e0a4d20d4ad91fd7c6dfac11855e8e4bf15bcbd382fca875b1",
+      "status": "PASS"
+    },
+    {
+      "file": "policies/26_코드베이스 운영체계 실행 지침.md",
+      "baseline_sha256": "312b888fc7593bc63f07a4eb163ead7948fe3198b56325d5a1a0a7adfeed5d41",
+      "current_sha256": "312b888fc7593bc63f07a4eb163ead7948fe3198b56325d5a1a0a7adfeed5d41",
+      "status": "PASS"
+    },
+    {
+      "file": "skills/dashboard-builder/SKILL.md",
+      "baseline_sha256": "43ce0c7e97675c527cbb922a7fcbcff91fb5680af0d35c3ea1822df04e1dbeef",
+      "current_sha256": "43ce0c7e97675c527cbb922a7fcbcff91fb5680af0d35c3ea1822df04e1dbeef",
+      "status": "PASS"
+    },
+    {
+      "file": "skills/dashboard-builder/references/cloudflare-deploy.md",
+      "baseline_sha256": "a0f15e9e86a0397c704fdb151c888bab864bfd3ab8416c2257b53c52dd455846",
+      "current_sha256": "a0f15e9e86a0397c704fdb151c888bab864bfd3ab8416c2257b53c52dd455846",
+      "status": "PASS"
+    },
+    {
+      "file": "skills/dashboard-builder/references/dashboard-qa.md",
+      "baseline_sha256": "5e342c5aaeec81cffb712e926401d00f86fd57802fc029e0ff2dd30b4c684cd9",
+      "current_sha256": "5e342c5aaeec81cffb712e926401d00f86fd57802fc029e0ff2dd30b4c684cd9",
+      "status": "PASS"
+    },
+    {
+      "file": "skills/dashboard-builder/references/data-analysis.md",
+      "baseline_sha256": "b96376aecc640023b95e5299fe3824e8f1d0fb50de8cf2375787127a5ef3b25b",
+      "current_sha256": "b96376aecc640023b95e5299fe3824e8f1d0fb50de8cf2375787127a5ef3b25b",
+      "status": "PASS"
+    },
+    {
+      "file": "skills/dashboard-builder/references/design-system.md",
+      "baseline_sha256": "f247077b16335209f54fa1b976d855e176e9c372243354a23e86bf7ed44af9bb",
+      "current_sha256": "f247077b16335209f54fa1b976d855e176e9c372243354a23e86bf7ed44af9bb",
+      "status": "PASS"
+    },
+    {
+      "file": "skills/dashboard-builder/references/kpi-chart-rules.md",
+      "baseline_sha256": "cb0a89770f8c3a61e048f122b05753f3cff6ed02e78c1dbe2e11ce825f8bf526",
+      "current_sha256": "cb0a89770f8c3a61e048f122b05753f3cff6ed02e78c1dbe2e11ce825f8bf526",
+      "status": "PASS"
+    },
+    {
+      "file": "skills/dashboard-builder/references/runtime-data.md",
+      "baseline_sha256": "6113cb3ecf610883f928801e9697fdf7a790265d276d3e63e454edf882746460",
+      "current_sha256": "6113cb3ecf610883f928801e9697fdf7a790265d276d3e63e454edf882746460",
+      "status": "PASS"
+    },
+    {
+      "file": "skills/dashboard-builder/scripts/validate_dashboard.py",
+      "baseline_sha256": "91dedaf7b0c3b6e081adfa0c3a4ea8d7d4de1e13bdb2ea9f692411e53d3eb3e7",
+      "current_sha256": "91dedaf7b0c3b6e081adfa0c3a4ea8d7d4de1e13bdb2ea9f692411e53d3eb3e7",
+      "status": "PASS"
+    },
+    {
+      "file": "skills/dashboard-builder/templates/dashboard-brief.md",
+      "baseline_sha256": "946b492ae8a29c7ef7a3abb34e4a03ae6b07886652e55cff3e4424cc03a079ca",
+      "current_sha256": "946b492ae8a29c7ef7a3abb34e4a03ae6b07886652e55cff3e4424cc03a079ca",
+      "status": "PASS"
+    },
+    {
+      "file": "skills/dashboard-builder/templates/dashboard.config.example.json",
+      "baseline_sha256": "81a6bae1702477097c6275a2be635cc203de7d1eb1975401135122381d8c5c27",
+      "current_sha256": "81a6bae1702477097c6275a2be635cc203de7d1eb1975401135122381d8c5c27",
+      "status": "PASS"
+    },
+    {
+      "file": "skills/dashboard-builder/templates/design-system.example.md",
+      "baseline_sha256": "62eb8c3c71578e214aeef7c260bab5cebdf7d047b9cabf3df4df6e6b546182e6",
+      "current_sha256": "62eb8c3c71578e214aeef7c260bab5cebdf7d047b9cabf3df4df6e6b546182e6",
+      "status": "PASS"
+    }
+  ]
+}

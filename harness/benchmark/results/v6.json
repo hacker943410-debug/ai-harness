@@ -1,0 +1,1154 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-10-03T01:35:36.970Z",
+  "scope": "Local routing/gate/project-binding fixtures and controlled context payload comparison",
+  "provenance": {
+    "baseline_source": "Unmodified v5 Git checkout supplied by --baseline-root",
+    "baseline_harness_version": "5.1",
+    "baseline_git_commit": "8ebab0087b228c0203a202bead8fb56853d9cb27",
+    "v6_source": "Current v6 worktree containing this runner",
+    "v6_git_commit": "8ebab0087b228c0203a202bead8fb56853d9cb27",
+    "v6_payload_sha256": "123b0f189c30aec4ef92bf9fee37b2fd4e6d1385383a269898568dea31d53154",
+    "node": "v24.13.0",
+    "tokenizer": {
+      "executable": "python.exe",
+      "version": "0.3.3",
+      "encoding": "cl100k_base"
+    },
+    "case_input_sha256": "288c6ebfbbd96d31b73cefed9ca2c52cacd7826c7a90edbadf333b32039a83eb",
+    "model_provider_calls": 0,
+    "limitations": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+  },
+  "version": "v6",
+  "cases": [
+    {
+      "id": "01",
+      "name": "Small Bug Fix",
+      "request": "Fix the small bug in the existing application",
+      "kind": "bug",
+      "mode": "MAINTENANCE",
+      "route": {
+        "project_mode": "MAINTENANCE",
+        "risk": "R2",
+        "tier": "balanced",
+        "verification_profile": "PROFILE_MAINTENANCE_LOW"
+      },
+      "wall_ms": 10400.3855,
+      "route_duration_ms": 0.8657999999999788,
+      "wall_scope": "Routing plus fixture operations and cleanup; context tokenizer time excluded.",
+      "tool_calls": 7,
+      "verification_subprocess_calls": 12,
+      "tool_call_scope": "Public harness API calls; verification subprocess calls recorded separately; internal Git probes excluded.",
+      "retries": 0,
+      "human_interventions": 0,
+      "files_touched": 6,
+      "files_touched_scope": "Managed binding actions; journal and source snapshot bookkeeping excluded.",
+      "rollback_count": 1,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 142655,
+        "sha256": "791ed0943fef5366c06072f396cdedce291e244337f27f090b31e412e6263ebf",
+        "tokens": 43286,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 35664,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "checks": {
+        "mode_route": true,
+        "plan": true,
+        "transaction": true,
+        "verification": true,
+        "product_preserved": true,
+        "acceptance_gate": true,
+        "failed_prior_gate": true,
+        "rollback": true,
+        "phase_duration_ms": 0.5564000000013039
+      },
+      "error": null,
+      "measurement_scope": "harness_fixture",
+      "task_success": true,
+      "first_pass_success": true,
+      "verification_pass": true,
+      "product_metrics": {
+        "reviewer_findings": null,
+        "post_merge_defects": null,
+        "visual_regressions": null,
+        "architecture_violations": null,
+        "first_deployment_success": null,
+        "production_verification_success": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      },
+      "beginner_metrics": {
+        "guided_completion": null,
+        "decision_error_recovery": null,
+        "required_external_knowledge": null,
+        "successful_first_deployment": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      }
+    },
+    {
+      "id": "02",
+      "name": "UI Feature",
+      "request": "기존 앱에 UI 검색 화면 기능 추가",
+      "kind": "ui",
+      "mode": "MAINTENANCE",
+      "route": {
+        "project_mode": "MAINTENANCE",
+        "risk": "R1",
+        "tier": "balanced",
+        "verification_profile": "PROFILE_MAINTENANCE_LOW"
+      },
+      "wall_ms": 14374.783800000003,
+      "route_duration_ms": 0.1320000000014261,
+      "wall_scope": "Routing plus fixture operations and cleanup; context tokenizer time excluded.",
+      "tool_calls": 7,
+      "verification_subprocess_calls": 12,
+      "tool_call_scope": "Public harness API calls; verification subprocess calls recorded separately; internal Git probes excluded.",
+      "retries": 0,
+      "human_interventions": 0,
+      "files_touched": 6,
+      "files_touched_scope": "Managed binding actions; journal and source snapshot bookkeeping excluded.",
+      "rollback_count": 1,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 142655,
+        "sha256": "791ed0943fef5366c06072f396cdedce291e244337f27f090b31e412e6263ebf",
+        "tokens": 43286,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 35664,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "checks": {
+        "mode_route": true,
+        "plan": true,
+        "transaction": true,
+        "verification": true,
+        "product_preserved": true,
+        "acceptance_gate": true,
+        "failed_prior_gate": true,
+        "rollback": true,
+        "phase_duration_ms": 0.09159999999974389
+      },
+      "error": null,
+      "measurement_scope": "harness_fixture",
+      "task_success": true,
+      "first_pass_success": true,
+      "verification_pass": true,
+      "product_metrics": {
+        "reviewer_findings": null,
+        "post_merge_defects": null,
+        "visual_regressions": null,
+        "architecture_violations": null,
+        "first_deployment_success": null,
+        "production_verification_success": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      },
+      "beginner_metrics": {
+        "guided_completion": null,
+        "decision_error_recovery": null,
+        "required_external_knowledge": null,
+        "successful_first_deployment": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      }
+    },
+    {
+      "id": "03",
+      "name": "API Feature",
+      "request": "Add an API endpoint to the existing project",
+      "kind": "api",
+      "mode": "MAINTENANCE",
+      "route": {
+        "project_mode": "MAINTENANCE",
+        "risk": "R2",
+        "tier": "balanced",
+        "verification_profile": "PROFILE_MAINTENANCE_LOW"
+      },
+      "wall_ms": 9116.121500000005,
+      "route_duration_ms": 0.316900000001624,
+      "wall_scope": "Routing plus fixture operations and cleanup; context tokenizer time excluded.",
+      "tool_calls": 7,
+      "verification_subprocess_calls": 12,
+      "tool_call_scope": "Public harness API calls; verification subprocess calls recorded separately; internal Git probes excluded.",
+      "retries": 0,
+      "human_interventions": 0,
+      "files_touched": 6,
+      "files_touched_scope": "Managed binding actions; journal and source snapshot bookkeeping excluded.",
+      "rollback_count": 1,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 142655,
+        "sha256": "791ed0943fef5366c06072f396cdedce291e244337f27f090b31e412e6263ebf",
+        "tokens": 43286,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 35664,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "checks": {
+        "mode_route": true,
+        "plan": true,
+        "transaction": true,
+        "verification": true,
+        "product_preserved": true,
+        "acceptance_gate": true,
+        "failed_prior_gate": true,
+        "rollback": true,
+        "phase_duration_ms": 0.06339999999909196
+      },
+      "error": null,
+      "measurement_scope": "harness_fixture",
+      "task_success": true,
+      "first_pass_success": true,
+      "verification_pass": true,
+      "product_metrics": {
+        "reviewer_findings": null,
+        "post_merge_defects": null,
+        "visual_regressions": null,
+        "architecture_violations": null,
+        "first_deployment_success": null,
+        "production_verification_success": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      },
+      "beginner_metrics": {
+        "guided_completion": null,
+        "decision_error_recovery": null,
+        "required_external_knowledge": null,
+        "successful_first_deployment": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      }
+    },
+    {
+      "id": "04",
+      "name": "DB Migration",
+      "request": "Migrate the database schema with rollback",
+      "kind": "database",
+      "mode": "MIGRATION",
+      "route": {
+        "project_mode": "MIGRATION",
+        "risk": "R3",
+        "tier": "frontier",
+        "verification_profile": "PROFILE_MIGRATION"
+      },
+      "wall_ms": 9036.219299999997,
+      "route_duration_ms": 0.27709999999933643,
+      "wall_scope": "Routing plus fixture operations and cleanup; context tokenizer time excluded.",
+      "tool_calls": 7,
+      "verification_subprocess_calls": 12,
+      "tool_call_scope": "Public harness API calls; verification subprocess calls recorded separately; internal Git probes excluded.",
+      "retries": 0,
+      "human_interventions": 0,
+      "files_touched": 6,
+      "files_touched_scope": "Managed binding actions; journal and source snapshot bookkeeping excluded.",
+      "rollback_count": 1,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/16_마이그레이션 및 롤백 관리 지침.md",
+          "harness/runtime/transition-audit.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 137869,
+        "sha256": "f441fd8cc98b30c44dbabbcd53e9479a40f851472028278cca9b42c8d3a04e73",
+        "tokens": 41745,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 34468,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "checks": {
+        "mode_route": true,
+        "migration_boundary": true,
+        "plan": true,
+        "transaction": true,
+        "verification": true,
+        "product_preserved": true,
+        "acceptance_gate": true,
+        "failed_prior_gate": true,
+        "rollback": true,
+        "phase_duration_ms": 0.07130000000324799
+      },
+      "error": null,
+      "measurement_scope": "harness_fixture",
+      "task_success": true,
+      "first_pass_success": true,
+      "verification_pass": true,
+      "product_metrics": {
+        "reviewer_findings": null,
+        "post_merge_defects": null,
+        "visual_regressions": null,
+        "architecture_violations": null,
+        "first_deployment_success": null,
+        "production_verification_success": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      },
+      "beginner_metrics": {
+        "guided_completion": null,
+        "decision_error_recovery": null,
+        "required_external_knowledge": null,
+        "successful_first_deployment": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      }
+    },
+    {
+      "id": "05",
+      "name": "Full-stack Vertical Slice",
+      "request": "새 프로젝트 full-stack vertical slice 구축",
+      "kind": "vertical",
+      "mode": "GREENFIELD",
+      "route": {
+        "project_mode": "GREENFIELD",
+        "risk": "R2",
+        "tier": "balanced",
+        "verification_profile": "PROFILE_GREENFIELD"
+      },
+      "wall_ms": 7135.884500000007,
+      "route_duration_ms": 0.04530000000522705,
+      "wall_scope": "Routing plus fixture operations and cleanup; context tokenizer time excluded.",
+      "tool_calls": 7,
+      "verification_subprocess_calls": 0,
+      "tool_call_scope": "Public harness API calls; verification subprocess calls recorded separately; internal Git probes excluded.",
+      "retries": 0,
+      "human_interventions": 0,
+      "files_touched": 6,
+      "files_touched_scope": "Managed binding actions; journal and source snapshot bookkeeping excluded.",
+      "rollback_count": 1,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/18_설계 결정 기록 및 의사결정 기억 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 117447,
+        "sha256": "ce2862f76c54d661e0f8c3851134b4266df7df8b303252ebf3d9ca80dec07b55",
+        "tokens": 36422,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 29362,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "checks": {
+        "mode_route": true,
+        "empty_greenfield_binding": true,
+        "plan": true,
+        "transaction": true,
+        "verification": true,
+        "no_product_creation": true,
+        "acceptance_gate": true,
+        "failed_prior_gate": true,
+        "rollback": true,
+        "phase_duration_ms": 0.06210000000282889
+      },
+      "error": null,
+      "measurement_scope": "harness_fixture",
+      "task_success": true,
+      "first_pass_success": true,
+      "verification_pass": true,
+      "product_metrics": {
+        "reviewer_findings": null,
+        "post_merge_defects": null,
+        "visual_regressions": null,
+        "architecture_violations": null,
+        "first_deployment_success": null,
+        "production_verification_success": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      },
+      "beginner_metrics": {
+        "guided_completion": null,
+        "decision_error_recovery": null,
+        "required_external_knowledge": null,
+        "successful_first_deployment": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      }
+    },
+    {
+      "id": "06",
+      "name": "Refactoring",
+      "request": "Refactor the existing module without behavior changes",
+      "kind": "refactor",
+      "mode": "MAINTENANCE",
+      "route": {
+        "project_mode": "MAINTENANCE",
+        "risk": "R2",
+        "tier": "balanced",
+        "verification_profile": "PROFILE_MAINTENANCE_LOW"
+      },
+      "wall_ms": 9023.300299999988,
+      "route_duration_ms": 0.0471999999936088,
+      "wall_scope": "Routing plus fixture operations and cleanup; context tokenizer time excluded.",
+      "tool_calls": 7,
+      "verification_subprocess_calls": 12,
+      "tool_call_scope": "Public harness API calls; verification subprocess calls recorded separately; internal Git probes excluded.",
+      "retries": 0,
+      "human_interventions": 0,
+      "files_touched": 6,
+      "files_touched_scope": "Managed binding actions; journal and source snapshot bookkeeping excluded.",
+      "rollback_count": 1,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 142655,
+        "sha256": "791ed0943fef5366c06072f396cdedce291e244337f27f090b31e412e6263ebf",
+        "tokens": 43286,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 35664,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "checks": {
+        "mode_route": true,
+        "plan": true,
+        "transaction": true,
+        "verification": true,
+        "product_preserved": true,
+        "acceptance_gate": true,
+        "failed_prior_gate": true,
+        "rollback": true,
+        "phase_duration_ms": 0.07349999999860302
+      },
+      "error": null,
+      "measurement_scope": "harness_fixture",
+      "task_success": true,
+      "first_pass_success": true,
+      "verification_pass": true,
+      "product_metrics": {
+        "reviewer_findings": null,
+        "post_merge_defects": null,
+        "visual_regressions": null,
+        "architecture_violations": null,
+        "first_deployment_success": null,
+        "production_verification_success": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      },
+      "beginner_metrics": {
+        "guided_completion": null,
+        "decision_error_recovery": null,
+        "required_external_knowledge": null,
+        "successful_first_deployment": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      }
+    },
+    {
+      "id": "07",
+      "name": "Security Fix",
+      "request": "Fix authentication security permissions",
+      "kind": "security",
+      "mode": "MAINTENANCE",
+      "route": {
+        "project_mode": "MAINTENANCE",
+        "risk": "R3",
+        "tier": "frontier",
+        "verification_profile": "PROFILE_MAINTENANCE_HIGH"
+      },
+      "wall_ms": 14197.965900000025,
+      "route_duration_ms": 0.06400000001303852,
+      "wall_scope": "Routing plus fixture operations and cleanup; context tokenizer time excluded.",
+      "tool_calls": 7,
+      "verification_subprocess_calls": 12,
+      "tool_call_scope": "Public harness API calls; verification subprocess calls recorded separately; internal Git probes excluded.",
+      "retries": 0,
+      "human_interventions": 0,
+      "files_touched": 6,
+      "files_touched_scope": "Managed binding actions; journal and source snapshot bookkeeping excluded.",
+      "rollback_count": 1,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/17_보안 및 권한 경계 관리 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 196714,
+        "sha256": "d60f529fbcd91951bd2b8cfb689cdee36ecf66a0f72182c83d1689c2296a62c7",
+        "tokens": 59117,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 49179,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "checks": {
+        "mode_route": true,
+        "security_boundary": true,
+        "plan": true,
+        "transaction": true,
+        "verification": true,
+        "product_preserved": true,
+        "acceptance_gate": true,
+        "failed_prior_gate": true,
+        "rollback": true,
+        "phase_duration_ms": 0.06530000000202563
+      },
+      "error": null,
+      "measurement_scope": "harness_fixture",
+      "task_success": true,
+      "first_pass_success": true,
+      "verification_pass": true,
+      "product_metrics": {
+        "reviewer_findings": null,
+        "post_merge_defects": null,
+        "visual_regressions": null,
+        "architecture_violations": null,
+        "first_deployment_success": null,
+        "production_verification_success": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      },
+      "beginner_metrics": {
+        "guided_completion": null,
+        "decision_error_recovery": null,
+        "required_external_knowledge": null,
+        "successful_first_deployment": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      }
+    },
+    {
+      "id": "08",
+      "name": "Performance Improvement",
+      "request": "기존 서비스 성능 병목 개선",
+      "kind": "performance",
+      "mode": "MAINTENANCE",
+      "route": {
+        "project_mode": "MAINTENANCE",
+        "risk": "R2",
+        "tier": "balanced",
+        "verification_profile": "PROFILE_MAINTENANCE_LOW"
+      },
+      "wall_ms": 8894.7843,
+      "route_duration_ms": 0.06729999999515712,
+      "wall_scope": "Routing plus fixture operations and cleanup; context tokenizer time excluded.",
+      "tool_calls": 7,
+      "verification_subprocess_calls": 12,
+      "tool_call_scope": "Public harness API calls; verification subprocess calls recorded separately; internal Git probes excluded.",
+      "retries": 0,
+      "human_interventions": 0,
+      "files_touched": 6,
+      "files_touched_scope": "Managed binding actions; journal and source snapshot bookkeeping excluded.",
+      "rollback_count": 1,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 142655,
+        "sha256": "791ed0943fef5366c06072f396cdedce291e244337f27f090b31e412e6263ebf",
+        "tokens": 43286,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 35664,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "checks": {
+        "mode_route": true,
+        "plan": true,
+        "transaction": true,
+        "verification": true,
+        "product_preserved": true,
+        "acceptance_gate": true,
+        "failed_prior_gate": true,
+        "rollback": true,
+        "phase_duration_ms": 0.07450000000244472
+      },
+      "error": null,
+      "measurement_scope": "harness_fixture",
+      "task_success": true,
+      "first_pass_success": true,
+      "verification_pass": true,
+      "product_metrics": {
+        "reviewer_findings": null,
+        "post_merge_defects": null,
+        "visual_regressions": null,
+        "architecture_violations": null,
+        "first_deployment_success": null,
+        "production_verification_success": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      },
+      "beginner_metrics": {
+        "guided_completion": null,
+        "decision_error_recovery": null,
+        "required_external_knowledge": null,
+        "successful_first_deployment": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      }
+    },
+    {
+      "id": "09",
+      "name": "Documentation Change",
+      "request": "Update documentation for the existing project",
+      "kind": "documentation",
+      "mode": "MAINTENANCE",
+      "route": {
+        "project_mode": "MAINTENANCE",
+        "risk": "R2",
+        "tier": "balanced",
+        "verification_profile": "PROFILE_MAINTENANCE_LOW"
+      },
+      "wall_ms": 9209.17300000001,
+      "route_duration_ms": 0.04850000000442378,
+      "wall_scope": "Routing plus fixture operations and cleanup; context tokenizer time excluded.",
+      "tool_calls": 7,
+      "verification_subprocess_calls": 12,
+      "tool_call_scope": "Public harness API calls; verification subprocess calls recorded separately; internal Git probes excluded.",
+      "retries": 0,
+      "human_interventions": 0,
+      "files_touched": 6,
+      "files_touched_scope": "Managed binding actions; journal and source snapshot bookkeeping excluded.",
+      "rollback_count": 1,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 142655,
+        "sha256": "791ed0943fef5366c06072f396cdedce291e244337f27f090b31e412e6263ebf",
+        "tokens": 43286,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 35664,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "checks": {
+        "mode_route": true,
+        "plan": true,
+        "transaction": true,
+        "verification": true,
+        "product_preserved": true,
+        "acceptance_gate": true,
+        "failed_prior_gate": true,
+        "rollback": true,
+        "phase_duration_ms": 0.10169999999925494
+      },
+      "error": null,
+      "measurement_scope": "harness_fixture",
+      "task_success": true,
+      "first_pass_success": true,
+      "verification_pass": true,
+      "product_metrics": {
+        "reviewer_findings": null,
+        "post_merge_defects": null,
+        "visual_regressions": null,
+        "architecture_violations": null,
+        "first_deployment_success": null,
+        "production_verification_success": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      },
+      "beginner_metrics": {
+        "guided_completion": null,
+        "decision_error_recovery": null,
+        "required_external_knowledge": null,
+        "successful_first_deployment": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      }
+    },
+    {
+      "id": "10",
+      "name": "Deployment Change",
+      "request": "Change deployment configuration of existing production service",
+      "kind": "deployment",
+      "mode": "MAINTENANCE",
+      "route": {
+        "project_mode": "MAINTENANCE",
+        "risk": "R3",
+        "tier": "frontier",
+        "verification_profile": "PROFILE_MAINTENANCE_HIGH"
+      },
+      "wall_ms": 9221.939299999998,
+      "route_duration_ms": 0.04769999999552965,
+      "wall_scope": "Routing plus fixture operations and cleanup; context tokenizer time excluded.",
+      "tool_calls": 7,
+      "verification_subprocess_calls": 12,
+      "tool_call_scope": "Public harness API calls; verification subprocess calls recorded separately; internal Git probes excluded.",
+      "retries": 0,
+      "human_interventions": 0,
+      "files_touched": 6,
+      "files_touched_scope": "Managed binding actions; journal and source snapshot bookkeeping excluded.",
+      "rollback_count": 1,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 142655,
+        "sha256": "791ed0943fef5366c06072f396cdedce291e244337f27f090b31e412e6263ebf",
+        "tokens": 43286,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 35664,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "checks": {
+        "mode_route": true,
+        "plan": true,
+        "transaction": true,
+        "verification": true,
+        "product_preserved": true,
+        "acceptance_gate": true,
+        "failed_prior_gate": true,
+        "rollback": true,
+        "phase_duration_ms": 0.07940000000235159
+      },
+      "error": null,
+      "measurement_scope": "harness_fixture",
+      "task_success": true,
+      "first_pass_success": true,
+      "verification_pass": true,
+      "product_metrics": {
+        "reviewer_findings": null,
+        "post_merge_defects": null,
+        "visual_regressions": null,
+        "architecture_violations": null,
+        "first_deployment_success": null,
+        "production_verification_success": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      },
+      "beginner_metrics": {
+        "guided_completion": null,
+        "decision_error_recovery": null,
+        "required_external_knowledge": null,
+        "successful_first_deployment": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      }
+    },
+    {
+      "id": "11",
+      "name": "Beginner New Project",
+      "request": "초보자 새 프로젝트 만들어줘",
+      "kind": "beginner",
+      "mode": "GREENFIELD",
+      "beginner": true,
+      "route": {
+        "project_mode": "GREENFIELD",
+        "risk": "R2",
+        "tier": "balanced",
+        "verification_profile": "PROFILE_GREENFIELD"
+      },
+      "wall_ms": 7004.728000000003,
+      "route_duration_ms": 0.03569999999308493,
+      "wall_scope": "Routing plus fixture operations and cleanup; context tokenizer time excluded.",
+      "tool_calls": 7,
+      "verification_subprocess_calls": 0,
+      "tool_call_scope": "Public harness API calls; verification subprocess calls recorded separately; internal Git probes excluded.",
+      "retries": 0,
+      "human_interventions": 0,
+      "files_touched": 6,
+      "files_touched_scope": "Managed binding actions; journal and source snapshot bookkeeping excluded.",
+      "rollback_count": 1,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/18_설계 결정 기록 및 의사결정 기억 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 117447,
+        "sha256": "ce2862f76c54d661e0f8c3851134b4266df7df8b303252ebf3d9ca80dec07b55",
+        "tokens": 36422,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 29362,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "checks": {
+        "mode_route": true,
+        "empty_greenfield_binding": true,
+        "plan": true,
+        "transaction": true,
+        "verification": true,
+        "no_product_creation": true,
+        "acceptance_gate": true,
+        "failed_prior_gate": true,
+        "rollback": true,
+        "phase_duration_ms": 0.07960000001185108
+      },
+      "error": null,
+      "measurement_scope": "harness_fixture",
+      "task_success": true,
+      "first_pass_success": true,
+      "verification_pass": true,
+      "product_metrics": {
+        "reviewer_findings": null,
+        "post_merge_defects": null,
+        "visual_regressions": null,
+        "architecture_violations": null,
+        "first_deployment_success": null,
+        "production_verification_success": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      },
+      "beginner_metrics": {
+        "guided_completion": null,
+        "decision_error_recovery": null,
+        "required_external_knowledge": null,
+        "successful_first_deployment": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      }
+    },
+    {
+      "id": "12",
+      "name": "Beginner Existing Project Modification",
+      "request": "초보자 기존 프로젝트 기능 추가 도와줘",
+      "kind": "beginner",
+      "mode": "MAINTENANCE",
+      "beginner": true,
+      "route": {
+        "project_mode": "MAINTENANCE",
+        "risk": "R2",
+        "tier": "balanced",
+        "verification_profile": "PROFILE_MAINTENANCE_LOW"
+      },
+      "wall_ms": 9163.71530000001,
+      "route_duration_ms": 0.04349999999976717,
+      "wall_scope": "Routing plus fixture operations and cleanup; context tokenizer time excluded.",
+      "tool_calls": 7,
+      "verification_subprocess_calls": 12,
+      "tool_call_scope": "Public harness API calls; verification subprocess calls recorded separately; internal Git probes excluded.",
+      "retries": 0,
+      "human_interventions": 0,
+      "files_touched": 6,
+      "files_touched_scope": "Managed binding actions; journal and source snapshot bookkeeping excluded.",
+      "rollback_count": 1,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 142655,
+        "sha256": "791ed0943fef5366c06072f396cdedce291e244337f27f090b31e412e6263ebf",
+        "tokens": 43286,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 35664,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "checks": {
+        "mode_route": true,
+        "plan": true,
+        "transaction": true,
+        "verification": true,
+        "product_preserved": true,
+        "acceptance_gate": true,
+        "failed_prior_gate": true,
+        "rollback": true,
+        "phase_duration_ms": 0.06859999999869615
+      },
+      "error": null,
+      "measurement_scope": "harness_fixture",
+      "task_success": true,
+      "first_pass_success": true,
+      "verification_pass": true,
+      "product_metrics": {
+        "reviewer_findings": null,
+        "post_merge_defects": null,
+        "visual_regressions": null,
+        "architecture_violations": null,
+        "first_deployment_success": null,
+        "production_verification_success": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      },
+      "beginner_metrics": {
+        "guided_completion": null,
+        "decision_error_recovery": null,
+        "required_external_knowledge": null,
+        "successful_first_deployment": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      }
+    },
+    {
+      "id": "13",
+      "name": "Failed Build Recovery",
+      "request": "Recover the failed build in existing project",
+      "kind": "build_recovery",
+      "mode": "MAINTENANCE",
+      "route": {
+        "project_mode": "MAINTENANCE",
+        "risk": "R2",
+        "tier": "balanced",
+        "verification_profile": "PROFILE_MAINTENANCE_LOW"
+      },
+      "wall_ms": 14184.275800000003,
+      "route_duration_ms": 0.05920000001788139,
+      "wall_scope": "Routing plus fixture operations and cleanup; context tokenizer time excluded.",
+      "tool_calls": 8,
+      "verification_subprocess_calls": 12,
+      "tool_call_scope": "Public harness API calls; verification subprocess calls recorded separately; internal Git probes excluded.",
+      "retries": 0,
+      "human_interventions": 0,
+      "files_touched": 6,
+      "files_touched_scope": "Managed binding actions; journal and source snapshot bookkeeping excluded.",
+      "rollback_count": 1,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 142655,
+        "sha256": "791ed0943fef5366c06072f396cdedce291e244337f27f090b31e412e6263ebf",
+        "tokens": 43286,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 35664,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "checks": {
+        "mode_route": true,
+        "plan": true,
+        "transaction": true,
+        "verification": true,
+        "product_preserved": true,
+        "acceptance_gate": true,
+        "failed_prior_gate": true,
+        "repaired_gate_resume": true,
+        "rollback": true,
+        "phase_duration_ms": 0.2380000000121072
+      },
+      "error": null,
+      "measurement_scope": "harness_fixture",
+      "task_success": true,
+      "first_pass_success": true,
+      "verification_pass": true,
+      "product_metrics": {
+        "reviewer_findings": null,
+        "post_merge_defects": null,
+        "visual_regressions": null,
+        "architecture_violations": null,
+        "first_deployment_success": null,
+        "production_verification_success": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      },
+      "beginner_metrics": {
+        "guided_completion": null,
+        "decision_error_recovery": null,
+        "required_external_knowledge": null,
+        "successful_first_deployment": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      }
+    },
+    {
+      "id": "14",
+      "name": "Production Deployment Recovery",
+      "request": "기존 서비스 운영 배포 장애 복구 hotfix",
+      "kind": "production_recovery",
+      "mode": "HOTFIX",
+      "route": {
+        "project_mode": "HOTFIX",
+        "risk": "R3",
+        "tier": "frontier",
+        "verification_profile": "PROFILE_HOTFIX"
+      },
+      "wall_ms": 9081.39810000002,
+      "route_duration_ms": 0.1015999999945052,
+      "wall_scope": "Routing plus fixture operations and cleanup; context tokenizer time excluded.",
+      "tool_calls": 8,
+      "verification_subprocess_calls": 12,
+      "tool_call_scope": "Public harness API calls; verification subprocess calls recorded separately; internal Git probes excluded.",
+      "retries": 0,
+      "human_interventions": 0,
+      "files_touched": 6,
+      "files_touched_scope": "Managed binding actions; journal and source snapshot bookkeeping excluded.",
+      "rollback_count": 1,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 92704,
+        "sha256": "8e4423cee39c3d24ea864ce65eae127170506156fb9c2439d04411b1b6c46205",
+        "tokens": 28631,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 23176,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "checks": {
+        "mode_route": true,
+        "plan": true,
+        "transaction": true,
+        "verification": true,
+        "product_preserved": true,
+        "acceptance_gate": true,
+        "failed_prior_gate": true,
+        "simulated_production_rejected": true,
+        "rollback": true,
+        "phase_duration_ms": 0.4367000000202097
+      },
+      "error": null,
+      "measurement_scope": "harness_fixture",
+      "task_success": true,
+      "first_pass_success": true,
+      "verification_pass": true,
+      "product_metrics": {
+        "reviewer_findings": null,
+        "post_merge_defects": null,
+        "visual_regressions": null,
+        "architecture_violations": null,
+        "first_deployment_success": null,
+        "production_verification_success": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      },
+      "beginner_metrics": {
+        "guided_completion": null,
+        "decision_error_recovery": null,
+        "required_external_knowledge": null,
+        "successful_first_deployment": null,
+        "reason": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+      }
+    }
+  ],
+  "summary": {
+    "case_count": 14,
+    "fixture_passed": 14,
+    "fixture_failed": 0,
+    "fixture_success_rate": 1,
+    "total_wall_ms": 140044.67460000006,
+    "api_billed_tokens": null,
+    "production_success_rate": null
+  },
+  "release_gate": {
+    "status": "PASS",
+    "fixture_regressions": 0,
+    "baseline_executable_comparison": "unavailable",
+    "context_utf8_delta": 50039,
+    "context_cost_explanation": "Additive executable lifecycle, evidence, migration and update contracts increase always-loaded runtime text and selected JIT payloads; no claim of reduced billed tokens."
+  }
+}

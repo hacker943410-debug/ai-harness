@@ -1,9 +1,54 @@
+# AI Harness v6.0
+
+A beginner-guided development harness with executable phase gates and safe, version-pinned project installation, adoption and updates.
+
+Use one request in any connected project:
+
+- New: “AI Harness v6.0 기준으로 이 프로젝트를 시작해줘.”
+- Existing: “이 프로젝트에 AI Harness v6.0을 적용해줘.”
+- Update: “이 프로젝트의 AI Harness를 v6.0으로 업데이트해줘.”
+- Active development: “현재 개발 상태를 보존하면서 AI Harness를 v6.0으로 업데이트해줘.” The ordinary update request applies the same preservation procedure.
+
+The agent reads [PROJECT_INIT.md](PROJECT_INIT.md), diagnoses the project, runs the intent router, records Inventory → Gap Analysis → file migration plan, checkpoints and freezes active work, preserves local rules, validates, runs regression, audits critical gate backfill, records benchmark and resumes. Unsafe active deployment, DB transformation or incident work defers the update. Beginner Mode is ON unless explicitly changed; it survives migration. Existing code is not retroactively refactored.
+
+Runtime (Node 22+, already used by the v5 harness; no new packages):
+
+```powershell
+node scripts/harness-v6.mjs diagnose --project C:/your/project
+node scripts/harness-v6.mjs route --project C:/your/project --request 'AI Harness v6.0으로 업데이트해줘.'
+node scripts/harness-v6.mjs plan --project C:/your/project --request 'AI Harness v6.0으로 업데이트해줘.' --out C:/your/project/.ai/v6-plan.json
+node scripts/harness-v6.mjs apply --plan C:/your/project/.ai/v6-plan.json
+node scripts/harness-v6.mjs verify --project C:/your/project
+node scripts/harness-v6.mjs rollback --project C:/your/project
+```
+
+The agent performs these commands; beginners need only express their goal and resolve material choices. Existing projects require discovered build/test/critical regression commands as explicit argv configuration (or justified nonapplicability). `plan` is read-only; discovered commands are not automatically trusted. The project binding references a verified immutable global release snapshot, so upgrading a shared source cannot silently change active project rules. A custom managed block or modified bridge creates a conflict instead of being overwritten. Unmanaged instructions, custom Skills, decisions and product files remain intact.
+
+Read [Update Protocol](harness/update/UPDATE_PROTOCOL.md), [Migration Notes](MIGRATION_NOTES.md), [Traceability](docs/v6/REQUIREMENTS_TRACEABILITY.md) and [Benchmark](harness/benchmark/README.md). Exact measurements and limits are in `harness/benchmark/results/`; deterministic fixtures are not claims about real novice completion or production deployment.
+
+Validate source:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRepo.ps1 -Json
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRelease.ps1
+node scripts/test-jev-scenarios.mjs
+node scripts/validate-harness-v6.mjs
+node scripts/test-harness-v6.mjs
+node scripts/benchmark-harness-v6.mjs --baseline-root C:/your/v5-checkout
+```
+
+Existing machine runtime installers, credential boundaries, 26 JIT policies, dashboard Skill and optional Jev shadow fallback continue below. Machine installation/authentication is separate from project migration.
+
+---
+
 # AI Harness — 사용자 설치·운영 설명서
 
-Version: 5.1 (Canonical Source: `POLICY_INDEX.yaml` 의 `harness_version`)
+Version: 6.0.0 (Canonical Source: `HARNESS_VERSION`; Manifest / POLICY_INDEX와 일치)
 구성: 26개 전문 정책 + CORE + ROUTER + POLICY_INDEX + PROJECT_INIT + HARNESS_DOCTOR
       + 공용 런타임 / 클라이언트 계약 / 스키마 / 설치·진단 스크립트
 대상: Claude Code, Codex CLI, Antigravity(AGY) 및 유사한 파일 기반 Coding Agent
+
+아래의 기존 운영 설명은 머신 Runtime·인증·Skill 절차를 보존한다. 프로젝트 초기화·상태 파일·업데이트는 위의 v6 실행 경로와 `PROJECT_INIT.md`가 정본이며, 과거 수동 템플릿으로 다시 초기화하지 않는다.
 
 정본은 **GitHub 저장소**다. Google Drive 는 정본이 아니라 **불변 스냅샷**이다.
 
@@ -71,7 +116,7 @@ Claude Code 사용자는 플러그인이 더 짧다 (§23).
 |---|---|---|---|
 | **A 하네스** | 이 저장소 (`C:\AI-Harness` 등) | 정책·카탈로그·**레시피**(무엇을, 어떤 버전으로) | ✅ |
 | **B 머신** | `%LOCALAPPDATA%\AI-Tools` | **실체**(어디에 설치, 누구로 인증), 토큰, 저널 | ❌ |
-| **C 프로젝트** | `<프로젝트>\.ai\` | **capability ID 만** | ✅ |
+| **C 프로젝트** | `<프로젝트>\.ai\` | capability ID·참조, v6 바인딩·안전한 작업 상태·Evidence (비밀값 제외) | ✅ |
 
 따라서:
 

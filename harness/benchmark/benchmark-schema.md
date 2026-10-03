@@ -1,0 +1,11 @@
+# Benchmark JSON contract
+
+Both artifacts have `schema_version`, `generated_at`, `version`, `scope`, `provenance`, and `cases`. The result also has `summary` and `release_gate`. Portable source descriptions, Git commits and content hashes identify inputs without recording personal machine paths. Every case retains its shared case ID, name and request.
+
+Measured fields: `wall_ms`, `tool_calls` (instrumented public engine/project API invocations and separately recorded verification subprocess commands), `retries`, `human_interventions`, `context.utf8_bytes`, `context.sha256`, `context.tokens`, `context.tokenizer`, `context.estimated_tokens`, `context.estimator`, `checks`, `files_touched`, `rollback_count`, and `phase_duration_ms`. Null means unavailable; an unavailable value has an associated reason. Context tokens are not API usage or model billing. Tokenizer provenance identifies `cl100k_base`; its result is a context count under that encoding, not a claim about the tokenizer of any model.
+
+`checks` describe observed local outcomes. `task_success` and `verification_pass` mean the fixture checks passed; `first_pass_success` means no runner retry was needed. They have `measurement_scope: harness_fixture`. `product_metrics` and `beginner_metrics` include explicit null values and reasons for unmeasured human, product, reviewer and production outcomes. Model usage, deployment, semantic quality and post-merge defects cannot be inferred from fixture checks.
+
+The v5 artifact reports executable engine/transaction capability as unavailable where source files do not exist. It preserves real baseline runtime hashes and context measurements rather than synthesizing success rates, durations or interventions. Both versions use identical case input and policy selection, with `context.selection: v6 deterministic selection applied to both payloads`. This is a controlled payload comparison, not a benchmark of the old prose router executing tasks.
+
+`release_gate` records `PASS` or `FAIL`, fixture regression count, baseline information and context delta. An explicit explanation covers additive contract growth; unexplained growth fails. Missing baseline inputs fail rather than silently replacing v5 with v6. Machine results and documentation must retain these limitations when quoted elsewhere.

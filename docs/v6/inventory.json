@@ -1,0 +1,694 @@
+{
+  "repository": "https://github.com/hacker943410-debug/ai-harness",
+  "remote": "https://github.com/hacker943410-debug/ai-harness.git",
+  "tracked_file_count": 114,
+  "hash_algorithm": "SHA-256",
+  "files": [
+    {
+      "path": ".claude-plugin/marketplace.json",
+      "role": "Claude marketplace metadata",
+      "size_bytes": 968,
+      "sha256": "a5e39d67fcb7badd10e5854399381429d403afc2c55cde9a43250dd785cc4bcf"
+    },
+    {
+      "path": ".editorconfig",
+      "role": "editor formatting configuration",
+      "size_bytes": 578,
+      "sha256": "9da43e126a01329cae65de5a3ae2911471106aecb70a49fba0e222206000b513"
+    },
+    {
+      "path": ".gitattributes",
+      "role": "Git behavior/configuration",
+      "size_bytes": 970,
+      "sha256": "c1b7e4888e4aef3cb31cffe0497dda3809c83bed600b53b7929d6b3d9f79eb73"
+    },
+    {
+      "path": ".githooks/pre-commit",
+      "role": "Git hook",
+      "size_bytes": 4100,
+      "sha256": "3dd847b3b88acfade737fc9e63b70486441ef656a54c9b9124c0a54f4c87e539"
+    },
+    {
+      "path": ".gitignore",
+      "role": "Git behavior/configuration",
+      "size_bytes": 1183,
+      "sha256": "5ef70fd442c9e09988c3997a84cbb2d5c73d61a01da5d33216051556ddcf20b6"
+    },
+    {
+      "path": "CLI_PATCH_NOTES_V5.md",
+      "role": "user/operator documentation or release history",
+      "size_bytes": 4434,
+      "sha256": "269feab53cdc71efa09b983a4234c7d3aacdc1f8fb2dbfac3655663b6409cd3a"
+    },
+    {
+      "path": "CLI_PATCH_NOTES_V5_1.md",
+      "role": "user/operator documentation or release history",
+      "size_bytes": 3547,
+      "sha256": "5dbcfbf8fecc4ea9a77e137cbd1271ed45317fc72632a2f7196a848557f00442"
+    },
+    {
+      "path": "CORE.md",
+      "role": "always-loaded harness runtime core/router/index",
+      "size_bytes": 9163,
+      "sha256": "708ebba7619788ecf23870e0759e45361fbf7fb02014d6d9a7d9c1e24f28f522"
+    },
+    {
+      "path": "HARNESS_DOCTOR.md",
+      "role": "user/operator documentation or release history",
+      "size_bytes": 11304,
+      "sha256": "6751464987b828397b4ac0077e00efd275f3232d1350c3364da056f2edd7314e"
+    },
+    {
+      "path": "LICENSE",
+      "role": "license",
+      "size_bytes": 1075,
+      "sha256": "19b06ebb53705727070ec5d6ae282e49dd091b8879c0b13990ef8966b697194d"
+    },
+    {
+      "path": "PATCH_NOTES.md",
+      "role": "user/operator documentation or release history",
+      "size_bytes": 24474,
+      "sha256": "3ee6dba413807ae54e5ac7b2a679901fb3a323b2bca02704bfdaec735d90032f"
+    },
+    {
+      "path": "POLICY_INDEX.yaml",
+      "role": "always-loaded harness runtime core/router/index",
+      "size_bytes": 10579,
+      "sha256": "8d837b5b015e0526d583ae4028f3ac73e4931ab3ee49b8041376fa4885a6f545"
+    },
+    {
+      "path": "PROJECT_INIT.md",
+      "role": "user/operator documentation or release history",
+      "size_bytes": 22517,
+      "sha256": "2662acbc2d3830702850326dee3a0d97811ea8ebc9de9988fd43effd7cb512f6"
+    },
+    {
+      "path": "README.md",
+      "role": "user/operator documentation or release history",
+      "size_bytes": 34054,
+      "sha256": "2120567d04e2981337ae198384eddaa80430d73b4b9e6a8e8aec808bcda2e667"
+    },
+    {
+      "path": "ROUTER.md",
+      "role": "always-loaded harness runtime core/router/index",
+      "size_bytes": 14474,
+      "sha256": "cd58fba57e64917e2c728b0fdb9c32606e62849a7a3324a8aed7c0e1bc2315ac"
+    },
+    {
+      "path": "catalogs/escort-glossary.json",
+      "role": "capability/escort lookup catalog",
+      "size_bytes": 16211,
+      "sha256": "a3e379e002efcd749d7403b943f6a05048bac47892ce5121f2e140b4cf1b770b"
+    },
+    {
+      "path": "catalogs/escort-profiles.json",
+      "role": "capability/escort lookup catalog",
+      "size_bytes": 5983,
+      "sha256": "505da39d4ba31a2494ae23f6300c08011b7ebdd4d376f986f43d66e47cbfb770"
+    },
+    {
+      "path": "catalogs/mcp-catalog.json",
+      "role": "capability/escort lookup catalog",
+      "size_bytes": 23770,
+      "sha256": "23b92b5823ae5fe03c05ab4d537fea47f237bf0a97cf8a846b4e2dd584b91b8c"
+    },
+    {
+      "path": "catalogs/skill-catalog.json",
+      "role": "capability/escort lookup catalog",
+      "size_bytes": 8269,
+      "sha256": "a23922240da3fb02f9b97d0f95c7366da0100dbe13bc1097b8850c1723d933eb"
+    },
+    {
+      "path": "install.ps1",
+      "role": "top-level bootstrap installer",
+      "size_bytes": 18035,
+      "sha256": "2d2b337cdd327cc52a49675533990f03b2900018039cd69549db28ba19472657"
+    },
+    {
+      "path": "plugins/ai-harness/.claude-plugin/plugin.json",
+      "role": "Claude plugin packaging, command, or plugin skill",
+      "size_bytes": 602,
+      "sha256": "a5816b3e6ee4f576f6993fa6e274c49550d92ea5337cb4d8c9baed0aad49d502"
+    },
+    {
+      "path": "plugins/ai-harness/README.md",
+      "role": "Claude plugin packaging, command, or plugin skill",
+      "size_bytes": 2437,
+      "sha256": "ff0f9521a901e43228a46794563346dc6be20e5770671f024f614c9e1ebae827"
+    },
+    {
+      "path": "plugins/ai-harness/commands/harness-doctor.md",
+      "role": "Claude plugin packaging, command, or plugin skill",
+      "size_bytes": 1952,
+      "sha256": "febbf918ba99b3e8bc68679e3caf91a17586a338c55d1247915392def59f519e"
+    },
+    {
+      "path": "plugins/ai-harness/commands/harness-escort.md",
+      "role": "Claude plugin packaging, command, or plugin skill",
+      "size_bytes": 1975,
+      "sha256": "d733925117c82db683a7b300c3eb96e0143cde60a035fde07b0e114537246fec"
+    },
+    {
+      "path": "plugins/ai-harness/commands/harness-init.md",
+      "role": "Claude plugin packaging, command, or plugin skill",
+      "size_bytes": 1695,
+      "sha256": "9e8b1712348eab45a9e365d7646146b2af5d3a6e1d842d01568e34b112675de1"
+    },
+    {
+      "path": "plugins/ai-harness/commands/harness-status.md",
+      "role": "Claude plugin packaging, command, or plugin skill",
+      "size_bytes": 1703,
+      "sha256": "5cd12fce36dcbcba8b8d0c8c1c6e8186ebed87d31a83aa585dcee92d5bf47457"
+    },
+    {
+      "path": "plugins/ai-harness/skills/dashboard-builder/SKILL.md",
+      "role": "Claude plugin packaging, command, or plugin skill",
+      "size_bytes": 683,
+      "sha256": "f227a4c80d4804fb8669e7cff23f3d50d811b1d5f444834a4d8cef84de5d2c20"
+    },
+    {
+      "path": "plugins/ai-harness/skills/harness-capability/SKILL.md",
+      "role": "Claude plugin packaging, command, or plugin skill",
+      "size_bytes": 4640,
+      "sha256": "47d1e759aec8f525d7f1ab347bc0fc5d4bb402c49c531b695b1380daa480f053"
+    },
+    {
+      "path": "plugins/ai-harness/skills/harness-runtime/SKILL.md",
+      "role": "Claude plugin packaging, command, or plugin skill",
+      "size_bytes": 3443,
+      "sha256": "3cc5fb8b3cb1730bc78cd427fb60312bb3c34826b9309d34ea59ff933204b07d"
+    },
+    {
+      "path": "policies/01_코드베이스 지도 및 탐색 체계 설계서.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 45076,
+      "sha256": "54e515e3845dcf50788c48a40d14514cdf3739a1b71ddb8b800c5b72c6664c9f"
+    },
+    {
+      "path": "policies/02_적응형 멀티에이전트 하네스 설계서.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 47287,
+      "sha256": "3067ce03624a85d002618deea5ddbb432711c32868697100c4c0adb42e98731c"
+    },
+    {
+      "path": "policies/03_상황별 지침 라우팅 및 컨텍스트 제어 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 24273,
+      "sha256": "9299604f07923fa6eec01575cf5c233263e42d2596d320439531e11006d6c935"
+    },
+    {
+      "path": "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 23367,
+      "sha256": "906937b872369e7126d584553214b1f13db61c858071addd7b894da62520adcf"
+    },
+    {
+      "path": "policies/05_장기 작업 상태 압축·체크포인트·인수인계 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 34508,
+      "sha256": "2b0cd2713820035988afd8080bc245480362a1d1e5cb0b5b58d769479c446d88"
+    },
+    {
+      "path": "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 31653,
+      "sha256": "25ba862c0bc7b93a47ad8c26e16985a03a789d75f82c7649308be2b9ab66d320"
+    },
+    {
+      "path": "policies/07_모호한 요구사항 정량화·예시화·확정 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 32552,
+      "sha256": "6489a58bd9647733f1a520b5d991c58483bde9e8dbf7b1e8ea0b028bcf3c8b25"
+    },
+    {
+      "path": "policies/08_AI 실수 학습 및 재발 방지 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 34695,
+      "sha256": "ed83e5c8594f86163acf8f4bff111c902449b0edf21327387117c42d5a16d023"
+    },
+    {
+      "path": "policies/09_일반인 중심 설명·예시·수치 기반 소통 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 32181,
+      "sha256": "968c52d19c8477ddfd049a9573c74d633a2bfee15f33dee67a9051491c949fce"
+    },
+    {
+      "path": "policies/10_자연어 요구사항 정규화 및 명세 잠금 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 31332,
+      "sha256": "db90187c8db20fc971f4e2d6219945af442a7f1df1c353e893cf838a5a60c4fb"
+    },
+    {
+      "path": "policies/11_사실·추론·가정·불확실성 구분 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 32235,
+      "sha256": "feca0287314ca5aa2a502712992c68b5bf6261d84487810f96ed4676d3864354"
+    },
+    {
+      "path": "policies/12_주관적 디자인 표현 보정 및 디자인 기준 확정 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 34299,
+      "sha256": "fa751590206d34ab965010a076ab88e40524e8ba10b3a48d41fb8cbd88e389d2"
+    },
+    {
+      "path": "policies/13_경험·교훈의 규칙·검증·자동화 승격 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 49491,
+      "sha256": "22b61b6932cadae5e8ecf878f19128cdb3cd82bb10062fc876f15417467bbe75"
+    },
+    {
+      "path": "policies/14_사용자 의도 보존 및 결정권 보호 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 48210,
+      "sha256": "db661b2bbee43a2cee55284242cd7933b0850ccbe1205cab33133e06bda96043"
+    },
+    {
+      "path": "policies/15_의존성 및 외부 계약 관리 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 44390,
+      "sha256": "e4500adb7a4bf7bb40cdd81a0f34b4dcae0767a357b49ae58bba8966f40dce20"
+    },
+    {
+      "path": "policies/16_마이그레이션 및 롤백 관리 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 43621,
+      "sha256": "d8d0ddc0d5183461f9845f1de8257a8a31ff517b98e5ccb99e48ad14d9231132"
+    },
+    {
+      "path": "policies/17_보안 및 권한 경계 관리 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 54058,
+      "sha256": "6dba011a45150c3149633fd2f87d5d5311a31e2a954ed121eccfadabd8026a9f"
+    },
+    {
+      "path": "policies/18_설계 결정 기록 및 의사결정 기억 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 48110,
+      "sha256": "8602c35c218b868bfd648c4b8608b5a705ea0a0788ce050e43bf02e56b3c9f16"
+    },
+    {
+      "path": "policies/19_AI 하네스 평가 및 지속 개선 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 60281,
+      "sha256": "c637c6c58d7513c256554bf4d8b3a30e999f9c0f34dfbfaa9273c276d452a796"
+    },
+    {
+      "path": "policies/20_프로젝트 로드맵 및 마일스톤 관리 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 43200,
+      "sha256": "3b94c274428ead840d917088c3c12091a09374b6e9bcc2679e1670cb204e0ca2"
+    },
+    {
+      "path": "policies/21_현재 작업 계획 및 실행 추적 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 42199,
+      "sha256": "254179bc6e34aa62845d6e56ecc7bea9ff3e5d90c321ddf5f93a7acb4c5fd6ad"
+    },
+    {
+      "path": "policies/22_작업 의존성·선행조건·병렬 실행 관리 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 35542,
+      "sha256": "7d94ebcdf1f460a8f78151b446d09b32579dc40df8db9b6b4e93f3088a336da6"
+    },
+    {
+      "path": "policies/23_작업 이탈·범위 확장·사이드퀘스트 차단 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 39332,
+      "sha256": "c8016690c2dcbb5e6f03503c141cf887efbebef133ec072f83dfafed7cdfef01"
+    },
+    {
+      "path": "policies/24_프로젝트 진행상태 및 완료근거 관리 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 37876,
+      "sha256": "c80a4700179022340103beb94d2d1ddd58d1a5789c8bf40af7aa1fe87eabd8ed"
+    },
+    {
+      "path": "policies/25_계획 이탈 판정 및 재계획 관리 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 43994,
+      "sha256": "cdda5c1af734c1e0a4d20d4ad91fd7c6dfac11855e8e4bf15bcbd382fca875b1"
+    },
+    {
+      "path": "policies/26_코드베이스 운영체계 실행 지침.md",
+      "role": "JIT behavior policy; selected by POLICY_INDEX",
+      "size_bytes": 49950,
+      "sha256": "312b888fc7593bc63f07a4eb163ead7948fe3198b56325d5a1a0a7adfeed5d41"
+    },
+    {
+      "path": "proposals/HANDOFF.md",
+      "role": "proposal/handoff or design planning document",
+      "size_bytes": 42629,
+      "sha256": "48435bcadc815291c0d6cac298ab800bc6fb62d1718fe1e172cc8e95e3ead96c"
+    },
+    {
+      "path": "proposals/HARNESS_V3_PROPOSAL.md",
+      "role": "proposal/handoff or design planning document",
+      "size_bytes": 81168,
+      "sha256": "86dc8b42504e239989a68cd833cf7aeeded1641ba50f2ee88ff0b94fb47b0581"
+    },
+    {
+      "path": "proposals/JEV_DECISION_ENGINE_PLAN.md",
+      "role": "proposal/handoff or design planning document",
+      "size_bytes": 6560,
+      "sha256": "7f6b799977720a830eaa6508c1f6aaf28cfa44ab984d805d3776d96d73eaaa04"
+    },
+    {
+      "path": "runtimes/_TEMPLATE.runtime.json",
+      "role": "declarative shared runtime manifest/template",
+      "size_bytes": 2527,
+      "sha256": "cd6c2f3d0a4497297479f59addc9bce92e54de3ac4d86d4190ced5776380e58f"
+    },
+    {
+      "path": "runtimes/google-workspace.runtime.json",
+      "role": "declarative shared runtime manifest/template",
+      "size_bytes": 4984,
+      "sha256": "08818eb98d1e3fa257a3706eb8cecec34a969e4279625df7d1366e7778df5908"
+    },
+    {
+      "path": "schemas/README.md",
+      "role": "JSON Schema contract or schema documentation",
+      "size_bytes": 3209,
+      "sha256": "9dbe416d50fa9ff6c44044b3c4fd3c07e65b56be4938d7e9f94bc18acabac243"
+    },
+    {
+      "path": "schemas/capability-lock.schema.json",
+      "role": "JSON Schema contract or schema documentation",
+      "size_bytes": 2082,
+      "sha256": "ca25b03fe6add8404a9fe5c4341c34b3c7e7ca6def1c10a19acc664fb2de1b46"
+    },
+    {
+      "path": "schemas/change-plan.schema.json",
+      "role": "JSON Schema contract or schema documentation",
+      "size_bytes": 6499,
+      "sha256": "bef4a1f9860e5cad9be2d8b94352a8f45a6034737166fe7200d635c7f36086e2"
+    },
+    {
+      "path": "schemas/client-descriptor.schema.json",
+      "role": "JSON Schema contract or schema documentation",
+      "size_bytes": 10250,
+      "sha256": "c67214cfdab93e9d35afc339c328807a7dcabc0876cca79108d8021a4d86ddbc"
+    },
+    {
+      "path": "schemas/client-index.schema.json",
+      "role": "JSON Schema contract or schema documentation",
+      "size_bytes": 2705,
+      "sha256": "dffc7e5df6c2b5da5d560059334e1ca9a330873b10041f631e4581777f8fe111"
+    },
+    {
+      "path": "schemas/runtime-index.schema.json",
+      "role": "JSON Schema contract or schema documentation",
+      "size_bytes": 4547,
+      "sha256": "66daf19c12b78e9a61cbebf52b5af0d07afef6a50930c7a931b37878e1c27bf9"
+    },
+    {
+      "path": "schemas/runtime-manifest.schema.json",
+      "role": "JSON Schema contract or schema documentation",
+      "size_bytes": 8300,
+      "sha256": "7cb1ba4f6bf11878e049bbef8167a2608532575c64dd1b6581a9934637e6c499"
+    },
+    {
+      "path": "scripts/Connect-HarnessRuntimeAuth.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 14055,
+      "sha256": "58f96fd8e4b2edcf1c0ab6268f1dea0fcf5336613256cee61dbb0797e33fb88d"
+    },
+    {
+      "path": "scripts/Disconnect-HarnessRuntime.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 12104,
+      "sha256": "c9ce903c46c0ee8d64ea15364220dc53c8d9c664160b4267bc8a489e53917dc4"
+    },
+    {
+      "path": "scripts/Get-HarnessEnvironment.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 35137,
+      "sha256": "9367c5d942495f52507efc1b9deeacc639ec00a3174c96211a6ffa6130798e2d"
+    },
+    {
+      "path": "scripts/Install-Harness.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 29664,
+      "sha256": "a921d022fbbf8e1c181a578906c86d7ded6becaf54d0a3f03af932d577a02f94"
+    },
+    {
+      "path": "scripts/Install-HarnessRuntime.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 9677,
+      "sha256": "392d3df5c163653517c33857b07e0a4ecf4123b344091af08e0794c618001b1c"
+    },
+    {
+      "path": "scripts/Install-ProjectMcp.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 5807,
+      "sha256": "46803a0665b075f370d4e31e0ae302aec96f70383f6f6c8be92072cbbf79cce5"
+    },
+    {
+      "path": "scripts/Install-ProjectSkill.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 9600,
+      "sha256": "cf85b8bd17c3c2cbf9413e429d26d360d6890771474e179eb57bbb887f063f38"
+    },
+    {
+      "path": "scripts/Invoke-HarnessEscort.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 32372,
+      "sha256": "168ffc739d3eef91aee668a582b67e328449b5a107d96525c922413256b4fc79"
+    },
+    {
+      "path": "scripts/Publish-HarnessSnapshot.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 12213,
+      "sha256": "f96b2f564a949c172cc6efdbf71bafdfbec0ffdd19e5d0e273588ef6df6e8ad8"
+    },
+    {
+      "path": "scripts/Register-HarnessRuntimeClient.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 10478,
+      "sha256": "ee55219a45166c9ad389f34a140372f2184d03ee5240b8c2fff26f4217ed0c39"
+    },
+    {
+      "path": "scripts/Resolve-HarnessMcpRegistry.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 18765,
+      "sha256": "03757b6bf02d98a6b37d6417e4333ea5c30f75856c039a52066c37be2d089b0b"
+    },
+    {
+      "path": "scripts/Resolve-HarnessRuntime.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 6353,
+      "sha256": "8377d434b6c70c22aa8589028e65f1e4b83494b2e92d965167df231aa397c0f0"
+    },
+    {
+      "path": "scripts/Search-HarnessCapability.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 2402,
+      "sha256": "6ada63722be973f62398543884cb17c7c2c735b92fd4409142cbf1bdf73ab4d9"
+    },
+    {
+      "path": "scripts/Sync-HarnessClients.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 11470,
+      "sha256": "9a4797623dc7f8088fa7302c517a526709ec3b2575c80b5b55ec8bdddb7fa722"
+    },
+    {
+      "path": "scripts/Test-HarnessRelease.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 19248,
+      "sha256": "95330386e785584cd8602ad4b4af6e0b3d7279c5becae98327766aa4fbdc9f83"
+    },
+    {
+      "path": "scripts/Test-HarnessRepo.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 31347,
+      "sha256": "a7e379a3f5f499f98bcb016d88d790a47bf6137ad003699e03b396033076ba37"
+    },
+    {
+      "path": "scripts/Test-HarnessRuntime.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 9358,
+      "sha256": "541768c791846f243b675dc3048057af94a25921da5e4ee0bc353209516de5b3"
+    },
+    {
+      "path": "scripts/Test-ProjectCapabilities.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 7982,
+      "sha256": "94abb0cd31cd348c2950e3ec005ff71fb1f1834b0038414a1057f01a69113141"
+    },
+    {
+      "path": "scripts/_Harness.Common.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 14616,
+      "sha256": "d200dd523f237706e6616a76d084db3e4ceb583930b9cd88ba05ee7c47ec267e"
+    },
+    {
+      "path": "scripts/_Harness.Runtime.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 41913,
+      "sha256": "ce0c7d72b1a7b4397e66c3eecbbd8dfcee59097ad563d69662bbd1f37aaeed67"
+    },
+    {
+      "path": "scripts/_Harness.Skill.ps1",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 3718,
+      "sha256": "a5454d42a3a4fd2a90ab5c1e527c0765943ce3565a06ce62d88b0ab2b06ce478"
+    },
+    {
+      "path": "scripts/harness-drive-snapshot.mjs",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 6533,
+      "sha256": "c21be8f5eea6b6527940dadd8a3cf6ca0ade45b62e14b295e601b83f264f511e"
+    },
+    {
+      "path": "scripts/harness-mcp-probe.mjs",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 3937,
+      "sha256": "3c6aa4733eb34b8d302683fcc1a821aad06e39e9a62557ad3dc624ea2f51b679"
+    },
+    {
+      "path": "scripts/harness-schema-validate.mjs",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 9318,
+      "sha256": "b82a0588df643a0898bb1deffa40df5dfa057cb464e169eaa8afebbf41267579"
+    },
+    {
+      "path": "scripts/jev-decision.mjs",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 19963,
+      "sha256": "f677bd6cb289f5502d3d114b7a7a1c95bc2074b1f25d9e5f87ff3395da79786e"
+    },
+    {
+      "path": "scripts/test-jev-scenarios.mjs",
+      "role": "runtime, install, adapter, validation, release, or helper script",
+      "size_bytes": 28871,
+      "sha256": "e9ac8276feb42aaa023cbb36d4ebfc53028fa920444bd440575fb07d22a044ff"
+    },
+    {
+      "path": "settings/clients/agy.client.json",
+      "role": "client runtime adapter descriptor",
+      "size_bytes": 5908,
+      "sha256": "42f5bbc1901a247d7156458e002d0d7952cd373e81f523d0c8c2094acada3fbf"
+    },
+    {
+      "path": "settings/clients/claude.client.json",
+      "role": "client runtime adapter descriptor",
+      "size_bytes": 4738,
+      "sha256": "4f8dfd0aecb943879f9e85c9cb576fe491565c81fb00145baed30b43ad401fe2"
+    },
+    {
+      "path": "settings/clients/codex.client.json",
+      "role": "client runtime adapter descriptor",
+      "size_bytes": 5760,
+      "sha256": "67e5aa2b08bfe36b47e387d2d3add98ac615a002fbc43b663f32cf20ee8ac135"
+    },
+    {
+      "path": "skills/dashboard-builder/SKILL.md",
+      "role": "bundled skill procedure, reference, validator, or template",
+      "size_bytes": 6262,
+      "sha256": "43ce0c7e97675c527cbb922a7fcbcff91fb5680af0d35c3ea1822df04e1dbeef"
+    },
+    {
+      "path": "skills/dashboard-builder/references/cloudflare-deploy.md",
+      "role": "bundled skill procedure, reference, validator, or template",
+      "size_bytes": 1028,
+      "sha256": "a0f15e9e86a0397c704fdb151c888bab864bfd3ab8416c2257b53c52dd455846"
+    },
+    {
+      "path": "skills/dashboard-builder/references/dashboard-qa.md",
+      "role": "bundled skill procedure, reference, validator, or template",
+      "size_bytes": 1347,
+      "sha256": "5e342c5aaeec81cffb712e926401d00f86fd57802fc029e0ff2dd30b4c684cd9"
+    },
+    {
+      "path": "skills/dashboard-builder/references/data-analysis.md",
+      "role": "bundled skill procedure, reference, validator, or template",
+      "size_bytes": 1424,
+      "sha256": "b96376aecc640023b95e5299fe3824e8f1d0fb50de8cf2375787127a5ef3b25b"
+    },
+    {
+      "path": "skills/dashboard-builder/references/design-system.md",
+      "role": "bundled skill procedure, reference, validator, or template",
+      "size_bytes": 1105,
+      "sha256": "f247077b16335209f54fa1b976d855e176e9c372243354a23e86bf7ed44af9bb"
+    },
+    {
+      "path": "skills/dashboard-builder/references/kpi-chart-rules.md",
+      "role": "bundled skill procedure, reference, validator, or template",
+      "size_bytes": 1237,
+      "sha256": "cb0a89770f8c3a61e048f122b05753f3cff6ed02e78c1dbe2e11ce825f8bf526"
+    },
+    {
+      "path": "skills/dashboard-builder/references/runtime-data.md",
+      "role": "bundled skill procedure, reference, validator, or template",
+      "size_bytes": 1429,
+      "sha256": "6113cb3ecf610883f928801e9697fdf7a790265d276d3e63e454edf882746460"
+    },
+    {
+      "path": "skills/dashboard-builder/scripts/validate_dashboard.py",
+      "role": "bundled skill procedure, reference, validator, or template",
+      "size_bytes": 1600,
+      "sha256": "91dedaf7b0c3b6e081adfa0c3a4ea8d7d4de1e13bdb2ea9f692411e53d3eb3e7"
+    },
+    {
+      "path": "skills/dashboard-builder/templates/dashboard-brief.md",
+      "role": "bundled skill procedure, reference, validator, or template",
+      "size_bytes": 639,
+      "sha256": "946b492ae8a29c7ef7a3abb34e4a03ae6b07886652e55cff3e4424cc03a079ca"
+    },
+    {
+      "path": "skills/dashboard-builder/templates/dashboard.config.example.json",
+      "role": "bundled skill procedure, reference, validator, or template",
+      "size_bytes": 229,
+      "sha256": "81a6bae1702477097c6275a2be635cc203de7d1eb1975401135122381d8c5c27"
+    },
+    {
+      "path": "skills/dashboard-builder/templates/design-system.example.md",
+      "role": "bundled skill procedure, reference, validator, or template",
+      "size_bytes": 772,
+      "sha256": "62eb8c3c71578e214aeef7c260bab5cebdf7d047b9cabf3df4df6e6b546182e6"
+    },
+    {
+      "path": "workflows/CAPABILITY_ACQUISITION.md",
+      "role": "operational workflow documentation",
+      "size_bytes": 6070,
+      "sha256": "fb9b0642e342cebbfaed849d9b88c4837b5b3728491738f1cccbd9851eaca26a"
+    },
+    {
+      "path": "workflows/DECISION_ENGINE.md",
+      "role": "operational workflow documentation",
+      "size_bytes": 7628,
+      "sha256": "a360bc2d08882c1de0383b44dae493c6cb7e124be39846a6cdb5fb0d9a0be2f5"
+    },
+    {
+      "path": "workflows/ESCORT.md",
+      "role": "operational workflow documentation",
+      "size_bytes": 7118,
+      "sha256": "3a001516be4a9e216aed49713f2253c89e97b4ec7ec8efdfca594bcd14648830"
+    },
+    {
+      "path": "workflows/GOOGLE_WORKSPACE_MCP.md",
+      "role": "operational workflow documentation",
+      "size_bytes": 5263,
+      "sha256": "28ce847ce6d0529d3fea673112936a24a7ca27eb7722d852f390c4d994940958"
+    },
+    {
+      "path": "workflows/GOOGLE_WORKSPACE_SETUP.md",
+      "role": "operational workflow documentation",
+      "size_bytes": 15471,
+      "sha256": "4d4622513d1b52308ef56bc8147659b738f89de4553c403f9ee5ac8c3b60c9f0"
+    },
+    {
+      "path": "workflows/HARNESS_INSTALL.md",
+      "role": "operational workflow documentation",
+      "size_bytes": 34430,
+      "sha256": "59b60ed590df00473d9878533c660ce3bd7d6cf4a07ed904c924506e8445afd6"
+    },
+    {
+      "path": "workflows/SHARED_RUNTIME.md",
+      "role": "operational workflow documentation",
+      "size_bytes": 10523,
+      "sha256": "59c4a5864ddba24fe08931b0c60a874194f94f6bce8b81347f43e7157edec5d6"
+    }
+  ],
+  "baseline_commit": "8ebab0087b228c0203a202bead8fb56853d9cb27",
+  "recorded_at": "2026-10-02T15:24:40.113778+00:00"
+}

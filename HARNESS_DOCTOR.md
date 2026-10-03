@@ -1,13 +1,17 @@
 # AI Harness Doctor
 
 Document Version: 1.2
-Harness Version Source: `POLICY_INDEX.yaml`의 `harness_version`
+Harness Version Source: `HARNESS_VERSION`; `harness/manifest.yaml`과 `POLICY_INDEX.yaml`은 일치해야 한다.
 Mode: Read-only diagnostic by default
 Scope: Global Harness와 Project Bridge의 운영 상태 진단
 
 ---
 
 ## 1. 역할과 호출
+
+### v6 executable diagnosis
+
+Use `node scripts/harness-v6.mjs inspect --project <path>` then `diagnose --project <path>` for read-only version/manifest/binding/state/transition and environment diagnosis. HARNESS_VERSION is authoritative; manifest/index agreement is required. Source structural validation and project execution verification are distinct. `verify --project <path>` runs only explicitly configured argv from `.ai/harness-project.json`, never arbitrary discovered commands. Unexecuted checks remain UNKNOWN/NOT_CONFIGURED. Missing recovery, custom-byte drift, incomplete transition or unresolved critical backfill prevents claimed safe resume. Runtime/update docs are JIT procedures, not P27.
 
 이 문서는 P01~P26과 별개인 운영 진단 계약이다. 새로운 전문 Policy가 아니며 Policy 수나 JIT Active Policy 수에 포함하지 않는다.
 

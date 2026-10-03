@@ -1,0 +1,573 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-10-03T01:35:36.970Z",
+  "scope": "Local routing/gate/project-binding fixtures and controlled context payload comparison",
+  "provenance": {
+    "baseline_source": "Unmodified v5 Git checkout supplied by --baseline-root",
+    "baseline_harness_version": "5.1",
+    "baseline_git_commit": "8ebab0087b228c0203a202bead8fb56853d9cb27",
+    "v6_source": "Current v6 worktree containing this runner",
+    "v6_git_commit": "8ebab0087b228c0203a202bead8fb56853d9cb27",
+    "v6_payload_sha256": "123b0f189c30aec4ef92bf9fee37b2fd4e6d1385383a269898568dea31d53154",
+    "node": "v24.13.0",
+    "tokenizer": {
+      "executable": "python.exe",
+      "version": "0.3.3",
+      "encoding": "cl100k_base"
+    },
+    "case_input_sha256": "288c6ebfbbd96d31b73cefed9ca2c52cacd7826c7a90edbadf333b32039a83eb",
+    "model_provider_calls": 0,
+    "limitations": "Not measured: local harness fixture benchmark has no real users, model provider, product development or deployed production service."
+  },
+  "version": "v5",
+  "cases": [
+    {
+      "id": "01",
+      "name": "Small Bug Fix",
+      "request": "Fix the small bug in the existing application",
+      "kind": "bug",
+      "mode": "MAINTENANCE",
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 139191,
+        "sha256": "d4df26d3bba0566aab40eff14f84f16de9bbcf255da891b1138263584568b5b2",
+        "tokens": 42731,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 34798,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "wall_ms": null,
+      "tool_calls": null,
+      "retries": null,
+      "human_interventions": null,
+      "capabilities": {
+        "phase_engine": "unavailable",
+        "project_transaction": "unavailable"
+      },
+      "reason": "v5 lacks the executable v6 lifecycle/transaction API; prose guidance is not an executed score."
+    },
+    {
+      "id": "02",
+      "name": "UI Feature",
+      "request": "기존 앱에 UI 검색 화면 기능 추가",
+      "kind": "ui",
+      "mode": "MAINTENANCE",
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 139191,
+        "sha256": "d4df26d3bba0566aab40eff14f84f16de9bbcf255da891b1138263584568b5b2",
+        "tokens": 42731,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 34798,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "wall_ms": null,
+      "tool_calls": null,
+      "retries": null,
+      "human_interventions": null,
+      "capabilities": {
+        "phase_engine": "unavailable",
+        "project_transaction": "unavailable"
+      },
+      "reason": "v5 lacks the executable v6 lifecycle/transaction API; prose guidance is not an executed score."
+    },
+    {
+      "id": "03",
+      "name": "API Feature",
+      "request": "Add an API endpoint to the existing project",
+      "kind": "api",
+      "mode": "MAINTENANCE",
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 139191,
+        "sha256": "d4df26d3bba0566aab40eff14f84f16de9bbcf255da891b1138263584568b5b2",
+        "tokens": 42731,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 34798,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "wall_ms": null,
+      "tool_calls": null,
+      "retries": null,
+      "human_interventions": null,
+      "capabilities": {
+        "phase_engine": "unavailable",
+        "project_transaction": "unavailable"
+      },
+      "reason": "v5 lacks the executable v6 lifecycle/transaction API; prose guidance is not an executed score."
+    },
+    {
+      "id": "04",
+      "name": "DB Migration",
+      "request": "Migrate the database schema with rollback",
+      "kind": "database",
+      "mode": "MIGRATION",
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/16_마이그레이션 및 롤백 관리 지침.md"
+        ],
+        "unavailable_files": [
+          "harness/runtime/transition-audit.md"
+        ],
+        "utf8_bytes": 132862,
+        "sha256": "606d60dd521b59ee9f00b2ce920c6d39eea4778593ddcdb8bc51a9f591e44ccd",
+        "tokens": 40909,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 33216,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "wall_ms": null,
+      "tool_calls": null,
+      "retries": null,
+      "human_interventions": null,
+      "capabilities": {
+        "phase_engine": "unavailable",
+        "project_transaction": "unavailable"
+      },
+      "reason": "v5 lacks the executable v6 lifecycle/transaction API; prose guidance is not an executed score."
+    },
+    {
+      "id": "05",
+      "name": "Full-stack Vertical Slice",
+      "request": "새 프로젝트 full-stack vertical slice 구축",
+      "kind": "vertical",
+      "mode": "GREENFIELD",
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/18_설계 결정 기록 및 의사결정 기억 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 113983,
+        "sha256": "529e76f91d96828028fdee7d62b948e9806f2d63059330fa2114948f8060be56",
+        "tokens": 35867,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 28496,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "wall_ms": null,
+      "tool_calls": null,
+      "retries": null,
+      "human_interventions": null,
+      "capabilities": {
+        "phase_engine": "unavailable",
+        "project_transaction": "unavailable"
+      },
+      "reason": "v5 lacks the executable v6 lifecycle/transaction API; prose guidance is not an executed score."
+    },
+    {
+      "id": "06",
+      "name": "Refactoring",
+      "request": "Refactor the existing module without behavior changes",
+      "kind": "refactor",
+      "mode": "MAINTENANCE",
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 139191,
+        "sha256": "d4df26d3bba0566aab40eff14f84f16de9bbcf255da891b1138263584568b5b2",
+        "tokens": 42731,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 34798,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "wall_ms": null,
+      "tool_calls": null,
+      "retries": null,
+      "human_interventions": null,
+      "capabilities": {
+        "phase_engine": "unavailable",
+        "project_transaction": "unavailable"
+      },
+      "reason": "v5 lacks the executable v6 lifecycle/transaction API; prose guidance is not an executed score."
+    },
+    {
+      "id": "07",
+      "name": "Security Fix",
+      "request": "Fix authentication security permissions",
+      "kind": "security",
+      "mode": "MAINTENANCE",
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/17_보안 및 권한 경계 관리 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 193250,
+        "sha256": "4e0bc9baa27c6fcb48433bad6a4b4445aa45767b8971acc26f5d0c01e26e7d08",
+        "tokens": 58562,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 48313,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "wall_ms": null,
+      "tool_calls": null,
+      "retries": null,
+      "human_interventions": null,
+      "capabilities": {
+        "phase_engine": "unavailable",
+        "project_transaction": "unavailable"
+      },
+      "reason": "v5 lacks the executable v6 lifecycle/transaction API; prose guidance is not an executed score."
+    },
+    {
+      "id": "08",
+      "name": "Performance Improvement",
+      "request": "기존 서비스 성능 병목 개선",
+      "kind": "performance",
+      "mode": "MAINTENANCE",
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 139191,
+        "sha256": "d4df26d3bba0566aab40eff14f84f16de9bbcf255da891b1138263584568b5b2",
+        "tokens": 42731,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 34798,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "wall_ms": null,
+      "tool_calls": null,
+      "retries": null,
+      "human_interventions": null,
+      "capabilities": {
+        "phase_engine": "unavailable",
+        "project_transaction": "unavailable"
+      },
+      "reason": "v5 lacks the executable v6 lifecycle/transaction API; prose guidance is not an executed score."
+    },
+    {
+      "id": "09",
+      "name": "Documentation Change",
+      "request": "Update documentation for the existing project",
+      "kind": "documentation",
+      "mode": "MAINTENANCE",
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 139191,
+        "sha256": "d4df26d3bba0566aab40eff14f84f16de9bbcf255da891b1138263584568b5b2",
+        "tokens": 42731,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 34798,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "wall_ms": null,
+      "tool_calls": null,
+      "retries": null,
+      "human_interventions": null,
+      "capabilities": {
+        "phase_engine": "unavailable",
+        "project_transaction": "unavailable"
+      },
+      "reason": "v5 lacks the executable v6 lifecycle/transaction API; prose guidance is not an executed score."
+    },
+    {
+      "id": "10",
+      "name": "Deployment Change",
+      "request": "Change deployment configuration of existing production service",
+      "kind": "deployment",
+      "mode": "MAINTENANCE",
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 139191,
+        "sha256": "d4df26d3bba0566aab40eff14f84f16de9bbcf255da891b1138263584568b5b2",
+        "tokens": 42731,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 34798,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "wall_ms": null,
+      "tool_calls": null,
+      "retries": null,
+      "human_interventions": null,
+      "capabilities": {
+        "phase_engine": "unavailable",
+        "project_transaction": "unavailable"
+      },
+      "reason": "v5 lacks the executable v6 lifecycle/transaction API; prose guidance is not an executed score."
+    },
+    {
+      "id": "11",
+      "name": "Beginner New Project",
+      "request": "초보자 새 프로젝트 만들어줘",
+      "kind": "beginner",
+      "mode": "GREENFIELD",
+      "beginner": true,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/18_설계 결정 기록 및 의사결정 기억 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 113983,
+        "sha256": "529e76f91d96828028fdee7d62b948e9806f2d63059330fa2114948f8060be56",
+        "tokens": 35867,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 28496,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "wall_ms": null,
+      "tool_calls": null,
+      "retries": null,
+      "human_interventions": null,
+      "capabilities": {
+        "phase_engine": "unavailable",
+        "project_transaction": "unavailable"
+      },
+      "reason": "v5 lacks the executable v6 lifecycle/transaction API; prose guidance is not an executed score."
+    },
+    {
+      "id": "12",
+      "name": "Beginner Existing Project Modification",
+      "request": "초보자 기존 프로젝트 기능 추가 도와줘",
+      "kind": "beginner",
+      "mode": "MAINTENANCE",
+      "beginner": true,
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 139191,
+        "sha256": "d4df26d3bba0566aab40eff14f84f16de9bbcf255da891b1138263584568b5b2",
+        "tokens": 42731,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 34798,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "wall_ms": null,
+      "tool_calls": null,
+      "retries": null,
+      "human_interventions": null,
+      "capabilities": {
+        "phase_engine": "unavailable",
+        "project_transaction": "unavailable"
+      },
+      "reason": "v5 lacks the executable v6 lifecycle/transaction API; prose guidance is not an executed score."
+    },
+    {
+      "id": "13",
+      "name": "Failed Build Recovery",
+      "request": "Recover the failed build in existing project",
+      "kind": "build_recovery",
+      "mode": "MAINTENANCE",
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md",
+          "policies/26_코드베이스 운영체계 실행 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 139191,
+        "sha256": "d4df26d3bba0566aab40eff14f84f16de9bbcf255da891b1138263584568b5b2",
+        "tokens": 42731,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 34798,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "wall_ms": null,
+      "tool_calls": null,
+      "retries": null,
+      "human_interventions": null,
+      "capabilities": {
+        "phase_engine": "unavailable",
+        "project_transaction": "unavailable"
+      },
+      "reason": "v5 lacks the executable v6 lifecycle/transaction API; prose guidance is not an executed score."
+    },
+    {
+      "id": "14",
+      "name": "Production Deployment Recovery",
+      "request": "기존 서비스 운영 배포 장애 복구 hotfix",
+      "kind": "production_recovery",
+      "mode": "HOTFIX",
+      "context": {
+        "selection": "v6 deterministic selection applied to both payloads",
+        "files": [
+          "CORE.md",
+          "ROUTER.md",
+          "POLICY_INDEX.yaml",
+          "policies/06_작업 완료·테스트·회귀·검증 판정 지침.md",
+          "policies/04_코드 변경 범위·영향·차이 제어 지침.md"
+        ],
+        "unavailable_files": [],
+        "utf8_bytes": 89240,
+        "sha256": "683f5e445c6db2c0c1618da0a5dbab9cd5f3184cafe1a38857d03980a9891b54",
+        "tokens": 28076,
+        "tokenizer": {
+          "encoding": "cl100k_base",
+          "package": "tiktoken",
+          "version": "0.3.3"
+        },
+        "estimated_tokens": 22310,
+        "estimator": "ceil(UTF8 bytes / 4); heuristic only",
+        "billed_api_tokens": null
+      },
+      "wall_ms": null,
+      "tool_calls": null,
+      "retries": null,
+      "human_interventions": null,
+      "capabilities": {
+        "phase_engine": "unavailable",
+        "project_transaction": "unavailable"
+      },
+      "reason": "v5 lacks the executable v6 lifecycle/transaction API; prose guidance is not an executed score."
+    }
+  ]
+}

@@ -1,3 +1,13 @@
+# AI Harness v6.0 Patch Notes
+
+Major changes: Full SDLC Phase Engine; Beginner Mode and continuous briefing; user Decision Gate; acceptance-first and vertical slice; independent logical Builder/Tester/Reviewer roles; evidence-driven completion; visual/release/production verification; four project modes and existing behavior protection; development state and H1/H2/H3; checkpoint/freeze/progressive migration/critical backfill/audit/resume; source pin, manifest, version detection and customization preservation; token budgets/JIT/compaction/dynamic model and reasoning tiers; benchmark and learning loop.
+
+Architecture: extend existing folders; no 26-policy duplication, no Skill deletion, no package dependency, no product-wide refactor. Add Node project transaction alongside existing PowerShell machine installer; their ownership boundaries remain separate. Source migration uses an isolated Git worktree.
+
+Evidence: [Build Log](harness/build-log.md), [Benchmark](harness/benchmark/README.md), [Migration Notes](MIGRATION_NOTES.md). Results are recorded after execution; controlled simulation and context counts are labeled separately from real model/production/user outcomes. Additional update contract context has a measured cost; quality gates remain mandatory.
+
+---
+
 # v5.1.0 — 설치·업데이트 안정성 수정
 
 2026-09-30

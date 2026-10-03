@@ -94,6 +94,29 @@ function Resolve-HarnessRevision {
     throw '요청한 Ref의 커밋을 찾지 못했습니다. 다른 버전으로 대신 적용하지 않습니다.'
 }
 
+# A shared legacy source may be referenced by active projects. Never move it
+# across a major boundary; stage a separate candidate for project migration.
+function Get-HarnessMajorUpgradeCandidate {
+    param([string]$Path, [string]$Before, [string]$Target)
+    $versions = @()
+    foreach ($revision in @($Before, $Target)) {
+        $value = Invoke-HarnessGit -Arguments @('-C', $Path, 'show', ($revision + ':HARNESS_VERSION'))
+        $text = ($value.Output -join "`n")
+        if ($value.ExitCode -ne 0) {
+            $value = Invoke-HarnessGit -Arguments @('-C', $Path, 'show', ($revision + ':POLICY_INDEX.yaml'))
+            $text = ($value.Output -join "`n")
+        }
+        if ($text -match '(?m)^\s*(?:harness_version:\s*["'']?)?(\d+)\.\d+') { $versions += [int]$Matches[1] }
+        else { $versions += $null }
+    }
+    if ($null -ne $versions[0] -and $null -ne $versions[1] -and $versions[0] -ne $versions[1]) {
+        $parent = Split-Path -Parent $Path
+        $leaf = Split-Path -Leaf $Path
+        return (Join-Path $parent ($leaf + '-v' + $versions[1]))
+    }
+    return $null
+}
+
 function Invoke-HarnessBootstrap {
     param([string]$Path, [string]$Ref, [switch]$SkipChecks)
 
@@ -236,6 +259,13 @@ function Invoke-HarnessBootstrap {
                 throw '브랜치 선행 커밋을 확인하지 못했습니다.'
             }
             if ($ahead -gt 0) { throw "로컬 '$branch'가 원격보다 앞서거나 분기했습니다. 브랜치와 HEAD를 보존했습니다." }
+            $candidate = Get-HarnessMajorUpgradeCandidate -Path $Path -Before $before -Target $target
+            if ($candidate) {
+                Write-Item '  ' 'Major version change: existing shared source and active projects are preserved.'
+                Invoke-HarnessBootstrap -Path $candidate -Ref $target -SkipChecks:$SkipChecks
+                Write-Item '  ' "Candidate ready: $candidate. Use PROJECT_INIT.md to checkpoint, migrate, verify and resume each project."
+                return
+            }
             $merge = Invoke-HarnessGit -Arguments @('-C', $Path, 'merge', '--ff-only', $target)
             if ($merge.ExitCode -ne 0) { throw 'fast-forward에 실패했습니다. 업데이트 성공으로 판정하지 않습니다.' }
             Write-Item 'ok' "브랜치 '$branch' 를 fast-forward 했습니다.  $before -> $target"
@@ -243,6 +273,13 @@ function Invoke-HarnessBootstrap {
         }
         else {
             $target = Resolve-HarnessRevision -Path $Path -Ref $Ref
+            $candidate = Get-HarnessMajorUpgradeCandidate -Path $Path -Before $before -Target $target
+            if ($candidate) {
+                Write-Item '  ' 'Major version change: existing shared source and active projects are preserved.'
+                Invoke-HarnessBootstrap -Path $candidate -Ref $target -SkipChecks:$SkipChecks
+                Write-Item '  ' "Candidate ready: $candidate. Use PROJECT_INIT.md to checkpoint, migrate, verify and resume each project."
+                return
+            }
             $checkout = Invoke-HarnessGit -Arguments @('-C', $Path, 'checkout', '--quiet', '--detach', $target)
             if ($checkout.ExitCode -ne 0) { throw '확인한 커밋으로 이동하지 못했습니다.' }
             if ($before -eq $target) { Write-Item 'ok' "요청한 Ref와 일치합니다 ($target)" }

@@ -1,0 +1,5 @@
+# Decision gate
+Escalate material architecture/schema/data migration/auth/permission/breaking API/deployment/provider/service/cost/performance/security/data deletion/irreversible/long-term maintenance choices.
+Before asking, prepare concrete reviewable options with benefits, costs, risks, long-term effects, suitable circumstances, project-specific recommendation and rollback. Record user decision/evidence, chosen scope and revisit condition. Existing explicit authorization persists; do not ask twice or manufacture an approval requirement for reversible already-authorized details.
+Safe defaults require reversible, negligible cost, no security/data loss/architecture or durable maintenance impact. State choice, reason and how to change it, then continue.
+Conflicts compare current versus v6/company/local model/deployment/Skill rules. Preserve both until resolved; never force a three-way merge. Material ambiguity blocks dependent action while independent investigation proceeds. Beginner mode affects explanation, never verification strength.

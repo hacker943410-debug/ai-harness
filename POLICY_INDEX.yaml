@@ -1,8 +1,15 @@
 schema_version: "1.0"
-harness_version: "5.1"
+harness_version: "6.0.0"
 policy_count: 26
 
 paths:
+  harness_version: "HARNESS_VERSION"
+  runtime_manifest: "harness/manifest.yaml"
+  project_cli: "scripts/harness-v6.mjs"
+  lifecycle: "harness/runtime/orchestrator.md"
+  phase_engine: "harness/runtime/phase-engine.md"
+  update_router: "harness/runtime/harness-update-router.md"
+  update_protocol: "harness/update/UPDATE_PROTOCOL.md"
   project_init: "PROJECT_INIT.md"
   core: "CORE.md"
   router: "ROUTER.md"

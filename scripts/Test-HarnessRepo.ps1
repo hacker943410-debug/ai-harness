@@ -511,6 +511,18 @@ if (-not $Quick) {
 # ---------------------------------------------------------------------------
 # 판정
 # ---------------------------------------------------------------------------
+if (-not $Quick) {
+    $v6Validator = Join-HarnessPath $root 'scripts' 'validate-harness-v6.mjs'
+    if (Test-Path -LiteralPath (Join-HarnessPath $root 'HARNESS_VERSION')) {
+        if (-not (Test-Path -LiteralPath $v6Validator)) {
+            Add-Issue 'FAIL' 'V6_VALIDATOR_MISSING' 'The versioned v6 source is missing its executable structural validator.'
+        } else {
+            $v6Output = @(& node $v6Validator --root $root 2>&1)
+            if ($LASTEXITCODE -ne 0) { Add-Issue 'FAIL' 'V6_CONTRACT' ($v6Output -join "`n") }
+            else { Add-Issue 'INFO' 'V6_CONTRACT' 'Manifest, version, runtime references and representative routing validated.' }
+        }
+    }
+}
 $failCount = @($issues | Where-Object severity -eq 'FAIL').Count
 $overall = if ($failCount -gt 0) { 'FAIL' } elseif (@($issues | Where-Object severity -ne 'INFO').Count -gt 0) { 'PASS_WITH_WARNING' } else { 'PASS' }
 $report = [pscustomobject]@{ overall = $overall; harness_root = $root; checked_at = (Get-HarnessUtcStamp); issues = @($issues) }

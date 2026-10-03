@@ -1,13 +1,19 @@
 # AI Harness ROUTER
 
 Document Version: 2.0
-Harness Version Source: `POLICY_INDEX.yaml`의 `harness_version`
+Harness Version Source: `HARNESS_VERSION`; `harness/manifest.yaml`과 `POLICY_INDEX.yaml`은 일치해야 한다.
 Purpose: 26개 정책 원문을 매번 읽지 않고 현재 Task에 필요한 정책만 JIT로 선택한다.
 Canonical detail: 정책 03이 Router 자체의 상세 설계를 소유한다.
 
 ---
 
 ## 1. 절대 원칙
+
+### v6 intent and state dispatch
+
+Before Task policy selection, classify Harness install/update/migration/repair or product intent using `node scripts/harness-v6.mjs inspect --project <path>` and `route --project <path> --request '<one line>'`. Harness intent JIT-loads `harness/runtime/harness-update-router.md`; product work JIT-loads `harness/runtime/orchestrator.md` as needed. Route mode → development state → change type → H1/H2/H3 → risk → safe timing → beginner preference → current workflow → JIT policies → model/reasoning → verify/review/evidence. None of these dispatches requires full runtime or policy preload.
+
+Version mismatch is information requiring safe plan, not permission to replace. Active-phase major update, HOTFIX, live DB/data transformation or deployment uses checkpoint/defer/minimal HARNESS_BLOCKER rules. Completed phases carry forward; missing critical gates backfill before release. Existing local behavior and custom Skills remain protected.
 
 - 세션 시작 시 26개 정책 원문을 전부 읽지 않는다.
 - POLICY_INDEX.yaml의 짧은 메타데이터로 먼저 분류한다.
@@ -26,6 +32,8 @@ Task routing 전에 `.ai/harness.yaml` 또는 `.ai/HARNESS.md`가 가리키는 `
 4. `POLICY_INDEX.yaml` 존재 및 파싱 가능
 5. `policy_count == 26`
 6. Index의 `paths.policies_dir`가 존재
+
+v6 also checks HARNESS_VERSION/source manifest/index version agreement at metadata level; mismatch blocks trusted upgrade, with unrelated read-only work allowed only under explicit DEGRADED reasoning.
 
 이 Fast Check는 P01~P26 원문 전체 검사가 아니다. 전체 파일 매핑·Adapter·버전·참조·Secret 흔적 검사는 요청 시 `HARNESS_DOCTOR.md`를 JIT로 읽어 수행한다. Doctor는 전문 정책이 아니며 Pxx Active Policy 수에 포함하지 않는다.
 

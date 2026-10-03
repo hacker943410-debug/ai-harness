@@ -1,0 +1,27 @@
+=== [1] 오프라인 입력 차단 검사 (기대: fetch 0회, 고정 오류) ===
+[T01] customer_operational 분류 사전 차단: PASS (fetch: 0)
+[T02] 중첩된 민감 키(api_key) 사전 차단: PASS (fetch: 0)
+[T03] 알 수 없는 최상위 필드 거부: PASS (fetch: 0)
+[T04] expected 필드 거부: PASS (fetch: 0)
+[T05] 숫자 설명이 포함된 Choice criteria 거부: PASS (fetch: 0)
+[T06] 길이 부족(1개) Score criteria 거부: PASS (fetch: 0)
+[T07] true/false 외 키를 가진 Boolean criteria 거부: PASS (fetch: 0)
+[T08] question과 instructions 동시 존재 질문 거부: PASS (fetch: 0)
+[T09] 순환 객체 안전 거부: PASS (fetch: 0)
+=== [2] 오프라인 Provider 응답 표본 검사 (기대: fetch 1회) ===
+[T10] 정상 Choice 응답 검증 및 안전 투영: PASS (fetch: 1)
+[T11] 정상 Score 응답 검증 및 안전 투영: PASS (fetch: 1)
+[T12] 정상 Boolean 응답 검증 및 안전 투영: PASS (fetch: 1)
+[T13] answers 필드 누락 응답 거부: PASS (fetch: 1)
+[T14] 요청 질문 키 누락 응답 거부: PASS (fetch: 1)
+[T15] 요청하지 않은 추가 답 키 포함 응답 거부: PASS (fetch: 1)
+[T16] 답 type 불일치 응답 거부: PASS (fetch: 1)
+[T17] Choice 상속 속성 선택값 응답 거부: PASS (fetch: 1)
+[T18] Score 범위 밖(3개 criteria에 score 5) 응답 거부: PASS (fetch: 1)
+[T19] Boolean probability 범위 밖(1.5) 응답 거부: PASS (fetch: 1)
+[T20] 잘못된 probabilities(음수 확률) 응답 거부: PASS (fetch: 1)
+[T21] 필수 토큰이 없는 usage 응답 거부: PASS (fetch: 1)
+[T22] 추가 원시 필드 격리 투영 검증: PASS (fetch: 1)
+---
+오프라인 검사 종합: 22/22 PASS (모의 fetch 호출: 13)
+오프라인 모드 검사 완료 (라이브 관문 미지정으로 실제 외부 호출 0건 유지).

@@ -1,28 +1,3 @@
-# AI Harness v6 project initialization
-
-Canonical executable entrypoint: `node scripts/harness-v6.mjs inspect --project <path>`, then `route --project <path> --request '<one line>'`. Follow `harness/update/UPDATE_PROTOCOL.md` for plan/apply/diagnose/verify/rollback. The installer produces `.ai/harness-project.json`, `.ai/harness-state.json` and `.ai/transition-manifest.yaml`, and manages only thin AI-HARNESS blocks in the selected adapters. It must preserve unmanaged bytes and unknown user fields.
-
-Before mutation detect existing Harness/version/manifest, project mode, development state, pending transition and deferred update. Existing application without Harness uses ADOPTION; existing old Harness uses UPDATE/MIGRATION; same version uses REPAIR/RECONCILE assessment. Source version is HARNESS_VERSION with manifest/index agreement. Do not silently replace files on mismatch or apply a major update inside active implementation.
-
-Use incremental wizard `harness/runtime/beginner-mode.md` after read-only environment diagnosis. Preserve existing beginner preference, goals, acceptance, completed phases, local rules, custom Skills and verified command argv. Discovering commands is not execution authorization: until explicitly configured and executed, tests/build/production remain UNKNOWN. Freeze/checkpoint/audit/backfill/resume are owned by the update protocol; no automatic product refactor or database migration.
-
-Executable flow from Harness root:
-
-```text
-node scripts/harness-v6.mjs inspect --project <path>
-node scripts/harness-v6.mjs route --project <path> --request '<one line>'
-node scripts/harness-v6.mjs plan --project <path> --request '<one line>' --out <plan.json>
-node scripts/harness-v6.mjs apply --plan <plan.json>
-node scripts/harness-v6.mjs diagnose --project <path>
-node scripts/harness-v6.mjs verify --project <path>
-```
-
-Inspect the concrete plan and resolve conflicts before apply. Apply checks drift and captures binding snapshots. Installation does not certify release or production; actual evidence determines status. Node unavailable or conflict means BLOCKED; report it rather than falling back to ad-hoc overwrites.
-
-## Legacy compatibility reference (not an alternate installer)
-
-The following v5 operational reference preserves useful Layer A/B/C, bridge, client, Skill and shared-runtime context. Its manual file creation/update/template steps and older required artifact lists are superseded by the v6 executable path above. They describe legacy installations for diagnosis/compatibility; never execute them as a second initializer. Shared Google runtime install/auth/registration remains its separate explicit workflow. Existing .ai/HARNESS.md, harness.yaml and current-state.md must be preserved/reconciled; they are not mandatory new duplicate state artifacts. Any old claim of PASS remains conditional on actual current checks.
-
 # AI Harness — PROJECT INIT
 
 Version: 3.1
@@ -91,7 +66,7 @@ HARNESS_ROOT/
 1. CORE.md 읽기 가능
 2. ROUTER.md 읽기 가능
 3. POLICY_INDEX.yaml 읽기 및 YAML 파싱 가능
-4. HARNESS_VERSION을 Global Version Source로 읽고 manifest/index 일치 확인
+4. Index의 `harness_version`을 Global Version Source로 읽을 수 있음
 5. Index에 `policy_count = 26`
 6. P01~P26 존재
 7. 각 Index의 `file`이 `policies/` 실제 파일과 일치하고 선두 제목이 해당 `purpose`와 명백히 어긋나지 않음

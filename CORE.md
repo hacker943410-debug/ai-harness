@@ -1,11 +1,17 @@
 # AI Harness CORE
 
 Document Version: 1.2
-Harness Version Source: `POLICY_INDEX.yaml`의 `harness_version`
+Harness Version Source: `HARNESS_VERSION`; `harness/manifest.yaml`과 `POLICY_INDEX.yaml`은 일치해야 한다.
 Purpose: 모든 CLI 작업에서 항상 유지할 최소 공통 계약.
 Scope: 상세 규칙을 대신하지 않는다. 상세 내용은 ROUTER가 선택한 정책 원문이 소유한다.
 
 ## 1. 최상위 실행 원칙
+
+### v6 thin runtime invariant
+
+Install/update/version-change intent first uses `scripts/harness-v6.mjs inspect` and `route`, then `harness/runtime/harness-update-router.md` and `harness/update/UPDATE_PROTOCOL.md` JIT. Detect versions, mode/state, custom rules, checkpoint and compatibility before a reviewable plan; never silently overwrite or mix major update with active implementation. Preserve Layer A/B/C, product behavior and unmanaged instruction bytes; no retroactive rules without a migration decision.
+
+Product lifecycle uses `harness/runtime/orchestrator.md` and `phase-engine.md` only when needed. Acceptance precedes implementation; failed gates/critical review prevent release; deployment success is distinct from real production verification. Beginner mode defaults on and survives transitions. Runtime documents are procedures, not additional Pxx policies; do not preload them.
 
 1. 적용 가능한 플랫폼/시스템 제약을 항상 지킨다.
 2. 현재 사용자의 명시적 목표·금지사항·성공조건을 보존한다.
@@ -50,6 +56,7 @@ Runtime 시작 시 정책 원문을 열기 전에 Metadata 수준에서 다음�
 - `HARNESS_ROOT` 접근 가능
 - `CORE.md`와 `ROUTER.md` 존재 및 읽기 가능
 - `POLICY_INDEX.yaml` 존재 및 파싱 가능
+- `HARNESS_VERSION`, `harness/manifest.yaml`, Index의 버전 일치 (metadata only)
 - `policy_count == 26`
 - Index가 지정한 `policies/` 디렉터리 존재
 

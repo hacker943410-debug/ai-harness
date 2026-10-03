@@ -132,6 +132,22 @@ Test-Case 'ambiguous tag and branch require an explicit ref' {
     Bootstrap-Test $stale 'refs/heads/fixture-v1'
     Assert-True ((Git-Test @('-C', $stale, 'rev-parse', 'HEAD')) -eq $second) 'Explicit branch resolved incorrectly.'
 }
+Test-Case 'major source update stages v6 without changing shared v5 HEAD or bytes' {
+    Write-HarnessText (Join-HarnessPath $sourceRepo 'HARNESS_VERSION') '5.1.0'
+    $oldSource = Commit-Test $sourceRepo 'v5 source fixture'
+    $null = Git-Test @('-C', $sourceRepo, 'push', '-q', $RepoUrl, 'main')
+    $live = Join-HarnessPath $fixture 'h3'
+    $null = Git-Test @('clone', '-q', $RepoUrl, $live)
+    Write-HarnessText (Join-HarnessPath $sourceRepo 'HARNESS_VERSION') '6.0.0'
+    $newSource = Commit-Test $sourceRepo 'v6 source fixture'
+    $null = Git-Test @('-C', $sourceRepo, 'push', '-q', $RepoUrl, 'main')
+    Bootstrap-Test $live
+    Assert-True ((Git-Test @('-C', $live, 'rev-parse', 'HEAD')) -eq $oldSource) 'Major upgrade changed shared v5 HEAD.'
+    Assert-True ((Read-HarnessText (Join-HarnessPath $live 'HARNESS_VERSION')) -eq '5.1.0') 'Active v5 source bytes changed.'
+    $candidate = Join-HarnessPath $fixture 'h3-v6'
+    Assert-True ((Git-Test @('-C', $candidate, 'rev-parse', 'HEAD')) -eq $newSource) 'v6 candidate was not pinned to the reviewed source.'
+    Assert-True ((Git-Test @('-C', $candidate, 'rev-parse', '--abbrev-ref', 'HEAD')) -eq 'HEAD') 'v6 candidate is not detached.'
+}
 Test-Case 'repository checker failure blocks success' {
     Write-HarnessText $stub "param([string]$([char]36)HarnessRoot) exit 1"
     $null = Commit-Test $sourceRepo 'failing checker'

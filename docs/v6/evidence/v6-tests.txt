@@ -1,0 +1,250 @@
+TAP version 13
+# Subtest: sixteen canonical phases and bilingual four-mode routing
+ok 1 - sixteen canonical phases and bilingual four-mode routing
+  ---
+  duration_ms: 3.0244
+  type: 'test'
+  ...
+# Subtest: unsafe update timing and minimal blocker exception preserve major gates
+ok 2 - unsafe update timing and minimal blocker exception preserve major gates
+  ---
+  duration_ms: 0.4553
+  type: 'test'
+  ...
+# Subtest: missing contracts, failed previous gates and fake evidence reject without mutating input
+ok 3 - missing contracts, failed previous gates and fake evidence reject without mutating input
+  ---
+  duration_ms: 1.2984
+  type: 'test'
+  ...
+# Subtest: compressed workflows retain acceptance, verification and independent review
+ok 4 - compressed workflows retain acceptance, verification and independent review
+  ---
+  duration_ms: 0.6143
+  type: 'test'
+  ...
+# Subtest: production success demands structured nonsimulated production evidence
+ok 5 - production success demands structured nonsimulated production evidence
+  ---
+  duration_ms: 0.4459
+  type: 'test'
+  ...
+# Subtest: token thresholds preserve verification; dynamic catalog has explicit fallback
+ok 6 - token thresholds preserve verification; dynamic catalog has explicit fallback
+  ---
+  duration_ms: 0.6104
+  type: 'test'
+  ...
+# Subtest: resume preserves exact goal/phase/next task and rejects incomplete verification
+ok 7 - resume preserves exact goal/phase/next task and rejects incomplete verification
+  ---
+  duration_ms: 0.8655
+  type: 'test'
+  ...
+# Subtest: one-line adoption is read-only until apply, preserves product and all unmanaged instruction bytes, exact rollback
+ok 8 - one-line adoption is read-only until apply, preserves product and all unmanaged instruction bytes, exact rollback
+  ---
+  duration_ms: 14613.0878
+  type: 'test'
+  ...
+# Subtest: active work preserves goal, criteria, phase, completed work, decisions and next task through update
+ok 9 - active work preserves goal, criteria, phase, completed work, decisions and next task through update
+  ---
+  duration_ms: 13474.4241
+  type: 'test'
+  ...
+# Subtest: unsafe active operations defer, incomplete active state and missing baselines block
+ok 10 - unsafe active operations defer, incomplete active state and missing baselines block
+  ---
+  duration_ms: 4516.0156
+  type: 'test'
+  ...
+# Subtest: later product drift and instruction drift invalidate a reviewed plan
+ok 11 - later product drift and instruction drift invalidate a reviewed plan
+  ---
+  duration_ms: 6213.5281
+  type: 'test'
+  ...
+# Subtest: local managed conflict cannot be bypassed by hand editing plan status
+ok 12 - local managed conflict cannot be bypassed by hand editing plan status
+  ---
+  duration_ms: 10222.2909
+  type: 'test'
+  ...
+# Subtest: baseline command failure performs no binding writes and shell descriptors are refused
+ok 13 - baseline command failure performs no binding writes and shell descriptors are refused
+  ---
+  duration_ms: 5880.3714
+  type: 'test'
+  ...
+# Subtest: failed post-install regression restores managed bytes and records failure
+ok 14 - failed post-install regression restores managed bytes and records failure
+  ---
+  duration_ms: 16387.5263
+  type: 'test'
+  ...
+# Subtest: rollback refuses later edits and corrupted backup without overwriting user bytes
+ok 15 - rollback refuses later edits and corrupted backup without overwriting user bytes
+  ---
+  duration_ms: 13068.4324
+  type: 'test'
+  ...
+# Subtest: interrupted journal blocks new plans and rollback rejects traversal targets
+ok 16 - interrupted journal blocks new plans and rollback rejects traversal targets
+  ---
+  duration_ms: 13664.6155
+  type: 'test'
+  ...
+# Subtest: version mismatch, path traversal and symbolic-link bindings are rejected
+ok 17 - version mismatch, path traversal and symbolic-link bindings are rejected
+  ---
+  duration_ms: 209.1919
+  type: 'test'
+  ...
+# Subtest: immutable source snapshots are checked during verification
+ok 18 - immutable source snapshots are checked during verification
+  ---
+  duration_ms: 8332.7027
+  type: 'test'
+  ...
+# Subtest: pinned snapshot version disagreement blocks verification
+ok 19 - pinned snapshot version disagreement blocks verification
+  ---
+  duration_ms: 6994.6636
+  type: 'test'
+  ...
+# Subtest: justified build and test nonapplicability retains a real critical regression
+ok 20 - justified build and test nonapplicability retains a real critical regression
+  ---
+  duration_ms: 7013.9462
+  type: 'test'
+  ...
+# Subtest: failed rollback verification reports failure after exact byte restoration
+ok 21 - failed rollback verification reports failure after exact byte restoration
+  ---
+  duration_ms: 7687.6754
+  type: 'test'
+  ...
+# Subtest: config state cannot erase an observed active deployment
+ok 22 - config state cannot erase an observed active deployment
+  ---
+  duration_ms: 14963.2848
+  type: 'test'
+  ...
+# Subtest: CLI normal route and phase reject pinned source drift without modifying phase state
+ok 23 - CLI normal route and phase reject pinned source drift without modifying phase state
+  ---
+  duration_ms: 8910.5452
+  type: 'test'
+  ...
+# Subtest: actual registered v5.1 templates upgrade to v6 and rollback retains all original custom bytes
+ok 24 - actual registered v5.1 templates upgrade to v6 and rollback retains all original custom bytes
+  ---
+  duration_ms: 12691.8288
+  type: 'test'
+  ...
+# Subtest: customized v5 bridge and heading-only managed instructions are preserved as conflicts
+ok 25 - customized v5 bridge and heading-only managed instructions are preserved as conflicts
+  ---
+  duration_ms: 6150.2547
+  type: 'test'
+  ...
+# Subtest: plain YAML credentials and token argv pairs are rejected before plan serialization
+ok 26 - plain YAML credentials and token argv pairs are rejected before plan serialization
+  ---
+  duration_ms: 1210.0688
+  type: 'test'
+  ...
+# Subtest: intermediate recorded state write recovers from an interrupted journal
+ok 27 - intermediate recorded state write recovers from an interrupted journal
+  ---
+  duration_ms: 7437.2636
+  type: 'test'
+  ...
+# Subtest: snapshot ancestor junction is refused before writing through the link
+ok 28 - snapshot ancestor junction is refused before writing through the link
+  ---
+  duration_ms: 3051.7333
+  type: 'test'
+  ...
+# Subtest: failed exit-code evidence cannot be promoted to phase success
+ok 29 - failed exit-code evidence cannot be promoted to phase success
+  ---
+  duration_ms: 0.2495
+  type: 'test'
+  ...
+# Subtest: UTF-16 unmanaged instructions block safely instead of rewriting custom bytes
+ok 30 - UTF-16 unmanaged instructions block safely instead of rewriting custom bytes
+  ---
+  duration_ms: 162.854
+  type: 'test'
+  ...
+# Subtest: CLI changed or deleted recorded phase artifacts block subsequent progress
+ok 31 - CLI changed or deleted recorded phase artifacts block subsequent progress
+  ---
+  duration_ms: 10582.9261
+  type: 'test'
+  ...
+# Subtest: legacy active work requires faithful canonical mapping and state references invalidate stale plans
+ok 32 - legacy active work requires faithful canonical mapping and state references invalidate stale plans
+  ---
+  duration_ms: 12246.5257
+  type: 'test'
+  ...
+# Subtest: changed product invalidates prior automated verification before review
+ok 33 - changed product invalidates prior automated verification before review
+  ---
+  duration_ms: 10735.6029
+  type: 'test'
+  ...
+# Subtest: compressed standalone gates retain recorded artifact freshness checks
+ok 34 - compressed standalone gates retain recorded artifact freshness checks
+  ---
+  duration_ms: 12017.5218
+  type: 'test'
+  ...
+# Subtest: reviewed target version cannot be forged without rejection and no writes
+ok 35 - reviewed target version cannot be forged without rejection and no writes
+  ---
+  duration_ms: 5882.9222
+  type: 'test'
+  ...
+# Subtest: editing upstream acceptance invalidates downstream canonical and compressed evidence
+ok 36 - editing upstream acceptance invalidates downstream canonical and compressed evidence
+  ---
+  duration_ms: 0.4579
+  type: 'test'
+  ...
+# Subtest: clean Git consumer can apply the exact CLI plan saved under .ai
+ok 37 - clean Git consumer can apply the exact CLI plan saved under .ai
+  ---
+  duration_ms: 7963.1808
+  type: 'test'
+  ...
+# Subtest: truly empty GREENFIELD install and verify require no invented product commands
+ok 38 - truly empty GREENFIELD install and verify require no invented product commands
+  ---
+  duration_ms: 8779.9197
+  type: 'test'
+  ...
+# Subtest: all sixteen local phase gates execute in order with justified nonproduction applicability
+ok 39 - all sixteen local phase gates execute in order with justified nonproduction applicability
+  ---
+  duration_ms: 0.9771
+  type: 'test'
+  ...
+# Subtest: four project modes select distinct workflows while retaining mandatory gates
+ok 40 - four project modes select distinct workflows while retaining mandatory gates
+  ---
+  duration_ms: 0.3013
+  type: 'test'
+  ...
+1..40
+# tests 40
+# suites 0
+# pass 40
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 252625.1211

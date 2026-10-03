@@ -1,0 +1,5 @@
+# Existing project adoption
+No Harness plus application/history is EXISTING_PROJECT_ADOPTION, not GREENFIELD. Inspect repository structure/architecture, build/test argv suggestions, operational users/data/contracts/deployment, local instructions/Skills/company/security rules and current state.
+Record baseline including known failing tests; unknown production access stays UNKNOWN. Ask incremental intake (change/why/protected behavior/operating users-data/deployment/timing/urgency) only for gaps not inferable from evidence.
+Use compatibility matrix and minimal executable plan/apply from UPDATE_PROTOCOL.md. Install project bindings and thin current CLI adapter; preserve code, framework, folder layout, dependencies, env names, custom commands/rules/Skills and existing instruction bytes. No retroactive refactor.
+After diagnose/configured verify and independent preservation review, mark adoption installed only at actual evidence level; set future MAINTENANCE workflow, beginner ON unless preserved explicit expert preference. No arbitrary discovered command execution, inferred deployment success or blanket all-policy loading.

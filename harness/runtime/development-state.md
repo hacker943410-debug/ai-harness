@@ -1,0 +1,6 @@
+# Development state
+Development state is independent of GREENFIELD/MAINTENANCE/HOTFIX/MIGRATION.
+NOT_STARTED means implementation has not begun; IN_PROGRESS means implementation/test/repair active; SAFE_CHECKPOINT means reconstructible state and recovery point exist; FROZEN_FOR_MIGRATION freezes product features; RESUMING means validated transition back to prior work; STABLE means current required work/verification complete.
+Allowed: NOT_STARTED→IN_PROGRESS→SAFE_CHECKPOINT→IN_PROGRESS→STABLE; migration: IN_PROGRESS→SAFE_CHECKPOINT→FROZEN_FOR_MIGRATION→RESUMING→IN_PROGRESS; completion: IN_PROGRESS→SAFE_CHECKPOINT→STABLE.
+Do not infer SAFE_CHECKPOINT from a clean tree alone. Require checkpoint-policy.md. Do not apply a major update directly from IN_PROGRESS, start features while frozen, resume after failed Harness validation, or perform destructive migration without recovery.
+Freeze allows Harness migration/validation, compatibility and required transition fixes, regression and documentation. It forbids feature expansion, unrelated refactor, new DB migration/dependency upgrade and product architecture change. One active phase pins one rule set; retain its version, current goal, acceptance and next task in .ai/harness-state.json. A minimal documented HARNESS_BLOCKER fix is the only active-phase exception.

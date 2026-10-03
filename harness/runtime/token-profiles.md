@@ -1,0 +1,3 @@
+# Token profiles
+Canonical budget/measurement rules are in token-policy.md. GREENFIELD_CONTEXT: architecture and one vertical slice; MAINTENANCE_DELTA: change and direct dependencies first; HOTFIX_CRITICAL: incident critical path, rollback and evidence; MIGRATION_COMPATIBILITY: source/local/target, transition and current-phase evidence.
+Select profile after mode/state/risk; widen only for proven affected boundaries. Record loaded refs, repeat reads, actual versus estimated token measure, soft/hard limit response, retained state and released context. Validate each profile with same-mode benchmark comparisons, never by skipping tests.
