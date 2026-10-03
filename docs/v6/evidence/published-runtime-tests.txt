@@ -1,0 +1,13 @@
+✔ actual registered v5.1 templates upgrade to v6 and rollback retains all original custom bytes (7896.4704ms)
+✔ clean Git consumer can apply the exact CLI plan saved under .ai (8186.8195ms)
+✔ truly empty GREENFIELD install and verify require no invented product commands (7797.9894ms)
+✔ all sixteen local phase gates execute in order with justified nonproduction applicability (1.8939ms)
+✔ four project modes select distinct workflows while retaining mandatory gates (0.7773ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 24184.4307

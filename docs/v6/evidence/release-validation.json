@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "status": "VALIDATED_CANDIDATE",
-  "timestamp": "2026-10-03T01:39:57.503Z",
+  "status": "PASS",
+  "timestamp": "2026-10-03T01:45:58.314Z",
   "version": "6.0.0",
   "source_repository": "https://github.com/hacker943410-debug/ai-harness",
   "target_ref": "v6.0.0",
   "authoring_payload_sha256": "0a73fc4f5fccc946e514cf152f32cfa25c9bce5a552e6eaf787ba8d995c0354d",
-  "publication_status": "Pending source push and fresh GitHub checkout verification",
+  "publication_status": "GitHub main published; fresh bootstrap/checkout validated; final tag attestation will be a release asset",
   "baseline_git_commit": "8ebab0087b228c0203a202bead8fb56853d9cb27",
   "checks": {
     "runtime_tests": {
@@ -28,7 +28,25 @@
       "failed": 0
     },
     "structural": "PASS",
-    "independent_review": "PASS"
+    "independent_review": "PASS",
+    "published_bootstrap": {
+      "exit_code": 0,
+      "source_ref": "main",
+      "repository": "PASS_WITH_WARNING"
+    },
+    "published_runtime": {
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "exit_code": 0
+    },
+    "published_native": {
+      "passed": 29,
+      "failed": 0,
+      "exit_code": 0
+    },
+    "local_report_links": "PASS",
+    "pre_commit_secret_guard": "PASS"
   },
   "reviewed_implementation": {
     "scripts/harness-project.mjs": "b3480853633bb9fa17372107e73d4c52309a3a477a2afb7e8ad8b9a90101d5d5",
@@ -51,5 +69,27 @@
     "No real novice user study",
     "No paid model replay or provider token measurement",
     "No complete OS/Node version matrix"
-  ]
+  ],
+  "verified_github_commit": "54ec1fb395c8a2515ab5cd4c09c2f1f0de327560",
+  "distribution_payload_sha256": "b5f599f895cf1b9ae168bca05ef9a3f1bdd2b3d0cacb1ff6af07ca40883fbb57",
+  "distribution_implementation_sha256": {
+    "scripts/harness-project.mjs": "b3480853633bb9fa17372107e73d4c52309a3a477a2afb7e8ad8b9a90101d5d5",
+    "scripts/harness-v6.mjs": "9f057b159203567beaf121cc26a52a93b0b28ca61665e563d4d90c350883a0d7",
+    "scripts/harness-engine.mjs": "85f3b11a69b625c27b8f6edf79404c2b44367249f952b3a5253de4ceecd9af6b",
+    "install.ps1": "411399e1f67eff21ae2adf42bd4139162bbc5f3044f6eb5fa4b748c1df670b9b"
+  },
+  "evidence_hash_scope": "Authoring worktree bytes; Git-normalized distribution hashes listed separately where applicable.",
+  "distribution_evidence_sha256": {
+    "docs/v6/evidence/v6-tests.txt": "9cfd896853f513ef836d5f2cb85ebf091ec3574e27d931531b4eb625308e2170",
+    "docs/v6/evidence/v6-release-check.txt": "c85e56e1e35011afa2708820d47532fb4c0b19a1a82f6496a81dfc74822fc3bd",
+    "docs/v6/evidence/v6-jev-check.txt": "b8187db9de27935d1161b11f0c23a2f1754f16845f49c18bb834e4a46bde22e9",
+    "docs/v6/evidence/INDEPENDENT_REVIEW.md": "ac9caf73dee909e80c67e144c30092d04a771663c32950f633c8ab94ea880ca1",
+    "docs/v6/evidence/reuse-integrity.json": "c9039badf2b4054aa4fd09be829c5a52bd171d645df2cc1cfee8ec3de1d00ce5",
+    "harness/benchmark/baseline/v5.json": "a44d65c32c3dad9f7a4172b435063d68a6f6db9893ab81dba7163f415decdae9",
+    "harness/benchmark/results/v6.json": "4ae64731105c426ccb77db6d2676ede061c4d28c95777e6d4019d2433b13f9f7"
+  },
+  "new_distribution_checks": {
+    "published-runtime-tests.txt": "f4179ccc1e3095789642cb6d3acdbe4abd378a86ea232904788c302decef4a9e",
+    "published-native-check.txt": "2e3ed5e71593dce4b6f1bea32735c4b3baebbe4b84ec50b10214cff0a1100c03"
+  }
 }

@@ -23,6 +23,8 @@ JIT retains current-phase policies, compaction saves goal/criteria/evidence/next
 
 Runtime **40/40**, benchmark **14/14**, existing install/Skill/source-release **29/29**, Jev **22/22**, structural validator **PASS**, and independent safety review **PASS** with no unresolved Critical/High findings in its scope. Repository validation retains the baseline markitdown prerelease warning. Commands, exact checks, hashes and environment are linked from the [build log](../../harness/build-log.md).
 
+Fresh GitHub bootstrap succeeded. The normalized distribution passed **5/5** critical runtime scenarios and **29/29** native regressions; all independently reviewed executable hashes remained unchanged. The source payload identity and final-tag release attestation are linked from the build log.
+
 Benchmark: **140.045 seconds**, **100 Harness API calls**, **144 verification commands**, zero runner retries/manual interventions and zero fixture regressions. Raw [v5 baseline](../../harness/benchmark/baseline/v5.json) and [v6 results](../../harness/benchmark/results/v6.json) retain per-case outputs and explicit unavailable metrics. Cases include beginner/empty new projects, bug/UI/API/auth/DB work, adoption, migration, active work and incident recovery. These are Harness fixtures, not AI product-development or real operational trials.
 
 ## Compatibility, risk and next validation
