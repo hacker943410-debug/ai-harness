@@ -12,7 +12,7 @@ for(const id of ids){
  const path='skills/'+id+'/SKILL.md';
  if(!existsSync(resolve(root,path))){errors.push('missing '+path);continue}
  const text=read(path);
- if(!text.startsWith('---\nname: '+id+'\n')||!text.includes('description:')||!text.includes('Verify')&&!text.includes('verify')) errors.push('invalid SKILL.md '+id);
+ if(!text.startsWith('---\nname: '+id+'\n')||!text.includes('description:')||!/Verify|verification|검증|reopen/i.test(text)) errors.push('invalid SKILL.md '+id);
  const e=catalog.entries.filter(x=>x.id===id);
  if(e.length!==1||e[0].bundled_path!=='skills/'+id||e[0].source!=='hacker943410-debug/ai-harness') errors.push('bad catalog '+id);
  if(!manifest.payload_files.includes(path)) errors.push('missing payload '+id);

@@ -951,3 +951,12 @@ Data / UI / Responsive QA
 Skill을 도입해도 `CORE → ROUTER → POLICY_INDEX → 필요한 Policy/Skill만 JIT` 순서는 유지된다.
 
 v5.1은 업데이트 실패 판정, native Skill의 준비·검증·복원, 전체 파일 무결성 검사와 잠금 파일 스키마를 수정한다. 기본 채널은 GitHub `main`이며 `-Ref v5.1.0`으로 출시 버전을 고정할 수 있다. 변경과 검증 명령은 [v5.1 패치노트](CLI_PATCH_NOTES_V5_1.md)를 참조한다.
+
+
+## v6.1 Candidate (unmerged): Codex CLI and Office document skills
+
+The `upgrade/v6.1` branch adds locally-authored Word (DOCX), PowerPoint (PPTX), Excel (XLSX), and PDF artifact skills. These are **not Vercel-authored**; Vercel's `skills.sh` is a broader discovery/install ecosystem and `vercel-labs/agent-skills` primarily provides web-development skills. No third-party Skill code or automatic document-conversion dependencies are copied into this branch.
+
+The native skills are `office-docx`, `office-pptx`, `office-xlsx`, `office-pdf`; read them JIT only when needed. Use the existing safe project-scoped installer, for example `powershell -File scripts/Install-ProjectSkill.ps1 -Id office-docx -ProjectRoot <project> -Client Codex`. When local Office rendering is absent, do not claim visual verification passed.
+
+For CLI compatibility, run `node scripts/check-codex-cli-v6-1.mjs` (read-only), `node --test scripts/test-codex-compat-v6-1.mjs`, `node scripts/validate-office-skills-v6-1.mjs`, and the existing v6 release test suite. See [the Codex/Office audit](docs/v6_1/CODEX_COMPATIBILITY_AND_OFFICE_SKILLS.md). Actual installation, artifact creation, user-visible rendering and Windows MCP validation remain **NOT_RUN** until tested in the target Codex environment. The released version and source pin remain 6.0.0 on this candidate branch; only Codex-approved verification should authorize the 6.1 release transition.

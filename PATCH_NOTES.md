@@ -1,3 +1,13 @@
+# v6.1.0 candidate — UNRELEASED (upgrade/v6.1)
+
+- Add four original Office Skills (Word DOCX, PowerPoint PPTX, Excel XLSX, PDF); register in bundled catalog and payload manifest, preserving JIT loading and 26 existing policies.
+- Add read-only Codex CLI compatibility probe, unit test and Office Skill metadata validator. Local Codex CLI not yet tested.
+- Record latest stable release reference 0.160.1 (as of 2026-10-08) and Windows/MCP/subagent/resume compatibility checks.
+- Clarify Vercel skills.sh discovery vs original Skill authorship. No external Skill code imported or automatically installed.
+- No main modifications and no 6.1 release tag/version pin yet. Codex must run full regression, test native Skill install/rollback and generate/render real DOCX/PPTX/XLSX/PDF files before merge.
+
+---
+
 # AI Harness v6.0 Patch Notes
 
 Major changes: Full SDLC Phase Engine; Beginner Mode and continuous briefing; user Decision Gate; acceptance-first and vertical slice; independent logical Builder/Tester/Reviewer roles; evidence-driven completion; visual/release/production verification; four project modes and existing behavior protection; development state and H1/H2/H3; checkpoint/freeze/progressive migration/critical backfill/audit/resume; source pin, manifest, version detection and customization preservation; token budgets/JIT/compaction/dynamic model and reasoning tiers; benchmark and learning loop.
