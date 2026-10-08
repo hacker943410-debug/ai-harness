@@ -5,14 +5,13 @@
   "display_name": "OpenAI Codex CLI",
   "adapter_kind": "argv_cli",
   "verified_on": "2026-08-23",
-
-  "detect": { "command": "codex" },
-
+  "detect": {
+    "command": "codex"
+  },
   "$config_note": "이 PC 에서 CODEX_HOME 이 프로세스 범위로 재정의된 사례가 실제로 있었다(다계정 래퍼). ~/.codex/config.toml 을 읽는 검사는 그 환경에서 영원히 틀린 답을 준다. 권위는 CLI 의 probe 다.",
   "config_path_is_authoritative": false,
   "config_home_env": "CODEX_HOME",
   "config_hint": "$CODEX_HOME/config.toml (기본 ~/.codex/config.toml), [mcp_servers.<id>] 테이블",
-
   "supports": {
     "scopes": [],
     "default_scope": null,
@@ -20,24 +19,53 @@
     "drift_detection": true,
     "json_probe": true
   },
-
   "$argv_note": "help 원문: 'codex mcp add [OPTIONS] <NAME> (--url <URL> | -- <COMMAND>...)'. --env 는 <KEY=VALUE> 로 값 1개만 받는다(가변 인자가 아니다). 따라서 claude 와 달리 {env_flags} 가 {server_name} 앞에 와도 이름을 삼키지 않는다. 다만 이 순서로 실제 등록을 성공시킨 적은 아직 없다 — help 로만 확인했다.",
   "argv": {
-    "probe":    ["mcp", "get", "{server_name}"],
-    "register": ["mcp", "add", "{env_flags}", "{server_name}", "--", "{command}", "{args}"],
-    "remove":   ["mcp", "remove", "{server_name}"],
-    "list":     ["mcp", "list", "--json"]
+    "probe": [
+      "mcp",
+      "get",
+      "{server_name}"
+    ],
+    "register": [
+      "mcp",
+      "add",
+      "{env_flags}",
+      "{server_name}",
+      "--",
+      "{command}",
+      "{args}"
+    ],
+    "remove": [
+      "mcp",
+      "remove",
+      "{server_name}"
+    ],
+    "list": [
+      "mcp",
+      "list",
+      "--json"
+    ]
   },
-  "env_flag_template": ["--env", "{key}={value}"],
-
+  "env_flag_template": [
+    "--env",
+    "{key}={value}"
+  ],
   "probe_semantics": {
     "present_exit_code": 0,
     "absent_exit_code": 1,
-    "parse": { "kind": "json_list", "list_argv": ["mcp", "list", "--json"], "name_field": "name", "command_path": "transport.command", "args_path": "transport.args" }
+    "parse": {
+      "kind": "json_list",
+      "list_argv": [
+        "mcp",
+        "list",
+        "--json"
+      ],
+      "name_field": "name",
+      "command_path": "transport.command",
+      "args_path": "transport.args"
+    }
   },
-
   "register_is_upsert": false,
-
   "$tool_policy_note": "Codex 의 도구 필터는 모델용 목록 생성 전에 적용되므로 컨텍스트를 실제로 줄인다. writes 모드는 read_only_hint 가 아닌 도구에 승인을 요구한다.",
   "tool_policy_support": {
     "deny": {
@@ -50,13 +78,17 @@
       "file": "$CODEX_HOME/config.toml",
       "key": "mcp_servers.{server_name}.default_tools_approval_mode",
       "value": "writes",
-      "allowed_values": ["auto", "prompt", "writes", "approve"],
+      "allowed_values": [
+        "auto",
+        "prompt",
+        "writes",
+        "approve"
+      ],
       "reduces_context": false,
       "hint": "writes = 읽기는 자유, 쓰기는 승인. 도구별로 덮어쓰려면 [mcp_servers.<s>.tools.<t>] approval_mode."
     },
     "server_level_disable": null
   },
-
   "$limitations_note": "기술적으로 불가능한 것은 최초 설치 시점에 알려야 한다. how 안의 {server_name} {client_id} {runtime_id} 는 해석 시 치환된다.",
   "limitations": [
     {
@@ -106,7 +138,6 @@
       ]
     }
   ],
-
   "skill_support": {
     "native": true,
     "project_path_template": ".agents/skills/{skill_id}",
@@ -114,6 +145,16 @@
     "verified_on": "2026-09-30",
     "verification_source": "https://learn.chatgpt.com/docs/build-skills"
   },
-
-  "notes": "scope 플래그가 없다. 등록은 항상 전역이다. 프로젝트별 .codex/config.toml 은 신뢰된 프로젝트에서만 읽히며 수동 편집이 필요하다."
+  "notes": "scope 플래그가 없다. 등록은 항상 전역이다. 프로젝트별 .codex/config.toml 은 신뢰된 프로젝트에서만 읽히며 수동 편집이 필요하다.",
+  "codex_cli_6_1_candidate": {
+    "last_release_reference": "rust-v0.160.1",
+    "probe_required": [
+      "codex --version",
+      "codex mcp --help",
+      "codex mcp list --json"
+    ],
+    "authentication_from_mcp_list": "UNKNOWN",
+    "automatic_cli_upgrade": false,
+    "notes": "Windows sandbox and remote stdio MCP env changes must be tested on target machine; keep SYSTEMROOT/TEMP/TMP; investigate subagent/reviewer/resume failures; no default opt-in to experimental features."
+  }
 }

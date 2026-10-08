@@ -31,7 +31,8 @@
     "token_router": true,
     "model_router": true,
     "verification_profiles": true,
-    "benchmark": true
+    "benchmark": true,
+    "office_skill_suite": true
   },
   "required_runtime_files": [
     "AGENTS.md",
@@ -92,6 +93,7 @@
     "catalogs/escort-profiles.json",
     "catalogs/mcp-catalog.json",
     "catalogs/skill-catalog.json",
+    "docs/v6_1/CODEX_COMPATIBILITY_AND_OFFICE_SKILLS.md",
     "harness/benchmark/README.md",
     "harness/benchmark/benchmark-schema.md",
     "harness/benchmark/cases/representative.json",
@@ -207,6 +209,10 @@
     "skills/dashboard-builder/templates/dashboard-brief.md",
     "skills/dashboard-builder/templates/dashboard.config.example.json",
     "skills/dashboard-builder/templates/design-system.example.md",
+    "skills/office-docx/SKILL.md",
+    "skills/office-pdf/SKILL.md",
+    "skills/office-pptx/SKILL.md",
+    "skills/office-xlsx/SKILL.md",
     "workflows/CAPABILITY_ACQUISITION.md",
     "workflows/DECISION_ENGINE.md",
     "workflows/ESCORT.md",
