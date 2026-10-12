@@ -6,6 +6,8 @@ import os from 'node:os';
 import {parseMcpRegistry,runDoctor,buildDoctorReport} from './doctor.mjs';
 import {verifyStudioEvidence} from './verify-session.mjs';
 import {scaffoldProject} from './scaffold.mjs';
+import {inspectRobloxProject,verifyRobloxProject} from './verify-project.mjs';
+import {fileURLToPath} from 'node:url';
 
 test('registration is not called an actual Studio connection',()=>{
  assert.equal(parseMcpRegistry('[{"name":"Roblox_Studio"}]').status,'REGISTERED_UNVERIFIED');
@@ -48,4 +50,28 @@ test('scaffold preview is read-only; create avoids overwriting existing content'
  assert.equal(scaffoldProject(dst,{create:true}).status,'SCAFFOLDED');
  assert.equal(fs.existsSync(path.join(dst,'default.project.json')),true);
  assert.throws(()=>scaffoldProject(dst,{create:true}),/DESTINATION_NOT_EMPTY/);
+});
+
+test('starter static verification is truthful and tool verification requires actual run',()=>{
+ const source=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../templates/roblox-game');
+ const basic=inspectRobloxProject(source);
+ assert.equal(basic.status,'PASS_STATIC_ONLY');
+ assert.equal(basic.external_build,'NOT_RUN');
+ assert.equal(basic.studio_playtest,'NOT_RUN');
+ const passed=verifyRobloxProject(source,{runTools:true,
+  runner:()=>({status:'PASS',exit_code:0})});
+ assert.equal(passed.status,'PASS_LOCAL_TOOLS_ONLY');
+ assert.equal(passed.studio_playtest,'NOT_RUN');
+ const failed=verifyRobloxProject(source,{runTools:true,
+  runner:binary=>({status:binary==='selene'?'FAIL':'PASS',exit_code:1})});
+ assert.equal(failed.status,'FAIL');
+ const unavailable=verifyRobloxProject(source,{runTools:true,
+  runner:()=>({status:'NOT_RUN',error:'ENOENT'})});
+ assert.equal(unavailable.status,'NOT_RUN');
+});
+test('missing Rojo mappings block static gate',t=>{
+ const parent=fs.mkdtempSync(path.join(os.tmpdir(),'roblox-v7-bad-'));
+ t.after(()=>fs.rmSync(parent,{recursive:true,force:true}));
+ fs.writeFileSync(path.join(parent,'default.project.json'),'{}');
+ assert.equal(inspectRobloxProject(parent).status,'FAIL');
 });

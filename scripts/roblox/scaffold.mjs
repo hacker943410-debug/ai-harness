@@ -24,6 +24,7 @@ export function scaffoldProject(destination,{create=false}={}){
   studio_mutation:'NOT_RUN'};
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- if(process.argv.length!==4||process.argv[2]!=='--out')throw Error('Usage: node scaffold.mjs --out DESTINATION (dry-run)\n       node scaffold.mjs --out DESTINATION --create');
- const result=scaffoldProject(process.argv[3]);process.stdout.write(JSON.stringify(result,null,2)+'\n');
+ if(![4,5].includes(process.argv.length)||process.argv[2]!=='--out'||(process.argv.length===5&&process.argv[4]!=='--create'))
+  throw Error('Usage: node scaffold.mjs --out DESTINATION [--create]');
+ const result=scaffoldProject(process.argv[3],{create:process.argv[4]==='--create'});process.stdout.write(JSON.stringify(result,null,2)+'\n');
 }
