@@ -1,0 +1,32 @@
+name: AI Harness v6.2 Candidate Checks
+on:
+  push:
+    branches:
+      - upgrade/v6.2
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  candidate:
+    name: Candidate Node 22 (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: v6.2 guard unit tests
+        run: node --test scripts/test-harness-guard-v6-2.mjs
+      - name: v6.1 Codex compatibility parser unit tests
+        run: node --test scripts/test-codex-compat-v6-1.mjs
+      - name: Office Skill metadata tests (not Office rendering)
+        run: node scripts/validate-office-skills-v6-1.mjs
+      - name: v6 Harness structural validator
+        run: node scripts/validate-harness-v6.mjs
