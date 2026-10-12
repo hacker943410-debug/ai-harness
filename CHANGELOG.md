@@ -1,3 +1,10 @@
+## 7.0.0 — Roblox integration candidate (NOT RELEASED)
+
+- First-party official Roblox Studio Agent Plugin discovery, safe Codex MCP doctor and Studio session evidence consistency gate.
+- Rojo/Rokit/Luau template, opt-in static build/lint checks, Roblox capability permission model, PROJECT ETERNAL game requirements.
+- Reuse v6.2 token/guard/verification architecture. Actual user-host Studio playtest not performed, so no live connection or gameplay claims.
+- Published HARNESS_VERSION remains 6.2.0; release tag/version changes are explicitly deferred.
+
 # Changelog
 
 ## 6.2.0 — release candidate (final CI validation required)

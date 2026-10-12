@@ -18,6 +18,8 @@ paths:
   policies_dir: "policies"
   capability_workflow: "workflows/CAPABILITY_ACQUISITION.md"
   mcp_catalog: "catalogs/mcp-catalog.json"
+  roblox_capability_candidate: "harness/capabilities/roblox/capability.json"
+  roblox_runtime_guide: "docs/v7_0/ROBLOX_MCP_SETUP.md"
   skill_catalog: "catalogs/skill-catalog.json"
   skills_dir: "skills"
   dashboard_builder_skill: "skills/dashboard-builder/SKILL.md"

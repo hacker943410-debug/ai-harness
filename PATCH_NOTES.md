@@ -1,3 +1,12 @@
+# v7.0 Roblox Studio MCP Capability Candidate — 2026-10-12 (unreleased)
+
+- Added official Roblox Plugin reference, capability permission contract, JIT routing, read-only local doctor, Studio evidence consistency check, optional Rojo template scaffolding and local source checks.
+- Retained v6.2 original 26 policies, main published 6.2.0 release and unchanged project pins. No automatic package installation, Studio data mutation or publishing.
+- PROJECT ETERNAL profile: no stealing, offline gold cap 28,800 seconds, server-owned rare captures, character and economy authority, persistent sessions.
+- CI validates only offline static and mocked scenarios. Real live Studio MCP and playable game logic are NOT_IMPLEMENTED/NOT_RUN.
+
+---
+
 # v6.2.0 Release Candidate — readiness and known limitations
 
 - Release metadata prepared consistently: HARNESS_VERSION, manifest version/source_ref, POLICY_INDEX and Claude plugin descriptor now say 6.2.0. No release tag exists until merge completion.
