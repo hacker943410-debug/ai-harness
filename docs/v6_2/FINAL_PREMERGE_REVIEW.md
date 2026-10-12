@@ -2,6 +2,7 @@
 
 Status: **DRAFT / HOLD FOR CODEX E2E**, 2026-10-12 (Asia/Seoul).
 Source: https://github.com/hacker943410-debug/ai-harness/pull/3
+For operators joining from Codex/GitHub CLI: [CLI Access and Operations Guide](CLI_ACCESS_AND_OPERATIONS_GUIDE.md) provides copy/paste onboarding, branch safety, test commands, Jev, managed guard limitations and troubleshooting.
 Target: `main`; candidate: `upgrade/v6.2`.
 This is a review checklist, **not** release certification. Do not merge, retag or change production without explicit user/Codex approval.
 

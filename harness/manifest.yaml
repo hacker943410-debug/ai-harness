@@ -99,6 +99,7 @@
     "catalogs/mcp-catalog.json",
     "catalogs/skill-catalog.json",
     "docs/v6_1/CODEX_COMPATIBILITY_AND_OFFICE_SKILLS.md",
+    "docs/v6_2/CLI_ACCESS_AND_OPERATIONS_GUIDE.md",
     "docs/v6_2/EXECUTION_ENFORCEMENT.md",
     "docs/v6_2/JEV_RUNTIME_INTEGRATION.md",
     "harness/benchmark/README.md",
