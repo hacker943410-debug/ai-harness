@@ -1,5 +1,5 @@
 /**
- * jev-decision.mjs — Vercel AI Gateway typesafe-ai/jev 최소 실행 연결 (Harness 3.1 R1)
+ * jev-decision.mjs — Vercel AI Gateway typesafe-ai/jev 공식 /v1/evaluate 실행 연결 (v6.2 후보)
  * 의존성 없음 (Node 24 ESM 기본 내장 기능만 사용)
  *
  * 계약:
@@ -17,7 +17,6 @@
 
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
 
 const ALLOWED_TOP_KEYS = new Set([
   'decision_type',
@@ -245,15 +244,9 @@ export async function evaluateJevDecision(request) {
   }
 
   // 10. API 키 획득
-  let apiKey = (process.env.AI_GATEWAY_API_KEY || '').trim();
-  if (!apiKey && process.platform === 'win32') {
-    try {
-      apiKey = execSync(
-        'powershell -NoProfile -Command "[System.Environment]::GetEnvironmentVariable(\'AI_GATEWAY_API_KEY\', \'User\')"',
-        { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }
-      ).trim();
-    } catch {}
-  }
+  // Credentials must be explicitly supplied to this process (inherited by Node children).
+  // Do not silently retrieve a different key from Windows user-scope environment.
+  const apiKey = (process.env.AI_GATEWAY_API_KEY || '').trim();
 
   if (!apiKey) {
     return makeFallbackResult(decisionType, 'AUTHENTICATION_FAILED', null, Date.now() - t0, safeExistingRoute);
@@ -277,17 +270,14 @@ export async function evaluateJevDecision(request) {
   let res;
 
   try {
-    res = await fetch('https://ai-gateway.vercel.sh/v4/ai/evaluation-model', {
+    res = await fetch('https://ai-gateway.vercel.sh/v1/evaluate', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'ai-gateway-protocol-version': '0.0.1',
-        'ai-gateway-auth-method': 'api-key',
-        'ai-evaluation-model-specification-version': '4',
-        'ai-model-id': 'typesafe-ai/jev'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
+        model: 'typesafe-ai/jev',
         state: request.state,
         questions: gatewayQuestions
       }),

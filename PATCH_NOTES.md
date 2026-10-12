@@ -1,3 +1,51 @@
+# v6.2.0 Release Candidate — readiness and known limitations
+
+- Release metadata prepared consistently: HARNESS_VERSION, manifest version/source_ref, POLICY_INDEX and Claude plugin descriptor now say 6.2.0. No release tag exists until merge completion.
+- Candidate includes v6.1 Codex adapter and optional initial Office instruction skills; Office rendering engines are NOT bundled and their document quality has not been proven.
+- Guard now accepts the correct separate immutable project snapshot if **content hash and version** match the executing source. This fixes the installed-project WRONG_PINNED_ROOT defect observed by expanded CI.
+- Installed-project managed guard integration and negative cases are in scripts/test-harness-guard-integration-v6-2.mjs; full v6 Harness regression is in CI.
+- No direct interactive Codex interception, guaranteed model-tier switching, mid-turn compaction or proved live Jev connectivity. These constraints are explicit, not hidden.
+- Jev is disabled by default and opt-in synthetic Shadow only; a live Vercel Gateway canary requires separately supplied credentials and may incur charges.
+- Release requires exact-current-head Windows/Linux CI success, PR merge, immutable tag creation on the **merged main commit** and post-merge source pin cross-check.
+
+---
+
+## 6.2.0 candidate — pre-merge Jev hardening
+- Add immutable pinned-source verification before Jev activation and live billable calls; report source-pin validity in read-only status.
+- Eliminate implicit PowerShell user-scope secret discovery. Require explicit process environment `AI_GATEWAY_API_KEY`.
+- Add offline negative test proving wrong-source activation never calls provider.
+- These checks do not constitute real provider/e2e validation or a version bump.
+
+# v6.2.0 candidate — Jev opt-in Shadow integration (UNRELEASED)
+
+- Reuse the preexisting `scripts/jev-decision.mjs`, validated typesafe-ai/jev schema and legacy fallback logic. Update Vercel AI Gateway HTTP URL/request body to the documented `/v1/evaluate` contract.
+- Add one-command Jev project activation with environment-only API key, explicit synthetic live canary, credential-free persisted enable/mode, status and disable.
+- Wire eligible managed Codex requests into Jev Shadow; preserve deterministic route, zero authorization powers and no raw project text sent. All provider failures fallback without blocking Codex.
+- Add offline CI regression for activation/contract/shadow and keep the previous 22 Jev negative tests. Live Gateway and actual Codex E2E require separate manual approval.
+- v6.2 candidate retains 6.0.0 manifest/version pin until Codex validation and release tagging. This is NOT a completed release or proof of token savings.
+
+---
+
+# v6.2.0 candidate (UNRELEASED, upgrade/v6.2)
+
+- Implement opt-in managed `codex exec --json` guard with verified pinned-source preflight, token-usage event parser, explicit budget actions, hard-limit checkpoint on next run, deterministic post-run project verification and sanitized JSON evidence.
+- Add isolated negative unit tests, documented trust boundary and release/E2E validation matrix.
+- Expose guard in root AGENTS instructions; distinguish managed/noninteractive enforcement from uninstrumented interactive sessions, model recommendation from observed model, JIT references from attested reads.
+- Preserve `upgrade/v6.1` Codex compatibility metadata and four optional first-party Office Skill candidates; no automatic Skill installation.
+- Version/tag intentionally remains published 6.0.0 until Codex verifies and prepares consistent 6.2 release; no merge or deployment.
+
+---
+
+# v6.1.0 candidate — UNRELEASED (upgrade/v6.1)
+
+- Add four original Office Skills (Word DOCX, PowerPoint PPTX, Excel XLSX, PDF); register in bundled catalog and payload manifest, preserving JIT loading and 26 existing policies.
+- Add read-only Codex CLI compatibility probe, unit test and Office Skill metadata validator. Local Codex CLI not yet tested.
+- Record latest stable release reference 0.160.1 (as of 2026-10-08) and Windows/MCP/subagent/resume compatibility checks.
+- Clarify Vercel skills.sh discovery vs original Skill authorship. No external Skill code imported or automatically installed.
+- No main modifications and no 6.1 release tag/version pin yet. Codex must run full regression, test native Skill install/rollback and generate/render real DOCX/PPTX/XLSX/PDF files before merge.
+
+---
+
 # AI Harness v6.0 Patch Notes
 
 Major changes: Full SDLC Phase Engine; Beginner Mode and continuous briefing; user Decision Gate; acceptance-first and vertical slice; independent logical Builder/Tester/Reviewer roles; evidence-driven completion; visual/release/production verification; four project modes and existing behavior protection; development state and H1/H2/H3; checkpoint/freeze/progressive migration/critical backfill/audit/resume; source pin, manifest, version detection and customization preservation; token budgets/JIT/compaction/dynamic model and reasoning tiers; benchmark and learning loop.

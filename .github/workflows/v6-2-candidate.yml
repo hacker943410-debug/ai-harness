@@ -1,0 +1,58 @@
+name: AI Harness v6.2 Candidate Checks
+on:
+  push:
+    branches:
+      - upgrade/v6.2
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  candidate:
+    name: Candidate Node 22 (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: v6.2 guard unit tests
+        run: node --test scripts/test-harness-guard-v6-2.mjs
+      - name: v6.1 Codex compatibility parser unit tests
+        run: node --test scripts/test-codex-compat-v6-1.mjs
+      - name: Office Skill metadata tests (not Office rendering)
+        run: node scripts/validate-office-skills-v6-1.mjs
+      - name: v6 Harness structural validator
+        run: node scripts/validate-harness-v6.mjs
+      - name: v6.2 managed guard installed-project integration tests
+        run: node --test scripts/test-harness-guard-integration-v6-2.mjs
+      - name: Full v6 Harness regression tests
+        run: node --test scripts/test-harness-v6.mjs
+      - name: Syntax check all Harness Node scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          find scripts -type f -name '*.mjs' -print0 | while IFS= read -r -d '' file; do
+            node --check "$file"
+          done
+      - name: Windows native Harness release regression
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # GitHub Actions checkouts do not activate repository-local Git hooks by default.
+          # Activate hooks in this disposable runner; do not weaken the repository guard.
+          git config --local core.hooksPath .githooks
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRepo.ps1 -Json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRelease.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Jev runtime + HTTP contract offline tests
+        run: node --test scripts/test-jev-v6-2.mjs
+      - name: Legacy Jev offline negative/canary fixtures
+        run: node scripts/test-jev-scenarios.mjs

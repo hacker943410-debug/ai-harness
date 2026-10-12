@@ -1,13 +1,17 @@
-# AI Harness v6.0
+# AI Harness v6.2.0
 
 A beginner-guided development harness with executable phase gates and safe, version-pinned project installation, adoption and updates.
 
+**CLI로 저장소를 처음 열거나 PR #3을 검증한다면:** [CLI 접속·브랜치 선택·Codex 검증·Jev·병합 전 점검 상세 가이드](docs/v6_2/CLI_ACCESS_AND_OPERATIONS_GUIDE.md)를 먼저 확인하세요. 이 가이드는 v6.2 후보용이며 별도의 설치 또는 정식 릴리스를 의미하지 않습니다.
+
 Use one request in any connected project:
 
-- New: “AI Harness v6.0 기준으로 이 프로젝트를 시작해줘.”
+- New: “AI Harness v6.2.0 기준으로 이 프로젝트를 시작해줘.”
 - Existing: “이 프로젝트에 AI Harness v6.0을 적용해줘.”
-- Update: “이 프로젝트의 AI Harness를 v6.0으로 업데이트해줘.”
+- Update: “이 프로젝트의 AI Harness를 v6.2.0으로 업데이트해줘.”
 - Active development: “현재 개발 상태를 보존하면서 AI Harness를 v6.0으로 업데이트해줘.” The ordinary update request applies the same preservation procedure.
+
+Version 6.2.0 is a release candidate until PR #3 is merged and the matching immutable v6.2.0 tag is verified. Jev live provider behavior and normal interactive Codex enforcement remain separate, explicitly scoped checks.
 
 The agent reads [PROJECT_INIT.md](PROJECT_INIT.md), diagnoses the project, runs the intent router, records Inventory → Gap Analysis → file migration plan, checkpoints and freezes active work, preserves local rules, validates, runs regression, audits critical gate backfill, records benchmark and resumes. Unsafe active deployment, DB transformation or incident work defers the update. Beginner Mode is ON unless explicitly changed; it survives migration. Existing code is not retroactively refactored.
 
@@ -43,7 +47,7 @@ Existing machine runtime installers, credential boundaries, 26 JIT policies, das
 
 # AI Harness — 사용자 설치·운영 설명서
 
-Version: 6.0.0 (Canonical Source: `HARNESS_VERSION`; Manifest / POLICY_INDEX와 일치)
+Version: 6.2.0 (Canonical Source: `HARNESS_VERSION`; Manifest / POLICY_INDEX와 일치)
 구성: 26개 전문 정책 + CORE + ROUTER + POLICY_INDEX + PROJECT_INIT + HARNESS_DOCTOR
       + 공용 런타임 / 클라이언트 계약 / 스키마 / 설치·진단 스크립트
 대상: Claude Code, Codex CLI, Antigravity(AGY) 및 유사한 파일 기반 Coding Agent
@@ -951,3 +955,20 @@ Data / UI / Responsive QA
 Skill을 도입해도 `CORE → ROUTER → POLICY_INDEX → 필요한 Policy/Skill만 JIT` 순서는 유지된다.
 
 v5.1은 업데이트 실패 판정, native Skill의 준비·검증·복원, 전체 파일 무결성 검사와 잠금 파일 스키마를 수정한다. 기본 채널은 GitHub `main`이며 `-Ref v5.1.0`으로 출시 버전을 고정할 수 있다. 변경과 검증 명령은 [v5.1 패치노트](CLI_PATCH_NOTES_V5_1.md)를 참조한다.
+
+
+## v6.1 Candidate (unmerged): Codex CLI and Office document skills
+
+The `upgrade/v6.1` branch adds locally-authored Word (DOCX), PowerPoint (PPTX), Excel (XLSX), and PDF artifact skills. These are **not Vercel-authored**; Vercel's `skills.sh` is a broader discovery/install ecosystem and `vercel-labs/agent-skills` primarily provides web-development skills. No third-party Skill code or automatic document-conversion dependencies are copied into this branch.
+
+The native skills are `office-docx`, `office-pptx`, `office-xlsx`, `office-pdf`; read them JIT only when needed. Use the existing safe project-scoped installer, for example `powershell -File scripts/Install-ProjectSkill.ps1 -Id office-docx -ProjectRoot <project> -Client Codex`. When local Office rendering is absent, do not claim visual verification passed.
+
+For CLI compatibility, run `node scripts/check-codex-cli-v6-1.mjs` (read-only), `node --test scripts/test-codex-compat-v6-1.mjs`, `node scripts/validate-office-skills-v6-1.mjs`, and the existing v6 release test suite. See [the Codex/Office audit](docs/v6_1/CODEX_COMPATIBILITY_AND_OFFICE_SKILLS.md). Actual installation, artifact creation, user-visible rendering and Windows MCP validation remain **NOT_RUN** until tested in the target Codex environment. The released version and source pin remain 6.0.0 on this candidate branch; only Codex-approved verification should authorize the 6.1 release transition.
+
+## v6.2 reliability candidate (unreleased)
+
+Use the **opt-in managed Codex entry point** `node scripts/harness-guard-v6-2.mjs preflight|run|verify|report`. See [execution enforcement, commands and limitations](docs/v6_2/EXECUTION_ENFORCEMENT.md). Only guarded noninteractive Codex executions have actual preflight and post-run verification control; interactive sessions and actual JIT reads are **NOT** automatically enforced. Budget requires explicitly supplied thresholds and `turn.completed` usage for actual measurement. No new Office Skill is auto-installed. Existing `upgrade/v6.1` capabilities remain staged and unmerged.
+
+## v6.2 Jev runtime activation (candidate / unreleased)
+
+The Jev executor already existed, but API-key registration alone never connected it to task execution. The candidate adds [`scripts/jev-runtime-v6-2.mjs`](scripts/jev-runtime-v6-2.mjs) for read-only status, one-command live synthetic canary + safe per-project Shadow activation, disable, and deterministic-only fallback. It also connects eligible *managed* `codex exec --json` runs to the existing Jev evaluator. Use a Vercel AI Gateway `AI_GATEWAY_API_KEY` held in the process environment; never store it in `.ai`, Git, ChatGPT prompts or scripts. See the [full setup, security restrictions and verification gates](docs/v6_2/JEV_RUNTIME_INTEGRATION.md). Activation is explicitly opt-in to avoid unexpected paid calls; direct interactive Codex sessions are not intercepted.
