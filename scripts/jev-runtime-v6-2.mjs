@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {evaluateJevDecision} from './jev-decision.mjs';
+import {sourceIdentity} from './harness-project.mjs';
 
 const ownFile=fileURLToPath(import.meta.url);
 const isDirect=()=>process.argv[1] && path.resolve(process.argv[1])===ownFile;
@@ -29,6 +30,14 @@ function localFile(project){
 }
 function readConfig(project){
   return JSON.parse(fs.readFileSync(localFile(project),'utf8').replace(/^\uFEFF/,''));
+}
+export function checkPinnedSource(config){
+  if(!config?.harness?.root||path.resolve(config.harness.root)!==root)
+    throw Error('HARNESS_ROOT_MISMATCH: use a verified pinned local Harness runtime');
+  const identity=sourceIdentity(root);
+  if(config.harness.version!==identity.version||config.harness.source_hash!==identity.hash)
+    throw Error('PINNED_SOURCE_DRIFT: source hash/version mismatch; migrate safely before Jev activation');
+  return {status:'PASS',version:identity.version};
 }
 function writeConfig(project,config){
   const target=localFile(project);
@@ -152,13 +161,20 @@ export async function main(argv=process.argv.slice(2),evaluate=evaluateJevDecisi
   if(!options.project)throw Error('--project required');
   const project=fs.realpathSync(options.project);
   const config=readConfig(project);
-  if(cmd==='status')return statusFor(config);
+  if(cmd==='status'){
+    let source_pin;
+    try{source_pin=checkPinnedSource(config).status;}catch{source_pin='FAIL';}
+    const current=statusFor(config);
+    return {...current,source_pin,
+      status:current.status==='SHADOW_READY'&&source_pin!=='PASS'?'UNVERIFIED_PIN':current.status};
+  }
   if(cmd==='disable'){
     config.decision_engine={...config.decision_engine,engine:'jev',enabled:false,mode:'shadow'};
     writeConfig(project,config);
     return {status:'DISABLED',credential_present:keyPresent(),route_changed:false};
   }
   if(options.live!=='true')throw Error('LIVE_PROVIDER_CONFIRMATION_REQUIRED: use --live true');
+  if(cmd==='activate')checkPinnedSource(config); // Before any potentially billable API call
   const canary=await liveCanary(evaluate);
   if(cmd==='canary')return canary;
   if(!canary.ok)return {...canary,activation:'BLOCKED'};

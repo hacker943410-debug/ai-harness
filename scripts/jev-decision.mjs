@@ -17,7 +17,6 @@
 
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
 
 const ALLOWED_TOP_KEYS = new Set([
   'decision_type',
@@ -245,15 +244,9 @@ export async function evaluateJevDecision(request) {
   }
 
   // 10. API 키 획득
-  let apiKey = (process.env.AI_GATEWAY_API_KEY || '').trim();
-  if (!apiKey && process.platform === 'win32') {
-    try {
-      apiKey = execSync(
-        'powershell -NoProfile -Command "[System.Environment]::GetEnvironmentVariable(\'AI_GATEWAY_API_KEY\', \'User\')"',
-        { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }
-      ).trim();
-    } catch {}
-  }
+  // Credentials must be explicitly supplied to this process (inherited by Node children).
+  // Do not silently retrieve a different key from Windows user-scope environment.
+  const apiKey = (process.env.AI_GATEWAY_API_KEY || '').trim();
 
   if (!apiKey) {
     return makeFallbackResult(decisionType, 'AUTHENTICATION_FAILED', null, Date.now() - t0, safeExistingRoute);

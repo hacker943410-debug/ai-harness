@@ -1,3 +1,9 @@
+## 6.2.0 candidate — pre-merge Jev hardening
+- Add immutable pinned-source verification before Jev activation and live billable calls; report source-pin validity in read-only status.
+- Eliminate implicit PowerShell user-scope secret discovery. Require explicit process environment `AI_GATEWAY_API_KEY`.
+- Add offline negative test proving wrong-source activation never calls provider.
+- These checks do not constitute real provider/e2e validation or a version bump.
+
 # v6.2.0 candidate — Jev opt-in Shadow integration (UNRELEASED)
 
 - Reuse the preexisting `scripts/jev-decision.mjs`, validated typesafe-ai/jev schema and legacy fallback logic. Update Vercel AI Gateway HTTP URL/request body to the documented `/v1/evaluate` contract.

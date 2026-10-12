@@ -2,8 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtempSync,mkdirSync,readFileSync,writeFileSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
-import {join} from 'node:path';
-import {statusFor,makeShadowRequest,shadowFor,liveCanary,main} from './jev-runtime-v6-2.mjs';
+import {dirname,join,resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {sourceIdentity} from './harness-project.mjs';
+import {statusFor,checkPinnedSource,makeShadowRequest,shadowFor,liveCanary,main} from './jev-runtime-v6-2.mjs';
 import {evaluateJevDecision} from './jev-decision.mjs';
 
 const route={intent:'development',risk:'R1',project_mode:'MAINTENANCE',
@@ -47,8 +49,10 @@ test('offline activate validates canary and never stores API key',async()=>{
  const before=process.env.AI_GATEWAY_API_KEY;
  try{
   mkdirSync(join(dir,'.ai'));
+  const harnessRoot=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+  const pin=sourceIdentity(harnessRoot);
   writeFileSync(join(dir,'.ai','harness-project.json'),JSON.stringify({
-   harness:{root:dir,version:'6.0.0'},keep_this:'custom'
+   harness:{root:harnessRoot,version:pin.version,source_hash:pin.hash},keep_this:'custom'
   }));
   process.env.AI_GATEWAY_API_KEY='do-not-write-this-test-secret';
   const blocked=await main(['activate','--project',dir,'--live','true'],
@@ -101,5 +105,28 @@ test('official v1 evaluate endpoint and request model are used, no raw payload l
  }finally{
   globalThis.fetch=oldFetch;
   if(oldKey===undefined)delete process.env.AI_GATEWAY_API_KEY;else process.env.AI_GATEWAY_API_KEY=oldKey;
+ }
+});
+
+test('activation rejects wrong pinned source before network call',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'jev-pin-'));
+ const previous=process.env.AI_GATEWAY_API_KEY;
+ try{
+  mkdirSync(join(dir,'.ai'));
+  const harnessRoot=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+  const identity=sourceIdentity(harnessRoot);
+  const invalid={harness:{root:harnessRoot,version:identity.version,source_hash:'invalid-sha'}};
+  writeFileSync(join(dir,'.ai','harness-project.json'),JSON.stringify(invalid));
+  process.env.AI_GATEWAY_API_KEY='offline-test-key';
+  let called=false;
+  await assert.rejects(
+   main(['activate','--project',dir,'--live','true'],async()=>{called=true;return {ok:true};}),
+   /PINNED_SOURCE_DRIFT/
+  );
+  assert.equal(called,false);
+  assert.throws(()=>checkPinnedSource(invalid),/PINNED_SOURCE_DRIFT/);
+ }finally{
+  if(previous===undefined)delete process.env.AI_GATEWAY_API_KEY;else process.env.AI_GATEWAY_API_KEY=previous;
+  rmSync(dir,{recursive:true,force:true});
  }
 });

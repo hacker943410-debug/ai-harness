@@ -77,3 +77,9 @@ The preflight report indicates Jev activation status; managed `run` stores a san
 5. Disposable project activation/disable test, no secret in filesystem, verified source pin and actual Jev shadow in managed JSON report.
 6. **Explicit live canary with an approved API key** on the user's machine. No CI secret or live calls are required for standard PR checks; if not executed, mark LIVE_PROVIDER=NOT_RUN.
 7. Compare actual tokens/cost and error/decision quality against deterministic-only guard run. Do not merge if unresolved regressions.
+
+## v6.2 final pre-merge hardening
+- Before **activation**, validate that the project's pinned Harness root, version and full manifest-derived source hash match the currently executing source. If the source differs, reject **before** making a potentially billable Jev request.
+- The read-only `status` reports `source_pin: PASS|FAIL` and refuses to label enabled Shadow as ready when the pin is invalid.
+- Jev credentials come strictly from the current process `AI_GATEWAY_API_KEY` (which may be inherited normally from the parent shell). Removed the silent PowerShell lookup of another Windows user-scope key.
+- Offline tests explicitly exercise a valid pinned source and reject invalid source pins before network evaluation. Installing from this candidate branch is not a substitute for proper 6.2 release tagging and migration.
