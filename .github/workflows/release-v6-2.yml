@@ -1,0 +1,73 @@
+name: AI Harness v6.2.0 Release
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.repository == 'hacker943410-debug/ai-harness'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check this is the approved 6.2.0 source identity
+        id: identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(tr -d '\r\n' < HARNESS_VERSION)"
+          if [[ "$VERSION" != '6.2.0' ]]; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "No v6.2.0 release required"
+            exit 0
+          fi
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('harness/manifest.yaml'));const p=JSON.parse(fs.readFileSync('plugins/ai-harness/.claude-plugin/plugin.json'));if(m.harness.version!=='6.2.0'||m.harness.source_ref!=='v6.2.0'||p.version!=='6.2.0'||!fs.readFileSync('POLICY_INDEX.yaml','utf8').includes('harness_version: \"6.2.0\"'))process.exit(1)"
+          echo "release=true" >> "$GITHUB_OUTPUT"
+      - name: Verify source schema and runtime before tagging
+        if: steps.identity.outputs.release == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test scripts/test-harness-guard-v6-2.mjs
+          node --test scripts/test-harness-guard-integration-v6-2.mjs
+          node --test scripts/test-jev-v6-2.mjs
+          node scripts/test-jev-scenarios.mjs
+          node --test scripts/test-codex-compat-v6-1.mjs
+          node scripts/validate-office-skills-v6-1.mjs
+          node scripts/validate-harness-v6.mjs
+          node --test scripts/test-harness-v6.mjs
+      - name: Create immutable v6.2.0 tag and GitHub Release (idempotent)
+        if: steps.identity.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags origin
+          if git show-ref --verify --quiet refs/tags/v6.2.0; then
+            TAG_SHA="$(git rev-list -n 1 v6.2.0)"
+            if [[ "$TAG_SHA" != "$GITHUB_SHA" ]]; then
+              # A subsequent main commit is not allowed to retag or recreate v6.2.0.
+              echo "v6.2.0 exists at a different commit; preserve immutable release."
+              exit 0
+            fi
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a v6.2.0 -m "AI Harness v6.2.0 verified release" "$GITHUB_SHA"
+            git push origin refs/tags/v6.2.0
+          fi
+          if ! gh release view v6.2.0 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create v6.2.0 --repo "$GITHUB_REPOSITORY" \
+              --verify-tag --title "AI Harness v6.2.0" \
+              --notes-file docs/v6_2/RELEASE_NOTES_v6.2.0.md
+          fi
