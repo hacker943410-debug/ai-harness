@@ -32,12 +32,13 @@ function readConfig(project){
   return JSON.parse(fs.readFileSync(localFile(project),'utf8').replace(/^\uFEFF/,''));
 }
 export function checkPinnedSource(config){
-  if(!config?.harness?.root||path.resolve(config.harness.root)!==root)
-    throw Error('HARNESS_ROOT_MISMATCH: use a verified pinned local Harness runtime');
-  const identity=sourceIdentity(root);
-  if(config.harness.version!==identity.version||config.harness.source_hash!==identity.hash)
+  if(!config?.harness?.root)throw Error('HARNESS_BINDING_REQUIRED');
+  const running=sourceIdentity(root),pinned=sourceIdentity(config.harness.root);
+  if(config.harness.version!==pinned.version||config.harness.source_hash!==pinned.hash)
     throw Error('PINNED_SOURCE_DRIFT: source hash/version mismatch; migrate safely before Jev activation');
-  return {status:'PASS',version:identity.version};
+  if(running.version!==pinned.version||running.hash!==pinned.hash)
+    throw Error('EXECUTOR_SOURCE_MISMATCH: use identical reviewed Harness snapshot');
+  return {status:'PASS',version:pinned.version};
 }
 function writeConfig(project,config){
   const target=localFile(project);
