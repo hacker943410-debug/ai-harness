@@ -146,7 +146,7 @@ function parseArgs(argv){
   }
   return {cmd,options};
 }
-export async function main(argv=process.argv.slice(2)){
+export async function main(argv=process.argv.slice(2),evaluate=evaluateJevDecision){
   const {cmd,options}=parseArgs(argv);
   if(!['status','activate','disable','canary'].includes(cmd))throw Error('Use status, activate, disable or canary');
   if(!options.project)throw Error('--project required');
@@ -159,7 +159,7 @@ export async function main(argv=process.argv.slice(2)){
     return {status:'DISABLED',credential_present:keyPresent(),route_changed:false};
   }
   if(options.live!=='true')throw Error('LIVE_PROVIDER_CONFIRMATION_REQUIRED: use --live true');
-  const canary=await liveCanary();
+  const canary=await liveCanary(evaluate);
   if(cmd==='canary')return canary;
   if(!canary.ok)return {...canary,activation:'BLOCKED'};
   config.decision_engine={...config.decision_engine,engine:'jev',enabled:true,mode:'shadow',
