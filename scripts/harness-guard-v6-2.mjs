@@ -6,6 +6,7 @@ import crypto from 'node:crypto';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {evaluateTokenBudget} from './harness-engine.mjs';
+import {statusFor as jevStatusFor,shadowFor as evaluateJevShadow} from './jev-runtime-v6-2.mjs';
 
 const ownFile=fileURLToPath(import.meta.url);
 const root=path.resolve(path.dirname(ownFile),'..');
@@ -137,7 +138,8 @@ export async function main(argv=process.argv.slice(2)){
    state:ready.info.development_state,planned_jit_files:ready.route.jit_files,actual_reads:'UNOBSERVED',
    recommended_tier:ready.route.tier,model_enforced:false,
    token_budget:budgetConfigured?{soft,hard}:'UNCONFIGURED',
-   scope:'Only guarded codex exec; interactive use is not intercepted'});
+   jev:jevStatusFor(ready.config),
+    scope:'Only guarded codex exec; interactive use is not intercepted'});
   return 0;
  }
  if(!budgetConfigured)throw Error('TOKEN_BUDGET_UNCONFIGURED: set guard_v6_2.token_budget or explicit limits');
@@ -159,6 +161,7 @@ export async function main(argv=process.argv.slice(2)){
   checkpoint=true;
  }
  const started=Date.now(),run_id=newid();
+ const jev=await evaluateJevShadow(ready.config,ready.route,ready.info);
  const execution=await runCodex(project,managedPrompt(o.request,ready.route),o['codex-bin']||'codex');
  const tokens=execution.summary.actual_usage?.total_tokens??null;
  const budget=budgetDecision(tokens,soft,hard);
@@ -176,7 +179,7 @@ export async function main(argv=process.argv.slice(2)){
    events:execution.summary.events,errors:execution.summary.errors,
    parse_errors:execution.summary.parse_errors,output_overflow:execution.overflow},
   token_usage:execution.summary.actual_usage,token_measurement:tokens===null?'UNKNOWN_NO_PROVIDER_USAGE_FAIL_CLOSED':'CODEX_TURN_COMPLETED',
-  budget,checkpoint_validated:checkpoint,verification,
+  budget,checkpoint_validated:checkpoint,verification,jev,
   enforcement_scope:'GUARDED_EXEC_ONLY',interactive_enforcement:'NOT_INSTALLED',
   limitations:['Cannot retroactively intercept interactive Codex','Budget evaluated after completed turns',
    'JIT file reads are not attested by the agent event stream']};
