@@ -5,6 +5,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
+import {evaluateTokenBudget} from './harness-engine.mjs';
 
 const ownFile=fileURLToPath(import.meta.url);
 const root=path.resolve(path.dirname(ownFile),'..');
@@ -39,8 +40,10 @@ export function extractUsage(evt){
 export function budgetDecision(tokens,soft,hard){
  if(tokens===null)return {action:'UNKNOWN',reason:'No actual Codex usage received'};
  if(!valid(soft)||!valid(hard)||soft<1||hard<=soft)return {action:'UNCONFIGURED'};
- return {action:tokens>=hard?'CHECKPOINT_REQUIRED':tokens>=soft?'COMPACT_NEXT_TURN':'CONTINUE',
-  reason:'Measured completed-turn token usage'};
+ // Connect the EXISTING v6 token policy evaluator to real Codex telemetry.
+ const evaluated=evaluateTokenBudget({used:tokens,soft_limit:soft,hard_limit:hard});
+ return {action:{CHECKPOINT:'CHECKPOINT_REQUIRED',COMPACT:'COMPACT_NEXT_TURN',CONTINUE:'CONTINUE'}[evaluated.action],
+  reason:evaluated.reason,policy_action:evaluated.action,source:'harness-engine.evaluateTokenBudget'};
 }
 export function summarizeJsonl(content){
  const out={events:0,turns:0,usage_events:0,actual_usage:null,errors:0,parse_errors:0};
