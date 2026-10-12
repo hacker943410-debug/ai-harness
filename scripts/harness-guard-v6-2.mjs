@@ -146,6 +146,13 @@ export async function main(argv=process.argv.slice(2)){
  if(o['checkpoint-evidence']){
   const f=safe(project,o['checkpoint-evidence']);
   if(!fs.existsSync(f)||!fs.statSync(f).isFile())throw Error('CHECKPOINT_EVIDENCE_MISSING');
+  const proof=read(f);
+  const prior=fs.existsSync(latest)?read(latest):null;
+  if(proof.kind!=='harness-budget-checkpoint'||proof.previous_run_id!==prior?.run_id||
+   proof.source_hash!==ready.config.harness.source_hash||
+   !['goal','current_phase','next_task'].every(k=>typeof proof[k]==='string'&&proof[k].trim().length>0)||
+   !Array.isArray(proof.acceptance_criteria)||proof.acceptance_criteria.length===0)
+    throw Error('INVALID_CHECKPOINT_CONTRACT: require previous_run_id, pinned hash, goal, phase, acceptance and next task');
   checkpoint=true;
  }
  const started=Date.now(),run_id=newid();
