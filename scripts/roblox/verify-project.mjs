@@ -19,7 +19,18 @@ function checkManifest(project){
   for(const [k,v] of Object.entries(n)){
    if(k==='$path'){
     if(typeof v!=='string'||path.isAbsolute(v)||v.split(/[\\/]/).includes('..'))return mapped.push({path:v,status:'INVALID'});
-    const f=path.resolve(project,v);mapped.push({path:v,status:fs.existsSync(f)?'EXISTS':'MISSING'});continue;
+    const f=path.resolve(project,v);
+    const relative=path.relative(project,f);
+    if(!relative||relative.startsWith('..'+path.sep)||relative==='..'||path.isAbsolute(relative)){
+      mapped.push({path:v,status:'INVALID_OUTSIDE_PROJECT'});continue;
+    }
+    if(!fs.existsSync(f)){mapped.push({path:v,status:'MISSING'});continue;}
+    let cursor=project,linked=false;
+    for(const segment of relative.split(path.sep)){
+      cursor=path.join(cursor,segment);
+      if(fs.lstatSync(cursor).isSymbolicLink()){linked=true;break}
+    }
+    mapped.push({path:v,status:linked?'INVALID_SYMLINK':'EXISTS'});continue;
    }
    if(typeof v==='object'&&v!==null)walk(v);
   }
@@ -76,4 +87,5 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   throw Error('Usage: node verify-project.mjs --project PATH [--run-tools]');
  const r=verifyRobloxProject(args[1],{runTools:args.includes('--run-tools')});emit(r);
  if(r.status==='FAIL')process.exitCode=2;
+ else if(args.includes('--run-tools')&&r.status!=='PASS_LOCAL_TOOLS_ONLY')process.exitCode=3;
 }
