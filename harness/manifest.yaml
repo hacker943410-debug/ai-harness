@@ -2,9 +2,9 @@
   "schema_version": 3,
   "harness": {
     "name": "ai-harness",
-    "version": "6.0.0",
+    "version": "6.2.0",
     "source_repository": "https://github.com/hacker943410-debug/ai-harness",
-    "source_ref": "v6.0.0",
+    "source_ref": "v6.2.0",
     "serialization": "JSON is the supported YAML 1.2 subset; read with JSON.parse"
   },
   "capabilities": {
@@ -204,6 +204,7 @@
     "scripts/jev-decision.mjs",
     "scripts/jev-runtime-v6-2.mjs",
     "scripts/test-codex-compat-v6-1.mjs",
+    "scripts/test-harness-guard-integration-v6-2.mjs",
     "scripts/test-harness-guard-v6-2.mjs",
     "scripts/test-harness-v6.mjs",
     "scripts/test-jev-scenarios.mjs",

@@ -1,3 +1,15 @@
+# v6.2.0 Release Candidate — readiness and known limitations
+
+- Release metadata prepared consistently: HARNESS_VERSION, manifest version/source_ref, POLICY_INDEX and Claude plugin descriptor now say 6.2.0. No release tag exists until merge completion.
+- Candidate includes v6.1 Codex adapter and optional initial Office instruction skills; Office rendering engines are NOT bundled and their document quality has not been proven.
+- Guard now accepts the correct separate immutable project snapshot if **content hash and version** match the executing source. This fixes the installed-project WRONG_PINNED_ROOT defect observed by expanded CI.
+- Installed-project managed guard integration and negative cases are in scripts/test-harness-guard-integration-v6-2.mjs; full v6 Harness regression is in CI.
+- No direct interactive Codex interception, guaranteed model-tier switching, mid-turn compaction or proved live Jev connectivity. These constraints are explicit, not hidden.
+- Jev is disabled by default and opt-in synthetic Shadow only; a live Vercel Gateway canary requires separately supplied credentials and may incur charges.
+- Release requires exact-current-head Windows/Linux CI success, PR merge, immutable tag creation on the **merged main commit** and post-merge source pin cross-check.
+
+---
+
 ## 6.2.0 candidate — pre-merge Jev hardening
 - Add immutable pinned-source verification before Jev activation and live billable calls; report source-pin validity in read-only status.
 - Eliminate implicit PowerShell user-scope secret discovery. Require explicit process environment `AI_GATEWAY_API_KEY`.

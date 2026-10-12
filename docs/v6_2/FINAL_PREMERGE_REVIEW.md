@@ -1,6 +1,6 @@
 # AI Harness v6.2 — Final Pre-Merge Review
 
-Status: **DRAFT / HOLD FOR CODEX E2E**, 2026-10-12 (Asia/Seoul).
+Status: **RELEASE CANDIDATE — automated integration verification expanded; provider/real Codex E2E still NOT_RUN**, 2026-10-12 (Asia/Seoul).
 Source: https://github.com/hacker943410-debug/ai-harness/pull/3
 For operators joining from Codex/GitHub CLI: [CLI Access and Operations Guide](CLI_ACCESS_AND_OPERATIONS_GUIDE.md) provides copy/paste onboarding, branch safety, test commands, Jev, managed guard limitations and troubleshooting.
 Target: `main`; candidate: `upgrade/v6.2`.
@@ -63,3 +63,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRele
 git push origin --delete upgrade/v6.1
 ```
 This does not delete any of its ancestors from `upgrade/v6.2`. Branch deletion is not required for v6.2 correctness; keep it until review if unsure.
+
+## 2026-10-12 release-candidate delta
+- Corrected the installed snapshot path false-positive: immutable source matching now uses digest+version rather than absolute path identity.
+- Added installed-project managed-guard integration tests with mocked Codex JSONL, plus failure, missing telemetry, budget and checkpoint cases.
+- Release metadata 6.2.0 is staged for CI; tag will point to final merge commit, not candidate branch.
+- Explicit limitations: provider-billed canary and full real Codex E2E remain NOT_RUN; do not claim fully verified provider interoperability or measured token savings.

@@ -41,6 +41,14 @@ jobs:
           find scripts -type f -name '*.mjs' -print0 | while IFS= read -r -d '' file; do
             node --check "$file"
           done
+      - name: Windows native Harness release regression
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRepo.ps1 -Json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRelease.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Jev runtime + HTTP contract offline tests
         run: node --test scripts/test-jev-v6-2.mjs
       - name: Legacy Jev offline negative/canary fixtures

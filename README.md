@@ -1,4 +1,4 @@
-# AI Harness v6.0
+# AI Harness v6.2.0
 
 A beginner-guided development harness with executable phase gates and safe, version-pinned project installation, adoption and updates.
 
@@ -6,10 +6,12 @@ A beginner-guided development harness with executable phase gates and safe, vers
 
 Use one request in any connected project:
 
-- New: “AI Harness v6.0 기준으로 이 프로젝트를 시작해줘.”
+- New: “AI Harness v6.2.0 기준으로 이 프로젝트를 시작해줘.”
 - Existing: “이 프로젝트에 AI Harness v6.0을 적용해줘.”
-- Update: “이 프로젝트의 AI Harness를 v6.0으로 업데이트해줘.”
+- Update: “이 프로젝트의 AI Harness를 v6.2.0으로 업데이트해줘.”
 - Active development: “현재 개발 상태를 보존하면서 AI Harness를 v6.0으로 업데이트해줘.” The ordinary update request applies the same preservation procedure.
+
+Version 6.2.0 is a release candidate until PR #3 is merged and the matching immutable v6.2.0 tag is verified. Jev live provider behavior and normal interactive Codex enforcement remain separate, explicitly scoped checks.
 
 The agent reads [PROJECT_INIT.md](PROJECT_INIT.md), diagnoses the project, runs the intent router, records Inventory → Gap Analysis → file migration plan, checkpoints and freezes active work, preserves local rules, validates, runs regression, audits critical gate backfill, records benchmark and resumes. Unsafe active deployment, DB transformation or incident work defers the update. Beginner Mode is ON unless explicitly changed; it survives migration. Existing code is not retroactively refactored.
 
@@ -45,7 +47,7 @@ Existing machine runtime installers, credential boundaries, 26 JIT policies, das
 
 # AI Harness — 사용자 설치·운영 설명서
 
-Version: 6.0.0 (Canonical Source: `HARNESS_VERSION`; Manifest / POLICY_INDEX와 일치)
+Version: 6.2.0 (Canonical Source: `HARNESS_VERSION`; Manifest / POLICY_INDEX와 일치)
 구성: 26개 전문 정책 + CORE + ROUTER + POLICY_INDEX + PROJECT_INIT + HARNESS_DOCTOR
       + 공용 런타임 / 클라이언트 계약 / 스키마 / 설치·진단 스크립트
 대상: Claude Code, Codex CLI, Antigravity(AGY) 및 유사한 파일 기반 Coding Agent
