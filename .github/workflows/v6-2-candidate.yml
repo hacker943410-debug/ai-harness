@@ -30,3 +30,7 @@ jobs:
         run: node scripts/validate-office-skills-v6-1.mjs
       - name: v6 Harness structural validator
         run: node scripts/validate-harness-v6.mjs
+      - name: Jev runtime + HTTP contract offline tests
+        run: node --test scripts/test-jev-v6-2.mjs
+      - name: Legacy Jev offline negative/canary fixtures
+        run: node scripts/test-jev-scenarios.mjs

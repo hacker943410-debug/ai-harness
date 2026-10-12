@@ -964,3 +964,7 @@ For CLI compatibility, run `node scripts/check-codex-cli-v6-1.mjs` (read-only), 
 ## v6.2 reliability candidate (unreleased)
 
 Use the **opt-in managed Codex entry point** `node scripts/harness-guard-v6-2.mjs preflight|run|verify|report`. See [execution enforcement, commands and limitations](docs/v6_2/EXECUTION_ENFORCEMENT.md). Only guarded noninteractive Codex executions have actual preflight and post-run verification control; interactive sessions and actual JIT reads are **NOT** automatically enforced. Budget requires explicitly supplied thresholds and `turn.completed` usage for actual measurement. No new Office Skill is auto-installed. Existing `upgrade/v6.1` capabilities remain staged and unmerged.
+
+## v6.2 Jev runtime activation (candidate / unreleased)
+
+The Jev executor already existed, but API-key registration alone never connected it to task execution. The candidate adds [`scripts/jev-runtime-v6-2.mjs`](scripts/jev-runtime-v6-2.mjs) for read-only status, one-command live synthetic canary + safe per-project Shadow activation, disable, and deterministic-only fallback. It also connects eligible *managed* `codex exec --json` runs to the existing Jev evaluator. Use a Vercel AI Gateway `AI_GATEWAY_API_KEY` held in the process environment; never store it in `.ai`, Git, ChatGPT prompts or scripts. See the [full setup, security restrictions and verification gates](docs/v6_2/JEV_RUNTIME_INTEGRATION.md). Activation is explicitly opt-in to avoid unexpected paid calls; direct interactive Codex sessions are not intercepted.

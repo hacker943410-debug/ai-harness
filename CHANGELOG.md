@@ -1,5 +1,12 @@
 # Changelog
 
+## 6.2.0 — candidate (not released)
+
+- Wire existing Jev decision executor to opt-in project Shadow activation, safe Vercel Gateway live canary, guarded Codex execution and typed offline regression tests.
+- Keep global Jev disabled by default; preserve fallback, explicit consent and synthetic-only provider state.
+- Update Jev HTTP call to Vercel documented `/v1/evaluate` contract; provider live testing still required.
+- Include previously staged v6.1 changes; no release version bump until Codex verifies.
+
 ## 6.0.0
 
 - Add executable sixteen-phase lifecycle and evidence, acceptance, review, release and production gates.

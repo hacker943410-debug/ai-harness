@@ -1,5 +1,5 @@
 /**
- * jev-decision.mjs — Vercel AI Gateway typesafe-ai/jev 최소 실행 연결 (Harness 3.1 R1)
+ * jev-decision.mjs — Vercel AI Gateway typesafe-ai/jev 공식 /v1/evaluate 실행 연결 (v6.2 후보)
  * 의존성 없음 (Node 24 ESM 기본 내장 기능만 사용)
  *
  * 계약:

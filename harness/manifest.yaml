@@ -33,7 +33,8 @@
     "verification_profiles": true,
     "benchmark": true,
     "office_skill_suite": true,
-    "guarded_codex_exec": true
+    "guarded_codex_exec": true,
+    "jev_shadow_integration": true
   },
   "required_runtime_files": [
     "AGENTS.md",
@@ -64,10 +65,12 @@
     "harness/update/UPDATE_PROTOCOL.md",
     "harness/update/VERSION_DETECTION.md",
     "scripts/harness-engine.mjs",
+    "scripts/harness-guard-v6-2.mjs",
     "scripts/harness-project.mjs",
     "scripts/harness-v6.mjs",
-    "scripts/validate-harness-v6.mjs",
-    "scripts/harness-guard-v6-2.mjs"
+    "scripts/jev-decision.mjs",
+    "scripts/jev-runtime-v6-2.mjs",
+    "scripts/validate-harness-v6.mjs"
   ],
   "required_project_files": [
     ".ai/harness-project.json",
@@ -97,6 +100,7 @@
     "catalogs/skill-catalog.json",
     "docs/v6_1/CODEX_COMPATIBILITY_AND_OFFICE_SKILLS.md",
     "docs/v6_2/EXECUTION_ENFORCEMENT.md",
+    "docs/v6_2/JEV_RUNTIME_INTEGRATION.md",
     "harness/benchmark/README.md",
     "harness/benchmark/benchmark-schema.md",
     "harness/benchmark/cases/representative.json",
@@ -197,10 +201,12 @@
     "scripts/harness-schema-validate.mjs",
     "scripts/harness-v6.mjs",
     "scripts/jev-decision.mjs",
+    "scripts/jev-runtime-v6-2.mjs",
     "scripts/test-codex-compat-v6-1.mjs",
     "scripts/test-harness-guard-v6-2.mjs",
     "scripts/test-harness-v6.mjs",
     "scripts/test-jev-scenarios.mjs",
+    "scripts/test-jev-v6-2.mjs",
     "scripts/validate-harness-v6.mjs",
     "scripts/validate-office-skills-v6-1.mjs",
     "settings/clients/agy.client.json",

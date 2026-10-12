@@ -248,3 +248,9 @@ override_reason
 - Shadow 비교 실행: 검증된 프로젝트가 명시적으로 opt-in할 수 있으며 기존 Router가 실제 경로를 계속 결정
 - 검증: R1 오프라인 22/22와 추가 반례 2/2 통과, Calibration 전 threshold는 `CONFIG_REQUIRED`
 - 기존 Router Fallback: 항상 유지
+
+## v6.2 — Runtime hookup (candidate)
+
+`POLICY_INDEX.yaml` still declares `enabled_by_default: false` and calibrated advisory thresholds `CONFIG_REQUIRED`. Project opt-in is automated through `node scripts/jev-runtime-v6-2.mjs activate --project <path> --live true`, which performs a **real synthetic canary** with an environment-only `AI_GATEWAY_API_KEY` before persisting `decision_engine.enabled:true, mode:shadow` in the existing project configuration. `status` and `disable` never call the provider. The current supported Vercel HTTP route is `POST /v1/evaluate` with explicit `model: typesafe-ai/jev`, `state`, and keyed `questions`.
+
+Eligible low-risk development tasks in `scripts/harness-guard-v6-2.mjs` call Jev in Shadow, passing **only coarse project mode/risk/context profile enums**, never the user request, private paths, code, credentials or customer data. Shadow metadata reports agreement and usage when available; it does not change the authoritative deterministic route or model. Provider errors/failure/missing credentials always fall back. Other direct Codex sessions are not intercepted. Live integration, billed tokens and actual performance gains require separate tests. See [integration guide](../docs/v6_2/JEV_RUNTIME_INTEGRATION.md).

@@ -1,3 +1,13 @@
+# v6.2.0 candidate — Jev opt-in Shadow integration (UNRELEASED)
+
+- Reuse the preexisting `scripts/jev-decision.mjs`, validated typesafe-ai/jev schema and legacy fallback logic. Update Vercel AI Gateway HTTP URL/request body to the documented `/v1/evaluate` contract.
+- Add one-command Jev project activation with environment-only API key, explicit synthetic live canary, credential-free persisted enable/mode, status and disable.
+- Wire eligible managed Codex requests into Jev Shadow; preserve deterministic route, zero authorization powers and no raw project text sent. All provider failures fallback without blocking Codex.
+- Add offline CI regression for activation/contract/shadow and keep the previous 22 Jev negative tests. Live Gateway and actual Codex E2E require separate manual approval.
+- v6.2 candidate retains 6.0.0 manifest/version pin until Codex validation and release tagging. This is NOT a completed release or proof of token savings.
+
+---
+
 # v6.2.0 candidate (UNRELEASED, upgrade/v6.2)
 
 - Implement opt-in managed `codex exec --json` guard with verified pinned-source preflight, token-usage event parser, explicit budget actions, hard-limit checkpoint on next run, deterministic post-run project verification and sanitized JSON evidence.
