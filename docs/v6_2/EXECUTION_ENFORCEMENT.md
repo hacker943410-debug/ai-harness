@@ -68,3 +68,12 @@ A trusted opt-in project/plugin Hook or a controlled managed-launch integration 
 
 ### Windows binary selection
 On Windows, if `codex` resolves only to an npm `.cmd` shim, some Node `spawn(shell:false)` builds cannot launch it. Supply a verified absolute path to `codex.exe` with `--codex-bin`. The wrapper intentionally does not enable `shell:true` or shell-interpolate user prompts. An unresolved binary or unsupported shim must fail closed and be reported; Codex E2E on the target Windows host is still pending.
+
+### Structured checkpoint evidence for hard budget
+A previous managed run with `CHECKPOINT_REQUIRED` cannot be bypassed with an arbitrary existing file. The next `run --checkpoint-evidence .ai/harness-guard/checkpoint.json` accepts a JSON contract only when `kind` is `harness-budget-checkpoint`, `previous_run_id` equals `.ai/harness-guard/latest.json.run_id`, `source_hash` equals the currently pinned Harness source hash, and `goal`, `current_phase`, `acceptance_criteria` (non-empty array), and `next_task` are provided. Record relevant decisions, known failures, worktree revision and rollback information when applicable; never include credentials. Codex must inspect the checkpoint before approving the next managed run. This is a logical continuation checkpoint, not proof of a filesystem backup.
+
+Example structure (populate with actual evidence, not placeholders in production):
+
+```json
+{"kind":"harness-budget-checkpoint","previous_run_id":"<actual-run-id>","source_hash":"<actual-pinned-source-hash>","goal":"<current-goal>","current_phase":"08_FEATURE_IMPLEMENTATION","acceptance_criteria":["<actual-acceptance>"],"next_task":"<next-action>"}
+```
