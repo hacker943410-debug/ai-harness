@@ -25,7 +25,7 @@ test('doctor invokes only allowlisted read-only CLI probes',()=>{
  }});
  assert.deepEqual(calls[0],['codex',['mcp','list','--json']]);
  assert.ok(calls.every(([cmd,args])=>(cmd==='codex'&&args.join(' ')==='mcp list --json')||
-  ['rokit','rojo','stylua','selene','lune','wally'].includes(cmd)&&args.join(' ')==='--version')));
+  (['rokit','rojo','stylua','selene','lune','wally'].includes(cmd)&&args.join(' ')==='--version')));
  assert.equal(report.plugin_registration.registered,false);
 });
 test('Studio proof must name selected instance and 3 required read tools',()=>{
