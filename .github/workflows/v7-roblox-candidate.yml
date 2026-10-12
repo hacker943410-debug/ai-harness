@@ -1,0 +1,37 @@
+name: AI Harness v7 Roblox Candidate
+on:
+  push:
+    branches:
+      - upgrade/v7.0
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  roblox-candidate:
+    name: Roblox candidate Node 22 (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Roblox capability tests (offline; never claim live Studio)
+        run: node --test scripts/roblox/test-v7.mjs
+      - name: Roblox manifest, safety and template validation
+        run: node scripts/validate-roblox-v7.mjs
+      - name: Existing v6.2 core regression (preservation)
+        run: node --test scripts/test-harness-guard-v6-2.mjs
+      - name: Existing v6.2 structure and pin validation
+        run: node scripts/validate-harness-v6.mjs
+      - name: Node syntax for all Roblox scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in scripts/roblox/*.mjs scripts/validate-roblox-v7.mjs; do node --check "$file"; done
