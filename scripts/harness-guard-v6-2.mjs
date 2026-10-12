@@ -81,9 +81,16 @@ async function readiness(project,request){
  const {routeTask}=await import('./harness-engine.mjs');
  const info=inspectProject(project,root),config=read(safe(project,'.ai/harness-project.json'));
  if(!config.harness?.root)throw Error('HARNESS_NOT_BOUND');
- if(path.resolve(config.harness.root)!==root)throw Error('WRONG_PINNED_ROOT');
+ // The installer intentionally copies an immutable, content-pinned source snapshot.
+ // The executing checkout path will normally be DIFFERENT from the pinned snapshot path.
+ // Compare identities and trust hashes, not filesystem path equality.
  if(info.pinned_source_status!=='PASS')throw Error('PINNED_SOURCE_DRIFT');
- if(info.installed_version!==sourceIdentity(root).version)throw Error('HARNESS_VERSION_MISMATCH');
+ const running=sourceIdentity(root);
+ const pinned=sourceIdentity(config.harness.root);
+ if(running.version!==pinned.version||running.hash!==pinned.hash||
+    running.hash!==config.harness.source_hash)
+   throw Error('EXECUTOR_SOURCE_MISMATCH');
+ if(info.installed_version!==pinned.version)throw Error('HARNESS_VERSION_MISMATCH');
  const route=routeTask(request,info);
  if(route.timing==='DEFERRED')throw Error('UNSAFE_ACTIVE_OPERATION');
  if(info.development_state==='FROZEN_FOR_MIGRATION'&&route.intent==='development')throw Error('MIGRATION_FREEZE');
