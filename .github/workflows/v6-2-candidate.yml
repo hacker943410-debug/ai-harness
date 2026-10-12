@@ -45,6 +45,9 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
+          # GitHub Actions checkouts do not activate repository-local Git hooks by default.
+          # Activate hooks in this disposable runner; do not weaken the repository guard.
+          git config --local core.hooksPath .githooks
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRepo.ps1 -Json
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRelease.ps1
