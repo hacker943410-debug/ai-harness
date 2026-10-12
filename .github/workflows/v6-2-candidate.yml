@@ -30,6 +30,17 @@ jobs:
         run: node scripts/validate-office-skills-v6-1.mjs
       - name: v6 Harness structural validator
         run: node scripts/validate-harness-v6.mjs
+      - name: v6.2 managed guard installed-project integration tests
+        run: node --test scripts/test-harness-guard-integration-v6-2.mjs
+      - name: Full v6 Harness regression tests
+        run: node --test scripts/test-harness-v6.mjs
+      - name: Syntax check all Harness Node scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          find scripts -type f -name '*.mjs' -print0 | while IFS= read -r -d '' file; do
+            node --check "$file"
+          done
       - name: Jev runtime + HTTP contract offline tests
         run: node --test scripts/test-jev-v6-2.mjs
       - name: Legacy Jev offline negative/canary fixtures
