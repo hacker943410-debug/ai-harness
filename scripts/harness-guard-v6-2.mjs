@@ -116,7 +116,7 @@ function runCodex(project,request,binary){
  });
 }
 const output=x=>process.stdout.write(JSON.stringify(x,null,2)+'\n');
-export async function main(argv=process.argv.slice(2)){
+export async function main(argv=process.argv.slice(2), adapters={}){
  const {command,o}=argsParse(argv);
  if(!['preflight','run','verify','report'].includes(command))throw Error('Use preflight, run, verify or report');
  if(!o.project)throw Error('--project required');
@@ -161,13 +161,13 @@ export async function main(argv=process.argv.slice(2)){
   checkpoint=true;
  }
  const started=Date.now(),run_id=newid();
- const jev=await evaluateJevShadow(ready.config,ready.route,ready.info);
- const execution=await runCodex(project,managedPrompt(o.request,ready.route),o['codex-bin']||'codex');
+ const jev=await (adapters.evaluateJevShadow || evaluateJevShadow)(ready.config,ready.route,ready.info);
+ const execution=await (adapters.runCodex || runCodex)(project,managedPrompt(o.request,ready.route),o['codex-bin']||'codex');
  const tokens=execution.summary.actual_usage?.total_tokens??null;
  const budget=budgetDecision(tokens,soft,hard);
  const eventHealthy=execution.exit_code===0&&!execution.signal&&!execution.overflow&&execution.summary.turns>0
    &&execution.summary.errors===0&&execution.summary.parse_errors===0;
- const verification=eventHealthy?await verify(project).catch(e=>({status:'FAIL',error:e.message})):
+ const verification=eventHealthy?await (adapters.verify || verify)(project).catch(e=>({status:'FAIL',error:e.message})):
   {status:'NOT_RUN',reason:'Codex execution or JSONL event stream failed'};
  const status=eventHealthy&&verification.status==='PASS'&&tokens!==null?'PASS':'FAIL';
  const report={schema_version:1,run_id,timestamp:new Date().toISOString(),duration_ms:Date.now()-started,
