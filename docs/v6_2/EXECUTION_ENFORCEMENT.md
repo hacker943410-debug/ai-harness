@@ -12,7 +12,7 @@ Entry point: \`node scripts/harness-guard-v6-2.mjs\`. This is an **opt-in, audit
 
 1. PRE-FLIGHT: validate installed project binding, immutable pinned source identity, current mode/state, route, required JIT paths and migration freeze.
 2. TASK: invoke \`codex exec --json\` with \`shell:false\` and explicit project CWD. Pass a short managed preamble and selected JIT **references** to agent; the wrapper does not falsely claim actual reads.
-3. USAGE: parse only real \`turn.completed.usage\` counters. Do not infer billed tokens from bytes or include cached inputs twice. Unknown metrics remain UNKNOWN.
+3. USAGE: parse only real \`turn.completed.usage\` counters. Do not infer billed tokens from bytes or include cached inputs twice. Unknown metrics remain UNKNOWN and a missing provider usage event prevents run-level PASS.
 4. BUDGET: require explicitly configured soft/hard token limits. Apply \`COMPACT_NEXT_TURN\` / \`CHECKPOINT_REQUIRED\` **after the completed turn**. Before the following managed run, hard-limit requires an existing project checkpoint artifact. Budget does not interrupt an in-flight turn.
 5. COMPLETION: after an otherwise successful run call existing \`verifyProject()\`; missing/failed verification gives **FAIL**, never PASS. Store compact JSON evidence in \`.ai/harness-guard/\` without raw model output, credentials or secret-filled logs.
 6. REPORT: distinguish planned JIT references, actual agent reads (UNOBSERVED), model selected (UNKNOWN), real token usage, fixture results, verification and enforcement scope.
@@ -65,3 +65,6 @@ This JSON is an **additional property example**, not a replacement for other req
 
 ## Suggested next enforcement phase
 A trusted opt-in project/plugin Hook or a controlled managed-launch integration can cover interactive start/end and tool events, but Hooks may be skipped when untrusted or in unsupported modes; they MUST report their activation state. Neither Hook nor wrapper can guarantee an LLM will *semantically* follow all policies; enforce deterministically checkable gates and measure adherence separately.
+
+### Windows binary selection
+On Windows, if `codex` resolves only to an npm `.cmd` shim, some Node `spawn(shell:false)` builds cannot launch it. Supply a verified absolute path to `codex.exe` with `--codex-bin`. The wrapper intentionally does not enable `shell:true` or shell-interpolate user prompts. An unresolved binary or unsupported shim must fail closed and be reported; Codex E2E on the target Windows host is still pending.
