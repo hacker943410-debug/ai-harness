@@ -24,12 +24,29 @@ jobs:
           node-version: '22'
       - name: Roblox capability tests (offline; never claim live Studio)
         run: node --test scripts/roblox/test-v7.mjs
+      - name: Live evidence structural and negative tests (offline, never Studio-attested)
+        run: node --test scripts/roblox/test-live-v7.mjs
       - name: Roblox manifest, safety and template validation
         run: node scripts/validate-roblox-v7.mjs
       - name: Existing v6.2 core regression (preservation)
         run: node --test scripts/test-harness-guard-v6-2.mjs
+      - name: Installed-project v6.2 managed guard regression
+        run: node --test scripts/test-harness-guard-integration-v6-2.mjs
+      - name: Jev v6.2 offline compatibility
+        run: node --test scripts/test-jev-v6-2.mjs
+      - name: Full v6 Harness unit regression
+        run: node --test scripts/test-harness-v6.mjs
       - name: Existing v6.2 structure and pin validation
         run: node scripts/validate-harness-v6.mjs
+      - name: Windows native Harness repo and release regression
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          git config --local core.hooksPath .githooks
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRepo.ps1 -Json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRelease.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Node syntax for all Roblox scripts
         shell: bash
         run: |

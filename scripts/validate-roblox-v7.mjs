@@ -13,6 +13,8 @@ export function validateRoblox(rootDir=root){
   'docs/v7_0/PROJECT_ETERNAL_REQUIREMENTS.md',
   'scripts/roblox/doctor.mjs','scripts/roblox/verify-session.mjs',
   'scripts/roblox/verify-project.mjs','scripts/roblox/scaffold.mjs','scripts/roblox/test-v7.mjs',
+  'scripts/roblox/verify-live-evidence.mjs','scripts/roblox/test-live-v7.mjs',
+  'docs/v7_0/INSTALLATION_AND_OPERATIONS.md','docs/v7_0/VERIFICATION_MATRIX.md',
   'templates/roblox-game/default.project.json','templates/roblox-game/rokit.toml'
  ];
  const manifest=JSON.parse(fs.readFileSync(path.join(rootDir,'harness/manifest.yaml'),'utf8'));
@@ -31,6 +33,7 @@ export function validateRoblox(rootDir=root){
  if(starter.status!=='PASS_STATIC_ONLY')errors.push('STARTER_INVALID:'+starter.errors.join(','));
  if(manifest.harness.version!=='6.2.0'||manifest.harness.source_ref!=='v6.2.0')errors.push('UNRELEASED_V7_VERSION_MUST_REMAIN_6_2');
  if(manifest.capabilities.roblox_studio_candidate!==true)errors.push('MISSING_CAPABILITY_FLAG');
+ if(!fs.readFileSync(path.join(rootDir,'docs/v7_0/VERIFICATION_MATRIX.md'),'utf8').includes('NO_GO'))errors.push('NO_RELEASE_HARD_GATE');
  return {status:errors.length?'FAIL':'PASS_STATIC_ONLY',actual_studio:'NOT_RUN',errors,
   checked:must.length,release_version:manifest.harness.version};
 }

@@ -20,6 +20,8 @@ paths:
   mcp_catalog: "catalogs/mcp-catalog.json"
   roblox_capability_candidate: "harness/capabilities/roblox/capability.json"
   roblox_runtime_guide: "docs/v7_0/ROBLOX_MCP_SETUP.md"
+  roblox_install_guide: "docs/v7_0/INSTALLATION_AND_OPERATIONS.md"
+  roblox_release_gate: "docs/v7_0/VERIFICATION_MATRIX.md"
   skill_catalog: "catalogs/skill-catalog.json"
   skills_dir: "skills"
   dashboard_builder_skill: "skills/dashboard-builder/SKILL.md"

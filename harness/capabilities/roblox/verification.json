@@ -35,6 +35,16 @@
       "id": "release",
       "mode": "user_approval",
       "criterion": "Sandbox/staging, permissioned publication, rollback evidence"
+    },
+    {
+      "id": "operator_evidence_consistency",
+      "mode": "offline_structural_unattested",
+      "criterion": "node scripts/roblox/verify-live-evidence.mjs produces EVIDENCE_CONSISTENT_UNATTESTED only, exit 3 even when consistent"
+    },
+    {
+      "id": "required_real_studio_e2e",
+      "mode": "user_local_manual",
+      "criterion": "Actually connected local Studio: source backup, edit, playtest, console, screenshot, rollback and two-client test. Human review of original MCP transcripts mandatory before merge"
     }
   ],
   "no_shortcuts": [

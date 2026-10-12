@@ -2,6 +2,7 @@
 
 - First-party official Roblox Studio Agent Plugin discovery, safe Codex MCP doctor and Studio session evidence consistency gate.
 - Rojo/Rokit/Luau template, opt-in static build/lint checks, Roblox capability permission model, PROJECT ETERNAL game requirements.
+- Expand installation and CLI operations manual, live test evidence consistency gate (strictly untrusted), negative tests and full Windows/Linux plus v6.2 regression coverage.
 - Reuse v6.2 token/guard/verification architecture. Actual user-host Studio playtest not performed, so no live connection or gameplay claims.
 - Published HARNESS_VERSION remains 6.2.0; release tag/version changes are explicitly deferred.
 

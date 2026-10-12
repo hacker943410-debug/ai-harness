@@ -2,7 +2,7 @@
 
 A beginner-guided development harness with executable phase gates and safe, version-pinned project installation, adoption and updates.
 
-**v7.0 Roblox Studio candidate (opt-in):** For Codex and Roblox Studio MCP onboarding use [Roblox MCP setup](docs/v7_0/ROBLOX_MCP_SETUP.md), [architecture / validation](docs/v7_0/ROBLOX_CAPABILITY_ARCHITECTURE.md), and project-specific [PROJECT ETERNAL rules](docs/v7_0/PROJECT_ETERNAL_REQUIREMENTS.md). **Published stable version remains v6.2.0** until candidate validation, source pin release and human approval. Doctor registration checks are NOT live Studio connectivity.
+**v7.0 Roblox Studio candidate (opt-in):** [상세 설치·운영 가이드](docs/v7_0/INSTALLATION_AND_OPERATIONS.md) 및 [최종 검증 매트릭스](docs/v7_0/VERIFICATION_MATRIX.md)를 참고하세요.  For Codex and Roblox Studio MCP onboarding use [Roblox MCP setup](docs/v7_0/ROBLOX_MCP_SETUP.md), [architecture / validation](docs/v7_0/ROBLOX_CAPABILITY_ARCHITECTURE.md), and project-specific [PROJECT ETERNAL rules](docs/v7_0/PROJECT_ETERNAL_REQUIREMENTS.md). **Published stable version remains v6.2.0** until candidate validation, source pin release and human approval. Doctor registration checks are NOT live Studio connectivity.
 
 **CLI로 저장소를 처음 열거나 PR #3을 검증한다면:** [CLI 접속·브랜치 선택·Codex 검증·Jev·병합 전 점검 상세 가이드](docs/v6_2/CLI_ACCESS_AND_OPERATIONS_GUIDE.md)를 먼저 확인하세요. 이 가이드는 v6.2 후보용이며 별도의 설치 또는 정식 릴리스를 의미하지 않습니다.
 
@@ -13,7 +13,7 @@ Use one request in any connected project:
 - Update: “이 프로젝트의 AI Harness를 v6.2.0으로 업데이트해줘.”
 - Active development: “현재 개발 상태를 보존하면서 AI Harness를 v6.0으로 업데이트해줘.” The ordinary update request applies the same preservation procedure.
 
-Version 6.2.0 is a release candidate until PR #3 is merged and the matching immutable v6.2.0 tag is verified. Jev live provider behavior and normal interactive Codex enforcement remain separate, explicitly scoped checks.
+Version 6.2.0 is already published as an immutable stable release. Candidate v7.0 is NOT released and Studio validation is NOT_RUN. Jev live provider behavior and normal interactive Codex enforcement remain separate, explicitly scoped checks.
 
 The agent reads [PROJECT_INIT.md](PROJECT_INIT.md), diagnoses the project, runs the intent router, records Inventory → Gap Analysis → file migration plan, checkpoints and freezes active work, preserves local rules, validates, runs regression, audits critical gate backfill, records benchmark and resumes. Unsafe active deployment, DB transformation or incident work defers the update. Beginner Mode is ON unless explicitly changed; it survives migration. Existing code is not retroactively refactored.
 

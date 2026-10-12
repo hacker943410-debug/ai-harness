@@ -75,3 +75,17 @@ test('missing Rojo mappings block static gate',t=>{
  fs.writeFileSync(path.join(parent,'default.project.json'),'{}');
  assert.equal(inspectRobloxProject(parent).status,'FAIL');
 });
+
+test('Rojo project mapping must reject source symlinks/paths outside project',t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'roblox-symlink-'));
+ t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ const source=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../templates/roblox-game');
+ fs.cpSync(source,dir,{recursive:true});
+ const target=path.join(dir,'src','shared');
+ fs.rmSync(target,{recursive:true,force:true});
+ try{fs.symlinkSync(source,target,'junction')}
+ catch(e){if(['EPERM','EACCES','ENOTSUP'].includes(e.code)){t.diagnostic('Symlink creation unsupported: '+e.code);return}throw e}
+ const report=inspectRobloxProject(dir);
+ assert.equal(report.status,'FAIL');
+ assert.ok(report.rojo?.mapped?.some(x=>x.status==='INVALID_SYMLINK'));
+});
