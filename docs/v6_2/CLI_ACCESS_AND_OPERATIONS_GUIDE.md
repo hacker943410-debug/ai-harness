@@ -94,6 +94,17 @@ git branch -r
 git status --short
 ```
 
+### PR을 바로 열고 싶은 경우 (새 클론에서만)
+
+로컬 추적 브랜치를 수동 생성하는 대신 GitHub CLI로 PR #3을 체크아웃할 수도 있습니다.
+
+```powershell
+gh pr checkout 3 --repo hacker943410-debug/ai-harness
+git branch --show-current
+```
+
+기존에 변경 사항이 있다면 이 명령도 브랜치 전환에 영향을 주므로 새 클론이나 Worktree를 이용하세요. `gh pr checkout --force`는 사용하지 않습니다.
+
 ### v6.2 검토 브랜치로 이동
 
 ```powershell
@@ -178,9 +189,24 @@ codex
 
 CLI가 `codex` 명령을 인식하지 못하면 우선 `codex --version`, PATH, 설치 환경을 확인합니다. CLI 인증 문제는 GitHub 인증과 별도입니다.
 
-### 다른 CLI(Claude Code, Gemini 등)
+### 다른 CLI(Claude Code, Gemini 등)로 접속하는 경우
 
-이 저장소는 `CLAUDE.md`, `GEMINI.md` 등 클라이언트별 Bridge를 사용할 수 있습니다. 사용 중인 CLI의 실제 버전, 지침 파일 지원 여부, 신뢰 설정을 먼저 점검합니다. **Codex 전용 `harness-guard-v6-2.mjs`가 자동으로 Claude/Gemini 실행을 계측하는 것은 아닙니다.** 공통 코드를 Git/Node로 검증하는 것은 가능합니다.
+실제 v6.2 소스 저장소 루트에는 **`AGENTS.md`만 존재**합니다. 설치된 개별 프로젝트에는 `CLAUDE.md`, `GEMINI.md` 등의 Bridge를 생성할 수 있지만, 현재 GitHub 소스 폴더 자체에서 Claude/Gemini가 이 가이드를 자동으로 읽는다고 가정하지 마세요.
+
+```powershell
+Set-Location C:\Dev\ai-harness
+
+# 해당 CLI가 설치된 경우에만 하나 선택
+claude
+# 또는 별도의 셸에서
+# gemini
+```
+
+Claude/Gemini 첫 메시지 예시:
+
+> 현재 디렉터리는 AI Harness v6.2 검토용 GitHub 소스 저장소다. 먼저 `README.md`와 `docs/v6_2/CLI_ACCESS_AND_OPERATIONS_GUIDE.md`에서 CLI 접속 및 검증 부분을 읽고, `AGENTS.md`와 `docs/v6_2/FINAL_PREMERGE_REVIEW.md`의 안전 조건을 준수해라. 실제 Git 브랜치·PR 상태를 확인한 뒤 작업을 시작해라. 명시적으로 승인받기 전에는 Push/병합/브랜치 삭제/유료 API 호출을 하지 마라.
+
+사용 중인 CLI의 실제 버전, 지침 파일 지원 여부, 신뢰 설정을 먼저 점검합니다. **Codex 전용 `harness-guard-v6-2.mjs`가 자동으로 Claude/Gemini 실행을 계측하는 것은 아닙니다.** 공통 Git/Node 오프라인 테스트는 CLI에 관계없이 직접 실행할 수 있습니다.
 
 ## 6. 소스 코드 최종 검토 — 본격 수정 전
 
