@@ -277,17 +277,14 @@ export async function evaluateJevDecision(request) {
   let res;
 
   try {
-    res = await fetch('https://ai-gateway.vercel.sh/v4/ai/evaluation-model', {
+    res = await fetch('https://ai-gateway.vercel.sh/v1/evaluate', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'ai-gateway-protocol-version': '0.0.1',
-        'ai-gateway-auth-method': 'api-key',
-        'ai-evaluation-model-specification-version': '4',
-        'ai-model-id': 'typesafe-ai/jev'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
+        model: 'typesafe-ai/jev',
         state: request.state,
         questions: gatewayQuestions
       }),
