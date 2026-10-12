@@ -32,7 +32,8 @@
     "model_router": true,
     "verification_profiles": true,
     "benchmark": true,
-    "office_skill_suite": true
+    "office_skill_suite": true,
+    "guarded_codex_exec": true
   },
   "required_runtime_files": [
     "AGENTS.md",
@@ -65,7 +66,8 @@
     "scripts/harness-engine.mjs",
     "scripts/harness-project.mjs",
     "scripts/harness-v6.mjs",
-    "scripts/validate-harness-v6.mjs"
+    "scripts/validate-harness-v6.mjs",
+    "scripts/harness-guard-v6-2.mjs"
   ],
   "required_project_files": [
     ".ai/harness-project.json",
