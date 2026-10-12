@@ -14,7 +14,7 @@ export function validateRoblox(rootDir=root){
   'scripts/roblox/doctor.mjs','scripts/roblox/verify-session.mjs',
   'scripts/roblox/verify-project.mjs','scripts/roblox/scaffold.mjs','scripts/roblox/test-v7.mjs',
   'scripts/roblox/verify-live-evidence.mjs','scripts/roblox/test-live-v7.mjs',
-  'docs/v7_0/INSTALLATION_AND_OPERATIONS.md','docs/v7_0/VERIFICATION_MATRIX.md',
+  'docs/v7_0/INSTALLATION_AND_OPERATIONS.md','docs/v7_0/VERIFICATION_MATRIX.md','docs/v7_0/FINAL_RELEASE_GO_NO_GO.md',
   'templates/roblox-game/default.project.json','templates/roblox-game/rokit.toml'
  ];
  const manifest=JSON.parse(fs.readFileSync(path.join(rootDir,'harness/manifest.yaml'),'utf8'));

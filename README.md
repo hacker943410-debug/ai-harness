@@ -2,7 +2,7 @@
 
 A beginner-guided development harness with executable phase gates and safe, version-pinned project installation, adoption and updates.
 
-**v7.0 Roblox Studio candidate (opt-in):** [상세 설치·운영 가이드](docs/v7_0/INSTALLATION_AND_OPERATIONS.md) 및 [최종 검증 매트릭스](docs/v7_0/VERIFICATION_MATRIX.md)를 참고하세요.  For Codex and Roblox Studio MCP onboarding use [Roblox MCP setup](docs/v7_0/ROBLOX_MCP_SETUP.md), [architecture / validation](docs/v7_0/ROBLOX_CAPABILITY_ARCHITECTURE.md), and project-specific [PROJECT ETERNAL rules](docs/v7_0/PROJECT_ETERNAL_REQUIREMENTS.md). **Published stable version remains v6.2.0** until candidate validation, source pin release and human approval. Doctor registration checks are NOT live Studio connectivity.
+**v7.0 Roblox Studio candidate (opt-in):** [상세 설치·운영 가이드](docs/v7_0/INSTALLATION_AND_OPERATIONS.md) 및 [최종 검증 매트릭스](docs/v7_0/VERIFICATION_MATRIX.md), [Go/No-Go 릴리스 인수인계](docs/v7_0/FINAL_RELEASE_GO_NO_GO.md)를 참고하세요.  For Codex and Roblox Studio MCP onboarding use [Roblox MCP setup](docs/v7_0/ROBLOX_MCP_SETUP.md), [architecture / validation](docs/v7_0/ROBLOX_CAPABILITY_ARCHITECTURE.md), and project-specific [PROJECT ETERNAL rules](docs/v7_0/PROJECT_ETERNAL_REQUIREMENTS.md). **Published stable version remains v6.2.0** until candidate validation, source pin release and human approval. Doctor registration checks are NOT live Studio connectivity.
 
 **CLI로 저장소를 처음 열거나 PR #3을 검증한다면:** [CLI 접속·브랜치 선택·Codex 검증·Jev·병합 전 점검 상세 가이드](docs/v6_2/CLI_ACCESS_AND_OPERATIONS_GUIDE.md)를 먼저 확인하세요. 이 가이드는 v6.2 후보용이며 별도의 설치 또는 정식 릴리스를 의미하지 않습니다.
 
