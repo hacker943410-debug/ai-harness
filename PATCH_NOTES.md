@@ -1,3 +1,13 @@
+# v6.2.0 candidate (UNRELEASED, upgrade/v6.2)
+
+- Implement opt-in managed `codex exec --json` guard with verified pinned-source preflight, token-usage event parser, explicit budget actions, hard-limit checkpoint on next run, deterministic post-run project verification and sanitized JSON evidence.
+- Add isolated negative unit tests, documented trust boundary and release/E2E validation matrix.
+- Expose guard in root AGENTS instructions; distinguish managed/noninteractive enforcement from uninstrumented interactive sessions, model recommendation from observed model, JIT references from attested reads.
+- Preserve `upgrade/v6.1` Codex compatibility metadata and four optional first-party Office Skill candidates; no automatic Skill installation.
+- Version/tag intentionally remains published 6.0.0 until Codex verifies and prepares consistent 6.2 release; no merge or deployment.
+
+---
+
 # v6.1.0 candidate — UNRELEASED (upgrade/v6.1)
 
 - Add four original Office Skills (Word DOCX, PowerPoint PPTX, Excel XLSX, PDF); register in bundled catalog and payload manifest, preserving JIT loading and 26 existing policies.
