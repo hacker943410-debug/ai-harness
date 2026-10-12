@@ -138,6 +138,7 @@ export async function main(argv=process.argv.slice(2)){
   return 0;
  }
  if(!budgetConfigured)throw Error('TOKEN_BUDGET_UNCONFIGURED: set guard_v6_2.token_budget or explicit limits');
+ if(process.platform==='win32' && /\.cmd$/i.test(o['codex-bin']||''))throw Error('WINDOWS_CMD_SHIM_UNVERIFIED: pass the trusted codex.exe path with --codex-bin');
  const latest=safe(project,'.ai/harness-guard/latest.json');
  if(fs.existsSync(latest)&&read(latest).budget?.action==='CHECKPOINT_REQUIRED'&&!o['checkpoint-evidence'])
   throw Error('PREVIOUS_HARD_BUDGET_REQUIRES_CHECKPOINT');
@@ -155,7 +156,7 @@ export async function main(argv=process.argv.slice(2)){
    &&execution.summary.errors===0&&execution.summary.parse_errors===0;
  const verification=eventHealthy?await verify(project).catch(e=>({status:'FAIL',error:e.message})):
   {status:'NOT_RUN',reason:'Codex execution or JSONL event stream failed'};
- const status=eventHealthy&&verification.status==='PASS'?'PASS':'FAIL';
+ const status=eventHealthy&&verification.status==='PASS'&&tokens!==null?'PASS':'FAIL';
  const report={schema_version:1,run_id,timestamp:new Date().toISOString(),duration_ms:Date.now()-started,
   status,harness_version:ready.info.installed_version,source_hash:ready.config.harness.source_hash,
   project_mode:ready.route.project_mode,route:{intent:ready.route.intent,tier:ready.route.tier,
@@ -164,7 +165,7 @@ export async function main(argv=process.argv.slice(2)){
   codex:{exit_code:execution.exit_code,signal:execution.signal,turns:execution.summary.turns,
    events:execution.summary.events,errors:execution.summary.errors,
    parse_errors:execution.summary.parse_errors,output_overflow:execution.overflow},
-  token_usage:execution.summary.actual_usage,token_measurement:tokens===null?'UNKNOWN':'CODEX_TURN_COMPLETED',
+  token_usage:execution.summary.actual_usage,token_measurement:tokens===null?'UNKNOWN_NO_PROVIDER_USAGE_FAIL_CLOSED':'CODEX_TURN_COMPLETED',
   budget,checkpoint_validated:checkpoint,verification,
   enforcement_scope:'GUARDED_EXEC_ONLY',interactive_enforcement:'NOT_INSTALLED',
   limitations:['Cannot retroactively intercept interactive Codex','Budget evaluated after completed turns',
