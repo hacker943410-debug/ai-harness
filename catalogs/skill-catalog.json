@@ -635,8 +635,8 @@
     {
       "id": "office-docx",
       "source": "hacker943410-debug/ai-harness",
-      "status": "verified",
-      "official": true,
+      "status": "candidate",
+      "official": false,
       "bundled_path": "skills/office-docx",
       "capabilities": [
         "office-docx",
@@ -648,13 +648,13 @@
         "office"
       ],
       "risk": "medium",
-      "notes": "Original AI Harness bundled skill; not authored by Vercel; tools/renderers checked at runtime."
+      "notes": "Original AI Harness-authored instruction skill only. Does not bundle Office conversion/rendering engines; artifact quality not independently validated. Optional project-scoped install."
     },
     {
       "id": "office-pptx",
       "source": "hacker943410-debug/ai-harness",
-      "status": "verified",
-      "official": true,
+      "status": "candidate",
+      "official": false,
       "bundled_path": "skills/office-pptx",
       "capabilities": [
         "office-pptx",
@@ -666,13 +666,13 @@
         "office"
       ],
       "risk": "medium",
-      "notes": "Original AI Harness bundled skill; not authored by Vercel; tools/renderers checked at runtime."
+      "notes": "Original AI Harness-authored instruction skill only. Does not bundle Office conversion/rendering engines; artifact quality not independently validated. Optional project-scoped install."
     },
     {
       "id": "office-xlsx",
       "source": "hacker943410-debug/ai-harness",
-      "status": "verified",
-      "official": true,
+      "status": "candidate",
+      "official": false,
       "bundled_path": "skills/office-xlsx",
       "capabilities": [
         "office-xlsx",
@@ -684,13 +684,13 @@
         "office"
       ],
       "risk": "medium",
-      "notes": "Original AI Harness bundled skill; not authored by Vercel; tools/renderers checked at runtime."
+      "notes": "Original AI Harness-authored instruction skill only. Does not bundle Office conversion/rendering engines; artifact quality not independently validated. Optional project-scoped install."
     },
     {
       "id": "office-pdf",
       "source": "hacker943410-debug/ai-harness",
-      "status": "verified",
-      "official": true,
+      "status": "candidate",
+      "official": false,
       "bundled_path": "skills/office-pdf",
       "capabilities": [
         "office-pdf",
@@ -702,7 +702,7 @@
         "office"
       ],
       "risk": "medium",
-      "notes": "Original AI Harness bundled skill; not authored by Vercel; tools/renderers checked at runtime."
+      "notes": "Original AI Harness-authored instruction skill only. Does not bundle Office conversion/rendering engines; artifact quality not independently validated. Optional project-scoped install."
     }
   ]
 }

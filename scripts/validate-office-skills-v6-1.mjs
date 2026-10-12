@@ -15,6 +15,7 @@ for(const id of ids){
  if(!text.startsWith('---\nname: '+id+'\n')||!text.includes('description:')||!/Verify|verification|검증|reopen/i.test(text)) errors.push('invalid SKILL.md '+id);
  const e=catalog.entries.filter(x=>x.id===id);
  if(e.length!==1||e[0].bundled_path!=='skills/'+id||e[0].source!=='hacker943410-debug/ai-harness') errors.push('bad catalog '+id);
+ if(e.length===1&&(e[0].status!=='candidate'||e[0].official!==false)) errors.push('unsupported provenance claim '+id);
  if(!manifest.payload_files.includes(path)) errors.push('missing payload '+id);
 }
 if(new Set(catalog.entries.map(e=>e.id)).size!==catalog.entries.length) errors.push('duplicate skill id');
