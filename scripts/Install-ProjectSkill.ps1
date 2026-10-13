@@ -49,6 +49,19 @@ if ($entry.PSObject.Properties.Name -contains 'bundled_path' -and $entry.bundled
         if (-not ($descriptor.skill_support.native -and $descriptor.skill_support.project_path_template)) { throw "Client '$Client' does not support native project Skills." }
         $descriptors += $descriptor
     }
+    $prior = @($lock.capabilities | Where-Object { $_.type -eq 'skill' -and $_.id -eq $Id })
+    if ($prior.Count -gt 1) { throw 'Existing capability lock has duplicate Skill records.' }
+    $installations = @()
+    if ($prior.Count -eq 1) {
+        $installations = @(Get-HarnessSkillInstallations $prior[0])
+        $seenPaths = @{}
+        foreach ($installation in $installations) {
+            $storedPath = Get-HarnessProjectPath $project $installation.config_path
+            $installation.config_path = $storedPath.Substring($project.TrimEnd([char[]]'\/').Length + 1).Replace('\', '/')
+            if ($seenPaths.ContainsKey($installation.config_path)) { throw 'Existing capability lock has duplicate Skill paths.' }
+            $seenPaths[$installation.config_path] = $true
+        }
+    }
     $targets = @()
     foreach ($descriptor in $descriptors) {
         $relative = ([string]$descriptor.skill_support.project_path_template).Replace('{skill_id}', $Id).Replace('\', '/')
@@ -67,15 +80,29 @@ if ($entry.PSObject.Properties.Name -contains 'bundled_path' -and $entry.bundled
             $existing = Get-HarnessSkillManifest $path
             if ($existing.Hash -ne $manifest.Hash -and -not $Force) { throw "Existing Skill differs at '$relative'. Review it, then use -Force to replace it." }
         }
-        $targets += [pscustomobject]@{ path = $path; relative = $relative; installed = $false; backupTaken = $false; backupRelative = $null }
+        $targets += [pscustomobject]@{ path = $path; relative = $relative; client_id = $descriptor.client_id; installed = $false; backupTaken = $false; backupRelative = $null }
     }
     if ($targets.Count -eq 0) { throw 'No native Skill-capable client descriptors were found.' }
     if (-not $PSCmdlet.ShouldProcess($project, ("Install verified Skill '{0}' into {1}" -f $Id, (($targets | ForEach-Object { $_.relative }) -join ', ')))) { return }
-    $record.content_hash = $manifest.SkillHash
-    $record.config_path = ($targets | ForEach-Object { $_.relative }) -join ';'
-    $record | Add-Member -NotePropertyName bundle_hash -NotePropertyValue $manifest.Hash
-    $record | Add-Member -NotePropertyName hash_algorithm -NotePropertyValue 'sha256-tree-v1'
-    $record | Add-Member -NotePropertyName files -NotePropertyValue @($manifest.Files)
+    foreach ($target in $targets) {
+        $installations = @($installations | Where-Object config_path -ne $target.relative)
+        $installations += [pscustomobject]@{
+            client_id = $target.client_id; config_path = $target.relative; content_hash = $manifest.SkillHash
+            bundle_hash = $manifest.Hash; hash_algorithm = 'sha256-tree-v1'; files = @($manifest.Files)
+            status = 'installed'; recorded_at = $record.recorded_at
+        }
+    }
+    $installations = @($installations | Sort-Object config_path)
+    $record.config_path = ($installations | ForEach-Object { $_.config_path }) -join ';'
+    $record | Add-Member -NotePropertyName installations -NotePropertyValue $installations
+    # Preserve the v6 aggregate only when every recorded installation agrees.
+    $different = @($installations | Where-Object { $_.bundle_hash -ne $manifest.Hash -or $_.hash_algorithm -ne 'sha256-tree-v1' -or $_.content_hash -ne $manifest.SkillHash })
+    if ($different.Count -eq 0) {
+        $record.content_hash = $manifest.SkillHash
+        $record | Add-Member -NotePropertyName bundle_hash -NotePropertyValue $manifest.Hash
+        $record | Add-Member -NotePropertyName hash_algorithm -NotePropertyValue 'sha256-tree-v1'
+        $record | Add-Member -NotePropertyName files -NotePropertyValue @($manifest.Files)
+    }
     $lock.capabilities = @(@($lock.capabilities | Where-Object { -not ($_.type -eq 'skill' -and $_.id -eq $Id) }) + $record)
     $transactionRelative = '.ai/.skill-install-' + [Guid]::NewGuid().ToString('N')
     $transaction = Get-HarnessProjectPath $project $transactionRelative

@@ -260,7 +260,7 @@ Test-Case 'additional unrecorded file is detected' {
 }
 Test-Case 'legacy SKILL.md hash remains compatible' {
     $lock = Read-HarnessJson $lockPath
-    foreach ($name in @('bundle_hash', 'hash_algorithm', 'files')) { $lock.capabilities[0].PSObject.Properties.Remove($name) }
+    foreach ($name in @('bundle_hash', 'hash_algorithm', 'files', 'installations')) { $lock.capabilities[0].PSObject.Properties.Remove($name) }
     Write-HarnessJson $lockPath $lock -Depth 12
     $check = Check-Test
     Assert-True ($check.overall -eq 'PASS_WITH_INFO' -and @($check.issues | Where-Object code -eq 'LEGACY_SKILL_HASH').Count -gt 0) 'Legacy hash was misinterpreted.'

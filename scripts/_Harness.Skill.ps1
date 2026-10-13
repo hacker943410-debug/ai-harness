@@ -51,6 +51,31 @@ function Get-HarnessSkillManifest {
     [pscustomobject]@{ Files = $files; Hash = ([BitConverter]::ToString($digest).Replace('-', '').ToLowerInvariant()); SkillHash = $entries['SKILL.md'] }
 }
 
+function Get-HarnessSkillInstallations {
+    param($Record)
+    if ($null -eq $Record) { return }
+    if ($Record.PSObject.Properties.Name -contains 'installations') {
+        foreach ($installation in @($Record.installations)) {
+            if ($null -eq $installation) { throw 'Invalid Skill installation record.' }
+            Write-Output $installation
+        }
+        return
+    }
+    # Carry forward recorded hashes. Never certify existing files during migration.
+    foreach ($relative in @(([string]$Record.config_path).Split(';') | Where-Object { $_ })) {
+        $installation = [pscustomobject]@{
+            client_id = 'legacy'; config_path = $relative; content_hash = $Record.content_hash
+            status = 'installed'; recorded_at = $Record.recorded_at
+        }
+        foreach ($name in @('bundle_hash', 'hash_algorithm', 'files')) {
+            if ($Record.PSObject.Properties.Name -contains $name) {
+                $installation | Add-Member -NotePropertyName $name -NotePropertyValue $Record.$name
+            }
+        }
+        Write-Output $installation
+    }
+}
+
 function Remove-HarnessSkillWorkPath {
     param([string]$ProjectRoot, [string]$RelativePath)
     $path = Get-HarnessProjectPath $ProjectRoot $RelativePath

@@ -38,6 +38,40 @@ jobs:
         run: node --test scripts/test-harness-v6.mjs
       - name: Existing v6.2 structure and pin validation
         run: node scripts/validate-harness-v6.mjs
+      - name: Separate-client Skill installation, migration and integrity regression (PowerShell 7)
+        shell: pwsh
+        run: ./scripts/Test-ProjectSkillInstall.ps1
+      - name: Pinned real template lint and build (does not run Studio)
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $toolRoot = Join-Path $env:RUNNER_TEMP 'roblox-verification-tools'
+          New-Item -ItemType Directory -Force -Path $toolRoot | Out-Null
+          $windows = '${{ runner.os }}' -eq 'Windows'
+          $specs = @(
+            @{Repo='rojo-rbx/rojo'; Tag='v7.7.0'; Asset=$(if ($windows) {'rojo-7.7.0-windows-x86_64.zip'} else {'rojo-7.7.0-linux-x86_64.zip'}); Binary='rojo'},
+            @{Repo='JohnnyMorganz/StyLua'; Tag='v2.5.2'; Asset=$(if ($windows) {'stylua-windows-x86_64.zip'} else {'stylua-linux-x86_64.zip'}); Binary='stylua'},
+            @{Repo='Kampfkarren/selene'; Tag='0.31.0'; Asset=$(if ($windows) {'selene-0.31.0-windows.zip'} else {'selene-0.31.0-linux.zip'}); Binary='selene'}
+          )
+          foreach ($spec in $specs) {
+            $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$($spec.Repo)/releases/tags/$($spec.Tag)" -Headers @{Authorization="Bearer $env:GH_TOKEN"}
+            $asset = @($release.assets | Where-Object name -eq $spec.Asset)
+            if ($asset.Count -ne 1 -or $asset[0].digest -notmatch '^sha256:[a-f0-9]{64}$') { throw 'Pinned asset checksum unavailable.' }
+            $archive = Join-Path $toolRoot $spec.Asset
+            Invoke-WebRequest -Uri $asset[0].browser_download_url -OutFile $archive
+            $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+            if (('sha256:' + $hash) -ne $asset[0].digest) { throw 'Pinned asset checksum mismatch.' }
+            Expand-Archive -LiteralPath $archive -DestinationPath $toolRoot -Force
+            if (-not $windows) {
+              & chmod +x (Join-Path $toolRoot $spec.Binary)
+              if ($LASTEXITCODE -ne 0) { throw 'Executable permissions failed.' }
+            }
+          }
+          $env:PATH = $toolRoot + [IO.Path]::PathSeparator + $env:PATH
+          node scripts/roblox/verify-project.mjs --project templates/roblox-game --run-tools
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Windows native Harness repo and release regression
         if: runner.os == 'Windows'
         shell: pwsh
@@ -46,6 +80,8 @@ jobs:
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRepo.ps1 -Json
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRelease.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-ProjectSkillInstall.ps1
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Node syntax for all Roblox scripts
         shell: bash
