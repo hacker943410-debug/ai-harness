@@ -10,10 +10,10 @@ Release decision: **NO_GO pending real Studio verification**. This review prepar
 | upgrade/v6.1 | fbcc7fe26d0fc53374d668d2c6cc5aea52f58343 | Already an ancestor of v7 |
 | upgrade/v6.2 | 4bdbc977947355634e367a8f127bac286fac3d64 | Already an ancestor of v7 |
 | upgrade/v7.0 | 7ccb7bda55bb5d1a95c1f21be692555f4f3a65a4 | Integration target |
-| release/v5.0.0 | 65d2bb1246d3779ac724e57ab3f75f6e2675d127 | Included by merging the integrity-fix branch |
+| release/v5.0.0 | 65d2bb1246d3779ac724e57ab3f75f6e2675d127 | Separate ancestry merge; current implementations retained |
 | fix/v5.0.1-skill-install-integrity | bb03b61dc949858a5230e53485b34d76a39b61d9 | Merge with deliberate conflict reconciliation |
 
-The older v5 release changes are already represented by the later source; their commit history is now retained by the merge. No remote branch is deleted. PR #2 remains pending until its commits actually reach main.
+The older v5 release changes are already represented by the later source. Its dashboard Skill content, Claude wrapper, client descriptor schema, AGY and Claude descriptors match the current source exactly. The newer Codex path, installer, doctor, routing and metadata supersede the older versions. A separate `ours` strategy merge retains that diverged release history without reverting the verified current implementations. The integrity-fix branch is merged separately with its missing behavior ported. No remote branch is deleted. PR #2 remains pending until its commits actually reach main.
 
 ## Conflict resolution
 
