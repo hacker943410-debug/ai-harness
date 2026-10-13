@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "server_id": "Roblox_Studio",
+  "tool_contract": "DISCOVER_AT_SESSION_RUNTIME",
+  "default_action": "DENY_MUTATION_UNTIL_USER_APPROVAL",
+  "classifications": {
+    "read_only": [
+      "list_roblox_studios",
+      "get_studio_state",
+      "get_console_output",
+      "script_read",
+      "script_search",
+      "script_grep",
+      "search_game_tree",
+      "inspect_instance",
+      "screen_capture",
+      "http_get",
+      "skill",
+      "search_asset"
+    ],
+    "review_required": [
+      "execute_luau",
+      "multi_edit",
+      "insert_asset",
+      "generate_mesh",
+      "generate_material",
+      "generate_procedural_model",
+      "generate_texture",
+      "segment_mesh",
+      "upload_image",
+      "start_stop_play",
+      "character_navigation",
+      "user_keyboard_input",
+      "user_mouse_input",
+      "subagent"
+    ],
+    "high_impact": [
+      "delete_instance",
+      "publish_place",
+      "upload_image",
+      "external_asset_upload",
+      "data_store_mutation"
+    ]
+  },
+  "invariants": [
+    "Choose explicit studio_id when supported",
+    "Save/backup the target place before large edits",
+    "Never assume MCP server registration proves a live Studio connection",
+    "Review generated AI content and copyrights before publication",
+    "Never modify or publish production games automatically",
+    "Do not log API keys, OAuth tokens or private place IDs in public CI"
+  ],
+  "unknown_tool": "REQUIRE_SCHEMA_DISCOVERY_AND_APPROVAL"
+}

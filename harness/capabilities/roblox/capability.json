@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "roblox_studio_mcp",
+  "version": "7.0.0",
+  "lifecycle": "OPT_IN_NOT_INSTALLED",
+  "source": "Roblox/roblox-studio-agent-plugin",
+  "official": true,
+  "docs": "https://create.roblox.com/docs/studio/mcp",
+  "plugin": "https://github.com/Roblox/roblox-studio-agent-plugin",
+  "client": "codex",
+  "mcp_server_name": "Roblox_Studio",
+  "transport": "stdio",
+  "install_mode": "USER_APPROVED_OFFICIAL_PLUGIN",
+  "auto_install": false,
+  "auto_publish": false,
+  "verification": {
+    "read_only_probe": "scripts/roblox/doctor.mjs",
+    "studio_evidence": "scripts/roblox/verify-session.mjs",
+    "source_checks": "scripts/roblox/verify-project.mjs"
+  },
+  "source_of_truth": {
+    "luau": "rojo_git_files",
+    "studio": "3d_scenes_and_live_testing",
+    "assets": "asset_id_registry"
+  },
+  "notes": "No runtime or Studio connection in hosted GitHub Actions. Connection must be proved in an authorized user workstation."
+}

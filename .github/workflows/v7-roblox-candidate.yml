@@ -1,0 +1,102 @@
+name: AI Harness v7 Roblox Candidate
+on:
+  workflow_call:
+  push:
+    branches:
+      - upgrade/v7.0
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  roblox-candidate:
+    name: Roblox candidate Node 22 (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Roblox capability tests (offline; never claim live Studio)
+        run: node --test scripts/roblox/test-v7.mjs
+      - name: Live evidence structural and negative tests (offline, never Studio-attested)
+        run: node --test scripts/roblox/test-live-v7.mjs
+      - name: Release acceptance and source binding negative tests
+        run: node --test scripts/test-release-v7.mjs
+      - name: Roblox manifest, safety and template validation
+        run: node scripts/validate-roblox-v7.mjs
+      - name: Existing v6.2 core regression (preservation)
+        run: node --test scripts/test-harness-guard-v6-2.mjs
+      - name: Installed-project v6.2 managed guard regression
+        run: node --test scripts/test-harness-guard-integration-v6-2.mjs
+      - name: Jev v6.2 offline compatibility
+        run: node --test scripts/test-jev-v6-2.mjs
+      - name: Codex compatibility regression
+        run: node --test scripts/test-codex-compat-v6-1.mjs
+      - name: Office metadata regression
+        run: node scripts/validate-office-skills-v6-1.mjs
+      - name: Legacy Jev negative fixtures
+        run: node scripts/test-jev-scenarios.mjs
+      - name: Full v6 Harness unit regression
+        run: node --test scripts/test-harness-v6.mjs
+      - name: Existing v6.2 structure and pin validation
+        run: node scripts/validate-harness-v6.mjs
+      - name: Reviewed release record and unchanged live-tested source
+        if: hashFiles('docs/v7_0/RELEASE_ACCEPTANCE.json') != ''
+        run: node scripts/validate-release-v7.mjs
+      - name: Separate-client Skill installation, migration and integrity regression (PowerShell 7)
+        shell: pwsh
+        run: ./scripts/Test-ProjectSkillInstall.ps1
+      - name: Pinned real template lint and build (does not run Studio)
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $toolRoot = Join-Path $env:RUNNER_TEMP 'roblox-verification-tools'
+          New-Item -ItemType Directory -Force -Path $toolRoot | Out-Null
+          $windows = '${{ runner.os }}' -eq 'Windows'
+          $specs = @(
+            @{Repo='rojo-rbx/rojo'; Tag='v7.7.0'; Asset=$(if ($windows) {'rojo-7.7.0-windows-x86_64.zip'} else {'rojo-7.7.0-linux-x86_64.zip'}); Binary='rojo'},
+            @{Repo='JohnnyMorganz/StyLua'; Tag='v2.5.2'; Asset=$(if ($windows) {'stylua-windows-x86_64.zip'} else {'stylua-linux-x86_64.zip'}); Binary='stylua'},
+            @{Repo='Kampfkarren/selene'; Tag='0.31.0'; Asset=$(if ($windows) {'selene-0.31.0-windows.zip'} else {'selene-0.31.0-linux.zip'}); Binary='selene'}
+          )
+          foreach ($spec in $specs) {
+            $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$($spec.Repo)/releases/tags/$($spec.Tag)" -Headers @{Authorization="Bearer $env:GH_TOKEN"}
+            $asset = @($release.assets | Where-Object name -eq $spec.Asset)
+            if ($asset.Count -ne 1 -or $asset[0].digest -notmatch '^sha256:[a-f0-9]{64}$') { throw 'Pinned asset checksum unavailable.' }
+            $archive = Join-Path $toolRoot $spec.Asset
+            Invoke-WebRequest -Uri $asset[0].browser_download_url -OutFile $archive
+            $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+            if (('sha256:' + $hash) -ne $asset[0].digest) { throw 'Pinned asset checksum mismatch.' }
+            Expand-Archive -LiteralPath $archive -DestinationPath $toolRoot -Force
+            if (-not $windows) {
+              & chmod +x (Join-Path $toolRoot $spec.Binary)
+              if ($LASTEXITCODE -ne 0) { throw 'Executable permissions failed.' }
+            }
+          }
+          $env:PATH = $toolRoot + [IO.Path]::PathSeparator + $env:PATH
+          node scripts/roblox/verify-project.mjs --project templates/roblox-game --run-tools
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Windows native Harness repo and release regression
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          git config --local core.hooksPath .githooks
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRepo.ps1 -Json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRelease.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-ProjectSkillInstall.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Node syntax for all Harness scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          find scripts -type f -name '*.mjs' -print0 | while IFS= read -r -d '' file; do node --check "$file"; done

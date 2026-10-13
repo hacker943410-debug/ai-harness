@@ -1,3 +1,17 @@
+# v7.0.0 — 2026-10-13
+
+- Integrated the legacy release/v5.0.0 and fix/v5.0.1-skill-install-integrity histories into the v7 candidate; v6.1 and v6.2 were already included. Ported the separate-client installation fix to the current transactional installer without reverting Force protection, staged copies or rollback.
+- Capability locks now retain each installation's paths and full-file manifest/hash across partial updates. Different valid installed versions do not receive a misleading common hash. Legacy v6 and SKILL.md-only locks migrate without certifying unverified files.
+- Added separate-client and migration regression checks for PowerShell 5.1/7. Shared Codex/AGY paths remain deduplicated. Retained the current v6 hash serialization; the abandoned v5 helper is not installed alongside it.
+- Added official Roblox Plugin reference, capability permission contract, JIT routing, read-only local doctor, Studio evidence consistency check, optional Rojo template scaffolding and local source checks.
+- Retained the original 26 policies, immutable v6.2.0 release and existing project pins. Roblox tooling remains opt-in, with scoped approval for changes and publishing.
+- PROJECT ETERNAL profile: no stealing, offline gold cap 28,800 seconds, server-owned rare captures, character and economy authority, persistent sessions.
+- The user's Windows host passed actual official Studio MCP connection, temporary editing, play start/stop, console/screenshots, two distinct client handshakes, source reconciliation and restoration. The user confirmed original-evidence review. CI still does not attest Studio execution.
+- Version, source ref, policy index and plugin/marketplace metadata now agree on 7.0.0. Release automation verifies both platforms, source/runtime identity and reviewed acceptance before tagging the main merge commit.
+- PROJECT ETERNAL game systems are reference requirements; production persistence, economy and gameplay are not implemented or certified by this capability release.
+
+---
+
 # v6.2.0 Release Candidate — readiness and known limitations
 
 - Release metadata prepared consistently: HARNESS_VERSION, manifest version/source_ref, POLICY_INDEX and Claude plugin descriptor now say 6.2.0. No release tag exists until merge completion.

@@ -37,7 +37,12 @@
           "reason": {"type": ["string", "null"]},
           "status": {"enum": ["planned", "installed", "configured", "verified", "disabled", "failed"]},
           "config_path": {"type": ["string", "null"]},
-          "recorded_at": {"type": "string"}
+          "recorded_at": {"type": "string"},
+          "installations": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"$ref": "#/$defs/skillInstallation"}
+          }
         },
         "allOf": [
           {
@@ -51,5 +56,26 @@
       }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "skillInstallation": {
+      "type": "object",
+      "required": ["client_id", "config_path", "content_hash", "status", "recorded_at"],
+      "properties": {
+        "client_id": {"type": "string", "minLength": 1},
+        "config_path": {"type": "string", "minLength": 1},
+        "content_hash": {"type": ["string", "null"]},
+        "bundle_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "hash_algorithm": {"const": "sha256-tree-v1"},
+        "files": {"$ref": "#/properties/capabilities/items/properties/files"},
+        "status": {"const": "installed"},
+        "recorded_at": {"type": "string"}
+      },
+      "allOf": [{"anyOf": [
+        {"not": {"anyOf": [{"required": ["bundle_hash"]}, {"required": ["hash_algorithm"]}, {"required": ["files"]}]}},
+        {"required": ["bundle_hash", "hash_algorithm", "files"]}
+      ]}],
+      "additionalProperties": false
+    }
+  }
 }

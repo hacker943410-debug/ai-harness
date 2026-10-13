@@ -1,0 +1,10 @@
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
+Packages/
+ServerPackages/
+DevPackages/
+.env
+.env.*
+.ai/roblox-probes/

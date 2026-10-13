@@ -1,5 +1,5 @@
 schema_version: "1.0"
-harness_version: "6.2.0"
+harness_version: "7.0.0"
 policy_count: 26
 
 paths:
@@ -18,6 +18,10 @@ paths:
   policies_dir: "policies"
   capability_workflow: "workflows/CAPABILITY_ACQUISITION.md"
   mcp_catalog: "catalogs/mcp-catalog.json"
+  roblox_capability_candidate: "harness/capabilities/roblox/capability.json"
+  roblox_runtime_guide: "docs/v7_0/ROBLOX_MCP_SETUP.md"
+  roblox_install_guide: "docs/v7_0/INSTALLATION_AND_OPERATIONS.md"
+  roblox_release_gate: "docs/v7_0/VERIFICATION_MATRIX.md"
   skill_catalog: "catalogs/skill-catalog.json"
   skills_dir: "skills"
   dashboard_builder_skill: "skills/dashboard-builder/SKILL.md"

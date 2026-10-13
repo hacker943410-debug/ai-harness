@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "stages": [
+    {
+      "id": "mcp_registry",
+      "mode": "read_only",
+      "criterion": "Codex MCP lists Roblox_Studio; not enough for PASS Studio"
+    },
+    {
+      "id": "studio_session",
+      "mode": "live_attestation",
+      "criterion": "list_roblox_studios plus explicit studio_id and get_studio_state"
+    },
+    {
+      "id": "rojo_source",
+      "mode": "static",
+      "criterion": "Rojo mapping, source and tool pins validated"
+    },
+    {
+      "id": "luau_quality",
+      "mode": "local_tools",
+      "criterion": "StyLua --check and Selene clean"
+    },
+    {
+      "id": "game_playtest",
+      "mode": "live",
+      "criterion": "Play-mode console and Studio state observed without errors"
+    },
+    {
+      "id": "server_integrity",
+      "mode": "isolated_scenarios",
+      "criterion": "Server-side economy, RemoteEvent fuzz, reconnect, idempotency and profile locks"
+    },
+    {
+      "id": "release",
+      "mode": "user_approval",
+      "criterion": "Sandbox/staging, permissioned publication, rollback evidence"
+    },
+    {
+      "id": "operator_evidence_consistency",
+      "mode": "offline_structural_unattested",
+      "criterion": "node scripts/roblox/verify-live-evidence.mjs produces EVIDENCE_CONSISTENT_UNATTESTED only, exit 3 even when consistent"
+    },
+    {
+      "id": "required_real_studio_e2e",
+      "mode": "user_local_manual",
+      "criterion": "Actually connected local Studio: source backup, edit, playtest, console, screenshot, rollback and two-client test. Human review of original MCP transcripts mandatory before merge"
+    }
+  ],
+  "no_shortcuts": [
+    "NOT_RUN never converts to PASS",
+    "Missing live Studio is not simulated by a markdown assertion",
+    "Unit fixture pass is not server-client multiplayer pass"
+  ]
+}

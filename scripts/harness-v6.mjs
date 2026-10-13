@@ -20,7 +20,7 @@ const write = (file, value) => { fs.mkdirSync(path.dirname(path.resolve(file)), 
 try {
   let result;
   const project = options.project ? path.resolve(options.project) : process.cwd();
-  const request = options.request || 'AI Harness v6.0으로 업데이트해줘.';
+  const request = options.request || 'AI Harness 업데이트';
   switch (command) {
     case 'inspect': result = inspectProject(project, options.source || source); break;
     case 'route': {
