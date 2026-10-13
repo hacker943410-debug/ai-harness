@@ -275,7 +275,7 @@ export function diagnoseProject(project) {
   result['Browser Test Capability'] = { status: config.verification_commands?.e2e ? 'CONFIGURED_NOT_RUN' : 'NOT_CONFIGURED', evidence: [] };
   return { timestamp: stamp(), checks: result, suggested_commands: cmds.suggestions, recommendation: 'Resolve missing required tools and configure project verification argv before migration. UI work requires actual browser evidence; metadata alone is not PASS.' };
 }
-export function planProject({ project, sourceRoot, request = 'AI Harness v6.0으로 업데이트해줘.', config: supplied = {} }) {
+export function planProject({ project, sourceRoot, request = 'AI Harness 업데이트', config: supplied = {} }) {
   project = rootPath(project); sourceRoot = rootPath(sourceRoot);
   if (project === sourceRoot) throw new Error('SOURCE_IS_NOT_CONSUMER_PROJECT');
   const identity = sourceIdentity(sourceRoot);
@@ -294,6 +294,12 @@ export function planProject({ project, sourceRoot, request = 'AI Harness v6.0으
   const files = managedFiles(project);
   const before = fileHashes(project, files);
   const conflicts = [];
+  const requestedVersion = request.match(/(?:AI\s*)?(?:Harness|하네스)(?:를|을|의)?\s*(?:v(?:ersion)?\s*|버전\s*)?(\d+)(?:\.(\d+))?(?:\.(\d+))?/i);
+  if (requestedVersion) {
+    const wanted = requestedVersion.slice(1, 4).filter(x => x !== undefined);
+    const actual = identity.version.split('.');
+    if (wanted.some((part, index) => part !== actual[index])) conflicts.push({ file: 'HARNESS_VERSION', kind: 'REQUESTED_VERSION_MISMATCH', reason: 'Requested Harness version differs from the selected source. Fetch and pin the requested version before planning; never substitute another version.' });
+  }
   const legacyProgress = !hadCanonicalState ? legacyState(project) : null;
   if (legacyProgress?.requires_mapping) {
     if (!supplied.state?.goal || !supplied.state?.current_phase || !supplied.state?.next_task || !supplied.state?.acceptance_criteria?.length) conflicts.push({ file: '.ai/current-state.md', kind: 'LEGACY_STATE_REQUIRES_MAPPING', reason: 'Map the existing goal/phase/criteria/decisions/next task into canonical state; completed work must not be reset.' });

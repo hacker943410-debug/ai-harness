@@ -1,10 +1,11 @@
-## 7.0.0 — Roblox integration candidate (NOT RELEASED)
+## 7.0.0 — 2026-10-13
 
 - First-party official Roblox Studio Agent Plugin discovery, safe Codex MCP doctor and Studio session evidence consistency gate.
 - Rojo/Rokit/Luau template, opt-in static build/lint checks, Roblox capability permission model, PROJECT ETERNAL game requirements.
 - Expand installation and CLI operations manual, live test evidence consistency gate (strictly untrusted), negative tests and full Windows/Linux plus v6.2 regression coverage.
-- Reuse v6.2 token/guard/verification architecture. Actual user-host Studio playtest not performed, so no live connection or gameplay claims.
-- Published HARNESS_VERSION remains 6.2.0; release tag/version changes are explicitly deferred.
+- Consolidate all six branch histories and port separate-client Skill integrity tracking into the current transactional installer without removing Force protection or rollback.
+- Preserve v6.2 token/guard/verification architecture and all 26 policies. Actual local Studio read/edit/play/console/screenshots, source reconciliation, restoration and a two-client StudioTestService run were observed; the user reviewed original private evidence.
+- Synchronize 7.0.0 identity and add Windows/Linux verification plus operator-review/runtime-hash publication gates. Tags remain immutable. PROJECT ETERNAL gameplay and production DataStore behavior remain outside the tested starter scope.
 
 # Changelog
 

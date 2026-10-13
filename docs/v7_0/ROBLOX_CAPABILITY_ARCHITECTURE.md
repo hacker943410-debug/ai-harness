@@ -1,7 +1,7 @@
 # Roblox Capability Pack — v7.0 Architecture
 
 ## Preservation contract
-AI Harness v6.2.0 remains published/stable on main. This is a single opt-in domain extension on `upgrade/v7.0`, not a replacement for the existing 26 policies or workflows. Source hash, project state, snapshots, rollback, Codex budget and Jev Shadow stay independent. Prevent all accidental implicit document/tool loading.
+AI Harness v7.0.0 preserves the existing 26 policies and workflows and adds one opt-in domain extension. The previous v6.2.0 release remains immutable. Source hash, project state, snapshots, rollback, Codex budget and Jev Shadow stay independent. Prevent all accidental implicit document/tool loading. Actual local Studio verification and release review are recorded separately in `LIVE_VERIFICATION_SUMMARY.md` and `RELEASE_ACCEPTANCE.json`.
 
 ## Layers and ownership
 | Layer | Authoritative source | Guard |

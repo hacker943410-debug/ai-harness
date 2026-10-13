@@ -1,0 +1,62 @@
+name: AI Harness v7.0.0 Release
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  verify:
+    if: github.repository == 'hacker943410-debug/ai-harness' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/v7-roblox-candidate.yml
+  publish:
+    needs: verify
+    if: github.repository == 'hacker943410-debug/ai-harness' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify release identity and original-evidence review record
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(tr -d '\r\n' < HARNESS_VERSION)"
+          if [[ "$VERSION" != '7.0.0' ]]; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          node scripts/validate-harness-v6.mjs
+          node scripts/validate-roblox-v7.mjs
+          node scripts/validate-release-v7.mjs
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+      - name: Publish immutable tag and release on the verified main commit
+        if: steps.release.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags origin
+          if git show-ref --verify --quiet refs/tags/v7.0.0; then
+            TAG_SHA="$(git rev-list -n 1 v7.0.0)"
+            if [[ "$TAG_SHA" != "$GITHUB_SHA" ]]; then
+              echo "v7.0.0 already exists on its original commit; preserve the immutable release."
+              exit 0
+            fi
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a v7.0.0 -m "AI Harness v7.0.0 verified release" "$GITHUB_SHA"
+            git push origin refs/tags/v7.0.0
+          fi
+          if ! gh release view v7.0.0 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create v7.0.0 --repo "$GITHUB_REPOSITORY" --verify-tag \
+              --title "AI Harness v7.0.0" --latest \
+              --notes-file docs/v7_0/RELEASE_NOTES_v7.0.0.md
+          fi

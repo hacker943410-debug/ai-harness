@@ -1,8 +1,8 @@
 # AI Harness v7.0 — Final Go / No-Go & Release Handoff
 
-Status: **NO_GO — actual Roblox Studio execution not attested**.
+Status: **GO — scoped local Studio execution observed and original evidence reviewed by the user**. Publication additionally requires final-head CI and immutable main tagging. See [live summary](LIVE_VERIFICATION_SUMMARY.md) and [release record](RELEASE_ACCEPTANCE.json).
 Branch: `upgrade/v7.0` · PR: https://github.com/hacker943410-debug/ai-harness/pull/4
-Stable release: `v6.2.0`.
+Release identity: `v7.0.0`. Previous immutable release: `v6.2.0`.
 
 ## What is code-reviewed/CI-testable
 - Official plugin provenance from Roblox Corporation, runtime discovery design.
@@ -14,7 +14,7 @@ Stable release: `v6.2.0`.
 - Core Harness 26 policies, token/Jev guards, managed-source snapshot behavior preserved through v6 regression.
 - Full Linux and Windows GitHub Actions must be checked on **the latest head SHA**, not older runs.
 
-## Blocking evidence still required on user workstation
+## Required evidence on the user workstation (completed for this release)
 1. First-party plugin installed and Studio MCP setting enabled; actual `list_roblox_studios`, `get_studio_state`, `search_game_tree` transcript inspected.
 2. Unique, user-confirmed `studio_id` and disposable **private test** Place selected.
 3. Prior recoverable Place backup and Git source checkpoint.
@@ -25,7 +25,7 @@ Stable release: `v6.2.0`.
 8. Actual `rokit`/Rojo/StyLua/Selene tool execution in target environment (if not available, remain NOT_RUN).
 9. Approval from the user to complete release with any residual risks explicitly acknowledged.
 
-The tool `scripts/roblox/verify-live-evidence.mjs` only checks local JSON **consistency**. Its successful result is **exit code 3** and is not an automated claim of genuine MCP execution. Original MCP transcript, Studio screenshot and Source/Place revision must be independently reviewed and kept outside public repo.
+The tool `scripts/roblox/verify-live-evidence.mjs` only checks local JSON **consistency**. Its successful result remains **exit code 3** and is not an automated claim of genuine MCP execution. Original MCP transcript, Studio screenshot and Source/Place revision must be independently reviewed and kept outside the public repo. The user confirmed that review for this release. `validate-release-v7.mjs` checks the reviewed record and unchanged runtime hash; it also makes no automated live-attestation claim.
 
 ## When ALL above are fulfilled — exact next steps
 1. Inspect PR #4 diff and provenance. Ensure all branch checks PASS on the final SHA.

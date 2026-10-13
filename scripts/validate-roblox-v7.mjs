@@ -31,8 +31,12 @@ export function validateRoblox(rootDir=root){
   errors.push('UNSAFE_TOOL_CLASSIFICATION');
  const starter=inspectRobloxProject(path.join(rootDir,'templates/roblox-game'));
  if(starter.status!=='PASS_STATIC_ONLY')errors.push('STARTER_INVALID:'+starter.errors.join(','));
- if(manifest.harness.version!=='6.2.0'||manifest.harness.source_ref!=='v6.2.0')errors.push('UNRELEASED_V7_VERSION_MUST_REMAIN_6_2');
- if(manifest.capabilities.roblox_studio_candidate!==true)errors.push('MISSING_CAPABILITY_FLAG');
+ const candidate=manifest.harness.version==='6.2.0'&&manifest.harness.source_ref==='v6.2.0';
+ const release=manifest.harness.version==='7.0.0'&&manifest.harness.source_ref==='v7.0.0';
+ if(!candidate&&!release)errors.push('ROBLOX_RELEASE_IDENTITY_MISMATCH');
+ if(candidate&&(manifest.capabilities.roblox_studio_candidate!==true||capability.version!=='7.0.0-candidate'))errors.push('CANDIDATE_CAPABILITY_MISMATCH');
+ if(release&&(manifest.capabilities.roblox_studio!==true||manifest.capabilities.roblox_studio_candidate!==false||capability.version!=='7.0.0'))errors.push('RELEASE_CAPABILITY_MISMATCH');
+ if(release&&!fs.existsSync(path.join(rootDir,'docs/v7_0/RELEASE_ACCEPTANCE.json')))errors.push('MISSING_RELEASE_REVIEW_RECORD');
  if(!fs.readFileSync(path.join(rootDir,'docs/v7_0/VERIFICATION_MATRIX.md'),'utf8').includes('NO_GO'))errors.push('NO_RELEASE_HARD_GATE');
  return {status:errors.length?'FAIL':'PASS_STATIC_ONLY',actual_studio:'NOT_RUN',errors,
   checked:must.length,release_version:manifest.harness.version};

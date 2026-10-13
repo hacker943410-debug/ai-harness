@@ -1,6 +1,6 @@
 # AI Harness v7.0 — Roblox Studio MCP 상세 설치·운영 가이드
 
-> **상태: 7.0.0 Release Candidate 준비 중.** 사용 가능한 정식 태그는 v6.2.0입니다. 이 문서는 `upgrade/v7.0`의 개발·검증 환경 안내입니다.
+> **상태: 7.0.0 릴리즈 준비 및 실기 검증 완료.** 게시 시 `v7.0.0` 태그가 검증된 main 병합 커밋을 가리킵니다. [실기 검증 요약](LIVE_VERIFICATION_SUMMARY.md)과 [릴리즈 검토 기록](RELEASE_ACCEPTANCE.json)을 확인하세요. 설치한 각 프로젝트는 별도로 검증합니다.
 > **핵심:** 클론·MCP 등록·실제 Studio 연결·게임 수정·배포는 각각 별개입니다. 사용자의 Windows Roblox Studio에 접근하지 못하는 원격 CI는 실제 라이브 연결을 증명할 수 없습니다.
 
 ## 1. 시작 전 준비 및 접근 권한
@@ -24,7 +24,7 @@ gh repo view hacker943410-debug/ai-harness
 ```
 GitHub와 Codex 인증은 별개입니다. `gh auth token`을 화면/로그에 출력하지 마세요.
 
-## 2. v7.0 후보 저장소 연결
+## 2. v7.0 저장소 연결
 
 처음 받는 경우:
 ```powershell
@@ -50,7 +50,7 @@ git pull --ff-only origin upgrade/v7.0
 
 기존 작업을 보존해야 한다면 새로운 Worktree를 만드세요. `git reset --hard`, `git clean -fd` 또는 임의 파일 덮어쓰기는 하지 않습니다.
 
-**버전 주의:** v7 브랜치에서는 `HARNESS_VERSION=6.2.0`이 아직 정상입니다. 실제 7.0 정식 릴리스가 아닌데 이 값을 강제로 바꾸거나 설치된 프로젝트의 Source Pin을 조작하지 마세요.
+**정식 버전 설치:** 게시된 불변 `v7.0.0` 태그를 `git switch --detach v7.0.0`으로 선택하거나 부트스트랩의 `-Ref v7.0.0`을 사용합니다. `HARNESS_VERSION`, Manifest, Policy Index와 Plugin 버전은 모두 7.0.0이어야 합니다. 설치된 프로젝트의 Source Pin을 임의 변경하지 말고 Harness 업데이트 프로토콜을 따릅니다.
 
 ## 3. 공식 Roblox Studio Agent Plugin 설치
 
@@ -66,7 +66,12 @@ codex
 
 Codex 대화형 화면에서 `/plugins`를 열어 **Roblox Studio** Plugin을 설치합니다. 완료 후 새 스레드(`/new`)에서 “Roblox Studio를 연결해줘. 먼저 읽기 전용으로 연결 상태만 확인해줘.”라고 요청하세요.
 
-Studio에서는 Assistant → 메뉴 (…) → MCP Servers(또는 Manage MCP Servers) → **Enable Studio as MCP server** 활성화. 같은 설정 화면의 Quick Connect에서 Codex(일부 빌드에서 ChatGPT (codex))를 허용하고 Studio 연결 상태 표시등을 확인합니다.
+한글 Studio에서는 우측 상단 **AI 어시스턴트** 아이콘 → **어시스턴트** 패널의 **… → 설정 → MCP 서버**로 이동합니다. 이 화면에서 Studio를 MCP 서버로 켜는 기능과 Quick Connect의 Codex(일부 빌드에서 ChatGPT (codex))를 사용자가 직접 활성화합니다. 표시 문구는 버전별로 다를 수 있습니다. Studio 연결 상태 표시와 실제 목록 조회 결과를 함께 확인합니다.
+
+CLI로 Windows MCP를 등록할 때는 현재 등록을 먼저 확인하고 공식 배치 파일의 실행 디렉터리를 보존합니다:
+```powershell
+codex mcp add Roblox_Studio '--' cmd.exe /c 'cd /d %LOCALAPPDATA%\Roblox && .\mcp.bat'
+```
 
 **중복 주의:** Studio의 Quick Connect, 공식 Plugin 자동 등록, 기존 수동 `codex mcp add` 등록이 겹치면 중복 연결 오류가 날 수 있습니다. 추가 설치 전에 `codex mcp list --json`을 점검합니다. Roblox 공식 Plugin이 이미 연결돼 있다면 다른 비공식 MCP를 추가하지 않습니다.
 
@@ -213,7 +218,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRele
 - `HARNESS_VERSION`, Manifest, Policy Index, Claude Plugin/Marketplace 등 v7.0.0 정합성 확보
 - 정식 `v7.0.0` 태그가 **실제 병합된 main 커밋**을 가리키는지 검증
 
-현재는 테스트 Place에서의 직접 연결 증거가 없으므로 **main 병합과 v7.0.0 정식 태그 생성을 보류**합니다. 테스트·검토를 속성상 생략하거나 CI에 가짜 Studio PASS를 삽입하지 않습니다.
+현재 릴리즈의 실제 로컬 연결·편집·플레이·2클라이언트·복원 원본과 사용자 검토는 [실기 검증 요약](LIVE_VERIFICATION_SUMMARY.md)에 기록되어 있습니다. 공개 JSON 기록과 CI는 실기 실행을 독립적으로 인증하지 않습니다. 이후 소스가 변경되거나 새로운 프로젝트를 게시할 때도 필수 실기 검증을 생략하지 않습니다.
 
 **정식 배포 후**에는 각 게임 프로젝트별 Harness를 바로 덮어쓰지 말고 `PROJECT_INIT.md`와 `harness/update/UPDATE_PROTOCOL.md`에 따라 현재 버전 탐지 → 별도 계획 → 체크포인트 → 적용 → 검증 → 재개 순서로 업데이트합니다. 이전 `v6.2.0` 고정 Snapshot은 그대로 유지합니다.
 

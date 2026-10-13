@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "roblox_studio_mcp",
-  "version": "7.0.0-candidate",
+  "version": "7.0.0",
   "lifecycle": "OPT_IN_NOT_INSTALLED",
   "source": "Roblox/roblox-studio-agent-plugin",
   "official": true,

@@ -1,5 +1,6 @@
 name: AI Harness v7 Roblox Candidate
 on:
+  workflow_call:
   push:
     branches:
       - upgrade/v7.0
@@ -26,6 +27,8 @@ jobs:
         run: node --test scripts/roblox/test-v7.mjs
       - name: Live evidence structural and negative tests (offline, never Studio-attested)
         run: node --test scripts/roblox/test-live-v7.mjs
+      - name: Release acceptance and source binding negative tests
+        run: node --test scripts/test-release-v7.mjs
       - name: Roblox manifest, safety and template validation
         run: node scripts/validate-roblox-v7.mjs
       - name: Existing v6.2 core regression (preservation)
@@ -34,10 +37,19 @@ jobs:
         run: node --test scripts/test-harness-guard-integration-v6-2.mjs
       - name: Jev v6.2 offline compatibility
         run: node --test scripts/test-jev-v6-2.mjs
+      - name: Codex compatibility regression
+        run: node --test scripts/test-codex-compat-v6-1.mjs
+      - name: Office metadata regression
+        run: node scripts/validate-office-skills-v6-1.mjs
+      - name: Legacy Jev negative fixtures
+        run: node scripts/test-jev-scenarios.mjs
       - name: Full v6 Harness unit regression
         run: node --test scripts/test-harness-v6.mjs
       - name: Existing v6.2 structure and pin validation
         run: node scripts/validate-harness-v6.mjs
+      - name: Reviewed release record and unchanged live-tested source
+        if: hashFiles('docs/v7_0/RELEASE_ACCEPTANCE.json') != ''
+        run: node scripts/validate-release-v7.mjs
       - name: Separate-client Skill installation, migration and integrity regression (PowerShell 7)
         shell: pwsh
         run: ./scripts/Test-ProjectSkillInstall.ps1
@@ -83,8 +95,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-ProjectSkillInstall.ps1
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Node syntax for all Roblox scripts
+      - name: Node syntax for all Harness scripts
         shell: bash
         run: |
           set -euo pipefail
-          for file in scripts/roblox/*.mjs scripts/validate-roblox-v7.mjs; do node --check "$file"; done
+          find scripts -type f -name '*.mjs' -print0 | while IFS= read -r -d '' file; do node --check "$file"; done

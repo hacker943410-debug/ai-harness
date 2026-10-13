@@ -143,7 +143,14 @@ test('active work preserves goal, criteria, phase, completed work, decisions and
   for(const field of ['goal','current_phase','completed_phases','acceptance_criteria','decisions','next_task','beginner_mode']) assert.deepEqual(state[field],f.config.state[field]);
   const manifest=JSON.parse(readFileSync(join(f.project,'.ai/transition-manifest.yaml'),'utf8'));
   assert.equal(manifest.resume_from.goal,f.config.state.goal); assert.equal(manifest.status,'VERIFIED');
-  const update=planProject({...f,request:'AI Harness v6.0으로 업데이트해줘',config:{...f.config,state:undefined}}); assert.equal(update.status,'READY');
+  const currentVersion=sourceIdentity(f.sourceRoot).version;
+  const beforeMismatch=snapshot(f.project);
+  const wrongMajor=Number(currentVersion.split('.')[0])-1;
+  const mismatch=planProject({...f,request:`AI Harness v${wrongMajor}.0으로 업데이트해줘`,config:{...f.config,state:undefined}});
+  assert.equal(mismatch.status,'BLOCKED','a different requested major must not silently install the current source');
+  assert.ok(mismatch.conflicts.some(conflict=>conflict.kind==='REQUESTED_VERSION_MISMATCH'));
+  assert.deepEqual(snapshot(f.project),beforeMismatch,'mismatched-version planning must preserve current work');
+  const update=planProject({...f,request:`AI Harness v${currentVersion}으로 업데이트해줘`,config:{...f.config,state:undefined}}); assert.equal(update.status,'READY',JSON.stringify(update.conflicts));
   assert.equal(update.route.intent,'harness_update'); assert.equal(applyPlan(update).status,'PASS');
 });
 test('unsafe active operations defer, incomplete active state and missing baselines block', () => {
@@ -276,10 +283,10 @@ function legacyFixture() {
   writeFileSync(join(f.project,'AGENTS.md'),'# Product rules\n\n'+instructions+'\n\nKeep original scope.\n');
   writeFileSync(join(f.project,'.ai/HARNESS.md'),'# AI Harness Project Bridge\n\n'+bridge+'\n');
   writeFileSync(join(f.project,'.ai/harness.yaml'),`harness:\n  version: "5.1"\n  root: "${root.replaceAll('\\','/')}"\n  policy_count: 26\ncustom_project_rule: "preserve me"\n`);
-  f.request='AI Harness v6.0으로 업데이트해줘';
+  f.request=`AI Harness v${sourceIdentity(f.sourceRoot).version}으로 업데이트해줘`;
   return f;
 }
-test('actual registered v5.1 templates upgrade to v6 and rollback retains all original custom bytes', () => {
+test('actual registered v5.1 templates upgrade to the selected version and rollback retains all original custom bytes', () => {
   const f=legacyFixture(),before=snapshot(f.project),plan=planProject(f);
   assert.equal(plan.status,'READY'); assert.equal(plan.from_version,'5.1.0'); assert.equal(plan.route.update_class,'H3');
   const applied=applyPlan(plan); assert.equal(applied.status,'PASS');

@@ -1,6 +1,6 @@
-# AI Harness v7.0 Candidate — Roblox Studio MCP Setup and Operations
+# AI Harness v7.0.0 — Roblox Studio MCP Setup and Operations
 
-> Status: **CANDIDATE / NO STUDIO E2E YET**. Based on the immutable **v6.2.0** main release.
+> Status: **7.0.0 identity prepared; local Studio E2E and user review completed**. See [live verification summary](LIVE_VERIFICATION_SUMMARY.md). Each consuming project still needs its own scoped setup and validation.
 > No automatic installation, Roblox publishing, paid API calls, model-based asset upload or changes to existing production projects.
 
 ## Scope
@@ -27,7 +27,12 @@ The doctor does NOT call Roblox Studio. `REGISTERED_UNVERIFIED` means the client
 ```powershell
 codex plugin marketplace add Roblox/roblox-studio-agent-plugin
 ```
-Then run `codex`, open `/plugins`, install **Roblox Studio**, and open a new thread (`/new`). In Studio, open **Assistant → Settings/Manage MCP Servers**, enable **Studio as MCP server**, and enable **Quick Connect for Codex**. Confirm the in-Studio connected indicator. If these controls vary by installed build, use the current official Creator Hub instructions, not stale screenshots.
+Then run `codex`, open `/plugins`, install **Roblox Studio**, and open a new thread (`/new`). On a Korean Studio UI, open the top-right **AI 어시스턴트** icon, then **어시스턴트 → … → 설정 → MCP 서버**. The user enables the Studio MCP server and Quick Connect for Codex in this pane. Confirm the connected indicator. Labels vary by build; use the current official Creator Hub instructions. The user signs in and turns on the MCP setting; never read passwords or edit Studio settings files.
+
+When adding the Windows client manually after checking for duplicates, preserve the standalone `'--'` argument and launch the official batch file from its own directory:
+```powershell
+codex mcp add Roblox_Studio '--' cmd.exe /c 'cd /d %LOCALAPPDATA%\Roblox && .\mcp.bat'
+```
 
 In Codex ask: **"List my open Roblox Studio windows using the official MCP tool. Show studio_id and place name; do not change anything."**
 
@@ -100,6 +105,6 @@ Use `docs/v7_0/PROJECT_ETERNAL_REQUIREMENTS.md` only in PROJECT ETERNAL.
 4. Safe temporary object creation and rollback in a **test place**, not automatic production editing.
 5. Real `start_stop_play`, `get_console_output`, screenshot plus mobile/multi-client coverage for relevant work.
 6. Verify tool pins/versions and Rojo source reconciliation; no surprise installation.
-7. Explicit v7 release metadata/tag/binding migration review, then approved merge into main. **Not done in this candidate**.
+7. Explicit release metadata and original-evidence review, exact-final-head CI, then approved main merge and immutable tag creation. See [release acceptance](RELEASE_ACCEPTANCE.json). Consumer binding migrations remain per-project.
 
 No change in tooling is considered "already installed" merely because a catalog lists it.

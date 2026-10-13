@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "version": "7.0.0",
+  "status": "GO",
+  "scope": "UNPUBLISHED_LOCAL_ROBLOX_TEMPLATE",
+  "evidence_basis": "OBSERVED_OFFICIAL_LOCAL_MCP_TRANSCRIPTS",
+  "tested_candidate_sha": "596729d054a6ff1a15daef16aa710520de26d972",
+  "tested_runtime_sha256": "e1c1394936940a57fc397103e3415ba4a2cc836020f89c89714dd572bc9c147b",
+  "verification_date": "2026-10-13",
+  "operator_review": {
+    "confirmed": true,
+    "basis": "USER_CONFIRMED_ORIGINAL_PRIVATE_EVIDENCE",
+    "date": "2026-10-13"
+  },
+  "production_data_mutation": false,
+  "gates": {
+    "R05": {"status": "PASS", "scope": "One official Roblox_Studio Codex registration and genuine Studio launcher"},
+    "R06": {"status": "PASS", "scope": "Actual official MCP list/state/tree responses for the selected local Place"},
+    "R07": {"status": "PASS", "scope": "Prior saved Place backup, source commit and live baseline inventory"},
+    "R08": {"status": "PASS", "scope": "Observed multi_edit creation/update of temporary scripts and read-back"},
+    "R09": {"status": "PASS", "scope": "Observed actual play start/stop and return to Edit"},
+    "R10": {"status": "PASS", "scope": "Actual console output and MCP edit/play screenshots reviewed"},
+    "R11": {"status": "PASS", "scope": "Live scripts matched local Rojo source; all observed original inventory and saved Place bytes restored"},
+    "R12": {"status": "PASS", "scope": "StudioTestService produced two actual players and two distinct server/client handshakes"},
+    "R13": {"status": "PASS", "scope": "Actual pinned StyLua/Selene/Rojo checks and Rokit version on the Windows host; Linux/Windows tool checks in CI"},
+    "R14": {"status": "PASS", "scope": "Observed wrong-session, unknown-tool and unapproved asset denials in the scoped verification driver; no universal interactive interception claim"}
+  },
+  "unverified_product_scopes": [
+    "PROJECT ETERNAL gameplay, economy, persistent profiles and production DataStores",
+    "Jev live paid provider connectivity",
+    "Office document rendering quality",
+    "Automatic enforcement of all plain interactive Codex sessions"
+  ],
+  "privacy": "Original MCP transcripts, session identifiers, local paths and screenshots remain on the user's PC. This record summarizes the reviewed scope; it is not cryptographic live attestation."
+}

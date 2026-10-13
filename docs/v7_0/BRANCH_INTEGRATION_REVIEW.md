@@ -1,6 +1,6 @@
 # v7.0 branch integration review — 2026-10-13
 
-Release decision: **NO_GO pending real Studio verification**. This review prepares the existing draft PR #4; it does not publish v7.0.0 or attest a live Studio session. The user has requested publication after all required checks pass.
+Release decision: **GO after actual local Studio verification and user review**, subject to final 7.0 identity CI and immutable main tagging. The integration stages below are the preserved audit history. Current live evidence is summarized in [LIVE_VERIFICATION_SUMMARY.md](LIVE_VERIFICATION_SUMMARY.md).
 
 ## Branch inputs
 
