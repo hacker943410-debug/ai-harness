@@ -65,7 +65,7 @@ try {
     Assert-Test ($added -ne $baseline) 'full hash detects hidden files'
     Move-Item -LiteralPath $extra -Destination (Join-Path $source '.renamed-test')
     Assert-Test ((Get-HarnessSkillManifest $source).Hash -ne $added) 'full hash detects renames'
-    Remove-Item -LiteralPath (Join-Path $source '.renamed-test')
+    Remove-Item -Force -LiteralPath (Join-Path $source '.renamed-test')
     Assert-Test ((Get-HarnessSkillManifest $source).Hash -eq $baseline) 'file deletion restores original hash'
     (Get-Item (Join-Path $source 'SKILL.md')).LastWriteTimeUtc = [datetime]::UtcNow.AddDays(-2)
     Assert-Test ((Get-HarnessSkillManifest $source).Hash -eq $baseline) 'mtime is excluded from hash'
