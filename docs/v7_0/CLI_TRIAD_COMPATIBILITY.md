@@ -28,21 +28,11 @@
 # 승인된 불변 릴리스 Snapshot이 마련되면:
 node scripts/harness-v6.mjs inspect --project C:/Projects/YourProject
 
-node scripts/harness-v6.mjs plan \
-  --project C:/Projects/YourProject \
-  --request "AI Harness 3개 CLI 연결" \
-  --clients codex,claude,agy \
-  --out C:/Projects/YourProject/.ai/cli-triad-plan.json
+node scripts/harness-v6.mjs plan --project C:/Projects/YourProject --request "AI Harness 3개 CLI 연결" --clients codex,claude,agy --out C:/Projects/YourProject/.ai/cli-triad-plan.json
 
-# 출력된 계획/검증 명령/기존 변경사항/복구점을 검토하고 승인한 이후에만:
+# 계획·충돌·검증 명령 확인 및 승인 후에만:
 node scripts/harness-v6.mjs apply --plan C:/Projects/YourProject/.ai/cli-triad-plan.json
 node scripts/harness-v6.mjs verify --project C:/Projects/YourProject
-```
-
-PowerShell에서는 위의 줄 연결 `\` 표기가 아닌 **백틱** (`\`가 아니라 역따옴표)을 사용하거나, 아래처럼 한 줄로 실행하세요.
-
-```powershell
-node scripts/harness-v6.mjs plan --project C:/Projects/YourProject --request "AI Harness 3개 CLI 연결" --clients codex,claude,agy --out C:/Projects/YourProject/.ai/cli-triad-plan.json
 ```
 
 **이 작업은 CLI 설치/로그인 또는 유료 모델 호출이 아닙니다.** 각 CLI의 실제 인증과 실행 여부는 PC에서 확인해야 합니다.

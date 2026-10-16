@@ -1,4 +1,4 @@
-# AI Harness v6 project initialization
+# AI Harness v7 current project initialization (executable entrypoint retained as harness-v6.mjs)
 
 Canonical executable entrypoint: `node scripts/harness-v6.mjs inspect --project <path>`, then `route --project <path> --request '<one line>'`. Follow `harness/update/UPDATE_PROTOCOL.md` for plan/apply/diagnose/verify/rollback. The installer produces `.ai/harness-project.json`, `.ai/harness-state.json` and `.ai/transition-manifest.yaml`, and manages only thin AI-HARNESS blocks in the selected adapters. It must preserve unmanaged bytes and unknown user fields.
 
