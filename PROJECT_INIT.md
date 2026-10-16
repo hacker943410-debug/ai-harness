@@ -27,11 +27,11 @@ Only these three current adapters are targeted for new workspaces:
 - AGY (Google Antigravity CLI): `AGENTS.md` managed block; native Skills `.agents/skills/`.
 - Gemini CLI: historical/legacy **only**. Preserve pre-existing `GEMINI.md` unmodified outside the managed block; never generate a new Gemini adapter or invoke the `gemini` executable for new projects.
 
-For projects using all three clients, explicitly opt in at the plan stage:
+For a project using any single CLI, explicitly opt in at the plan stage (example: AGY):
 ```powershell
-node scripts/harness-v6.mjs plan --project C:/your/project --request 'AI Harness v7.0.0 적용' --clients codex,claude,agy --out C:/your/project/.ai/triad-plan.json
+node scripts/harness-v6.mjs plan --project C:/your/project --request 'AI Harness v7.0.0 적용' --clients agy --out C:/your/project/.ai/cli-policy-plan.json
 ```
-Review the plan before applying. If `CLAUDE.md` already contains user instructions, its unmanaged bytes must be preserved. If missing, it is created only with explicit `claude` opt-in. Both Codex and AGY use `AGENTS.md`. No `GEMINI.md` is created. `--clients` affects project bridge planning, not client binary installation, authentication, native model selection, MCP policies or runtime interception; those need separate verified checks.
+Review the plan before applying. For Claude-only use `--clients claude`; for Codex-only use `--clients codex`. Multiple targets are supported but not required. If `CLAUDE.md` already contains user instructions, its unmanaged bytes must be preserved. If missing, it is created only with explicit `claude` opt-in. Both Codex and AGY use `AGENTS.md`. No `GEMINI.md` is created. `--clients` affects project bridge planning, not client binary installation, authentication, native model selection, MCP policies or runtime interception; those need separate verified checks.
 
 **Important:** The following document is a v5-era compatibility reference; its `Gemini CLI → GEMINI.md` passages are retained for migration history and must not be used as the current AGY setup contract.
 

@@ -73,3 +73,22 @@ test('CLI --clients option creates an auditable reviewed plan, not actual provid
  assert.ok(result.actions.some(x=>x.file==='CLAUDE.md'));
  assert.ok(!fs.existsSync(path.join(project,'CLAUDE.md')));
 });
+
+test('one active CLI at a time receives the same policy bridge without other clients', t=>{
+ for(const client of ['codex','claude','agy']){
+  const {project,snapshots}=fixture(t);
+  const plan=planProject({project,sourceRoot:root,request,config:{client_targets:[client],snapshot_root:snapshots}});
+  assert.equal(plan.status,'READY',client);
+  assert.deepEqual(plan.client_targets,[client]);
+  assert.equal(applyPlan(plan).status,'PASS',client);
+  assert.equal(verifyProject(project).status,'PASS',client);
+  const agents=fs.readFileSync(path.join(project,'AGENTS.md'),'utf8');
+  assert.match(agents,/Read \.ai\/HARNESS\.md before substantive work/);
+  if(client==='claude'){
+   const claude=fs.readFileSync(path.join(project,'CLAUDE.md'),'utf8');
+   const marker=/<!-- AI-HARNESS:START -->[\s\S]*?<!-- AI-HARNESS:END -->/;
+   assert.equal(agents.match(marker)?.[0],claude.match(marker)?.[0]);
+  }else assert.equal(fs.existsSync(path.join(project,'CLAUDE.md')),false);
+  assert.equal(fs.existsSync(path.join(project,'GEMINI.md')),false);
+ }
+});
