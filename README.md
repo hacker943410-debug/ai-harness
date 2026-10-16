@@ -6,6 +6,8 @@ A beginner-guided development harness with executable phase gates and safe, vers
 
 **CLI로 저장소를 처음 열거나 PR #3을 검증한다면:** [CLI 접속·브랜치 선택·Codex 검증·Jev·병합 전 점검 상세 가이드](docs/v6_2/CLI_ACCESS_AND_OPERATIONS_GUIDE.md)를 먼저 확인하세요. 이 가이드는 v6.2 후보용이며 별도의 설치 또는 정식 릴리스를 의미하지 않습니다.
 
+**Codex + Claude Code + AGY CLI migration:** [3-CLI compatibility guide and verification matrix](docs/v7_0/CLI_TRIAD_COMPATIBILITY.md). Gemini CLI is legacy-only; AGY is its distinct successor for this workflow. On new triad projects use `--clients codex,claude,agy` when generating the reviewed project migration plan. Each client must separately prove native instruction loading, Skill visibility, MCP connection and real task execution. No automatic installation or model switch is implied.
+
 Use one request in any connected project:
 
 - New: “AI Harness v7.0.0 기준으로 이 프로젝트를 시작해줘.”

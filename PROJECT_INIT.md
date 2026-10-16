@@ -19,6 +19,22 @@ node scripts/harness-v6.mjs verify --project <path>
 
 Inspect the concrete plan and resolve conflicts before apply. Apply checks drift and captures binding snapshots. Installation does not certify release or production; actual evidence determines status. Node unavailable or conflict means BLOCKED; report it rather than falling back to ad-hoc overwrites.
 
+## Current 7.0.x CLI targets — Codex / Claude / AGY
+
+Only these three current adapters are targeted for new workspaces:
+- Codex CLI: `AGENTS.md` managed block; native Skills `.agents/skills/`.
+- Claude Code: `CLAUDE.md` managed block; native Skills `.claude/skills/`.
+- AGY (Google Antigravity CLI): `AGENTS.md` managed block; native Skills `.agents/skills/`.
+- Gemini CLI: historical/legacy **only**. Preserve pre-existing `GEMINI.md` unmodified outside the managed block; never generate a new Gemini adapter or invoke the `gemini` executable for new projects.
+
+For projects using all three clients, explicitly opt in at the plan stage:
+```powershell
+node scripts/harness-v6.mjs plan --project C:/your/project --request 'AI Harness v7.0.0 적용' --clients codex,claude,agy --out C:/your/project/.ai/triad-plan.json
+```
+Review the plan before applying. If `CLAUDE.md` already contains user instructions, its unmanaged bytes must be preserved. If missing, it is created only with explicit `claude` opt-in. Both Codex and AGY use `AGENTS.md`. No `GEMINI.md` is created. `--clients` affects project bridge planning, not client binary installation, authentication, native model selection, MCP policies or runtime interception; those need separate verified checks.
+
+**Important:** The following document is a v5-era compatibility reference; its `Gemini CLI → GEMINI.md` passages are retained for migration history and must not be used as the current AGY setup contract.
+
 ## Legacy compatibility reference (not an alternate installer)
 
 The following v5 operational reference preserves useful Layer A/B/C, bridge, client, Skill and shared-runtime context. Its manual file creation/update/template steps and older required artifact lists are superseded by the v6 executable path above. They describe legacy installations for diagnosis/compatibility; never execute them as a second initializer. Shared Google runtime install/auth/registration remains its separate explicit workflow. Existing .ai/HARNESS.md, harness.yaml and current-state.md must be preserved/reconciled; they are not mandatory new duplicate state artifacts. Any old claim of PASS remains conditional on actual current checks.
