@@ -15,7 +15,7 @@ function fixture(t,{claudeFile=false,geminiFile=false}={}){
  if(claudeFile)fs.writeFileSync(path.join(project,'CLAUDE.md'),'# Custom Claude rules\nStay concise.\n');
  if(geminiFile)fs.writeFileSync(path.join(project,'GEMINI.md'),'# Historical Gemini instructions\nDo not remove.\n');
  t.after(()=>fs.rmSync(base,{recursive:true,force:true}));
- return {project,snapshots};
+ return {base,project,snapshots};
 }
 const request='이 프로젝트에 AI Harness 적용해줘';
 test('explicit cli targets normalize and reject legacy Gemini and duplicate IDs',()=>{
@@ -61,11 +61,11 @@ test('existing custom Claude/Gemini instructions are preserved outside managed b
  assert.equal(verifyProject(project).status,'PASS');
 });
 test('CLI --clients option creates an auditable reviewed plan, not actual provider activation',t=>{
- const {project,snapshots}=fixture(t);
+ const {base,project,snapshots}=fixture(t);
  const args=['scripts/harness-v6.mjs','plan','--project',project,'--request',request,
   '--clients','codex,claude,agy','--out',path.join(project,'.ai','triad-plan.json'),
-  '--config',path.join(project,'approved-input.json')];
- fs.writeFileSync(path.join(project,'approved-input.json'),JSON.stringify({snapshot_root:snapshots}));
+  '--config',path.join(base,'approved-input.json')];
+ fs.writeFileSync(path.join(base,'approved-input.json'),JSON.stringify({snapshot_root:snapshots}));
  const p=spawnSync(process.execPath,args,{cwd:root,encoding:'utf8',timeout:45000});
  assert.equal(p.status,0,p.stderr+' '+p.stdout.slice(0,1600));
  const result=JSON.parse(fs.readFileSync(path.join(project,'.ai','triad-plan.json'),'utf8'));
