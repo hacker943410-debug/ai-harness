@@ -106,8 +106,19 @@ function git(root, args) {
   const result = spawnSync('git', ['-C', root, ...args], { encoding: 'utf8', timeout: 15000, windowsHide: true });
   return result.status === 0 ? result.stdout.trim() : null;
 }
-function managedFiles(project) {
-  return [...MANAGED, ...['CLAUDE.md', 'GEMINI.md'].filter(x => fs.existsSync(safePath(project, x)))];
+function managedFiles(project, clientTargets = []) {
+  // The shared AGENTS.md is the Codex/AGY entry point. A new CLAUDE.md
+  // is created ONLY on explicit opt-in; existing legacy files are preserved.
+  const extra = ['CLAUDE.md', 'GEMINI.md'].filter(x =>
+    (x === 'CLAUDE.md' && clientTargets.includes('claude')) ||
+    fs.existsSync(safePath(project, x)));
+  return [...MANAGED, ...extra];
+}
+export function validateClientTargets(input = []) {
+  if (!Array.isArray(input) || new Set(input).size !== input.length ||
+      input.some(id => !['codex','claude','agy'].includes(id)))
+    throw new Error('UNSUPPORTED_CLIENT_TARGETS: use unique codex, claude, agy; Gemini CLI is legacy only.');
+  return [...input].sort();
 }
 function fileHashes(root, files) {
   return Object.fromEntries(files.map(rel => { const b = read(root, rel); return [rel, b === null ? null : hash(b)]; }));
@@ -291,7 +302,8 @@ export function planProject({ project, sourceRoot, request = 'AI Harness 업데�
     for (const key of ['development_state', 'project_mode', 'current_phase', 'operation_in_progress', 'production', 'beginner_mode']) if (key in supplied.state) detected[key] = supplied.state[key];
   }
   const route = routeTask(request, detected, { target_version: identity.version });
-  const files = managedFiles(project);
+  const clientTargets = validateClientTargets(supplied.client_targets || []);
+  const files = managedFiles(project, clientTargets);
   const before = fileHashes(project, files);
   const conflicts = [];
   const requestedVersion = request.match(/(?:AI\s*)?(?:Harness|하네스)(?:를|을|의)?\s*(?:v(?:ersion)?\s*|버전\s*)?(\d+)(?:\.(\d+))?(?:\.(\d+))?/i);
@@ -335,7 +347,7 @@ export function planProject({ project, sourceRoot, request = 'AI Harness 업데�
   const custom = ['.agents/skills', '.claude/skills', '.ai/decisions', '.ai/current-state.md', '.ai/active-plan.md', '.ai/active-spec.md'].map(rel => ({ file: rel, disposition: 'LOCAL', action: 'PRESERVE' }));
   const plan = { kind: 'harness-project-migration-plan', schema_version: 3, created_at: stamp(), id: crypto.randomUUID(),
     project, source_root: sourceRoot, source_version: identity.version, source_hash: identity.hash, source_files: identity.files,
-    status, request, route, from_version: detected.installed_version, to_version: identity.version, project_mode: detected.project_mode,
+    status, request, route, client_targets: clientTargets, from_version: detected.installed_version, to_version: identity.version, project_mode: detected.project_mode,
     before_hashes: before, state_reference_hashes: stateReferenceHashes(project), product_hash: detected.product_hash, git: detected.git, state,
     current_config: detected.config, legacy_binding: detected.legacy_text || null,
     verification_commands: commands.configured, diagnosis: diagnoseProject(project), conflicts, customizations: custom,
@@ -413,9 +425,9 @@ export function applyPlan(plan) {
   const project = rootPath(plan.project), source = rootPath(plan.source_root);
   // Recompute semantics, paths and conflicts from inputs. A hand-edited plan cannot
   // silently downgrade a conflict, change the source, or bypass unsafe timing.
-  const fresh = planProject({ project, sourceRoot: source, request: plan.request, config: { verification_commands: plan.verification_commands, state: plan.state, snapshot_root: plan.snapshot_root } });
+  const fresh = planProject({ project, sourceRoot: source, request: plan.request, config: { verification_commands: plan.verification_commands, state: plan.state, snapshot_root: plan.snapshot_root, client_targets: plan.client_targets || [] } });
   if (fresh.status !== 'READY' || json(fresh.before_hashes) !== json(plan.before_hashes) || json(fresh.state_reference_hashes) !== json(plan.state_reference_hashes) || fresh.source_hash !== plan.source_hash || fresh.product_hash !== plan.product_hash) throw new Error('PLAN_DRIFT_OR_CONFLICT');
-  for (const key of ['to_version', 'from_version', 'source_version', 'project_mode', 'legacy_binding', 'current_config', 'route', 'source_files', 'actions']) {
+  for (const key of ['to_version', 'from_version', 'source_version', 'project_mode', 'legacy_binding', 'current_config', 'route', 'client_targets', 'source_files', 'actions']) {
     if (json(fresh[key]) !== json(plan[key])) throw new Error('PLAN_SEMANTIC_DRIFT: validated version, local contract and operation semantics must match the reviewed plan.');
   }
   if (fresh.git.commit !== plan.git.commit || fresh.git.branch !== plan.git.branch) throw new Error('PLAN_SEMANTIC_DRIFT: project branch or baseline commit changed.');

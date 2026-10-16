@@ -1,0 +1,47 @@
+name: AI Harness Three-CLI Compatibility Candidate
+on:
+  push:
+    branches:
+      - fix/v7.0.1-cli-triad
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  cli-triad:
+    name: Codex Claude AGY static/migration checks (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Three CLI descriptor static contracts (NOT real CLI E2E)
+        run: node scripts/check-cli-triad-v7.mjs
+      - name: Three CLI installed-project plan / rollback tests
+        run: node --test scripts/test-cli-triad-v7.mjs
+      - name: Existing v7 Harness transaction regression
+        run: node --test scripts/test-harness-v6.mjs
+      - name: Existing Roblox and Jev structure (offline)
+        run: node scripts/validate-roblox-v7.mjs
+      - name: Existing version/release schema
+        run: node scripts/validate-release-v7.mjs
+      - name: Existing Harness source validator
+        run: node scripts/validate-harness-v6.mjs
+      - name: Existing Codex Guard regression
+        run: node --test scripts/test-harness-guard-integration-v6-2.mjs
+      - name: Windows native installer and project skills
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          git config --local core.hooksPath .githooks
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-HarnessRelease.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-ProjectSkillInstall.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

@@ -1,4 +1,4 @@
-# AI Harness v6 project initialization
+# AI Harness v7 current project initialization (executable entrypoint retained as harness-v6.mjs)
 
 Canonical executable entrypoint: `node scripts/harness-v6.mjs inspect --project <path>`, then `route --project <path> --request '<one line>'`. Follow `harness/update/UPDATE_PROTOCOL.md` for plan/apply/diagnose/verify/rollback. The installer produces `.ai/harness-project.json`, `.ai/harness-state.json` and `.ai/transition-manifest.yaml`, and manages only thin AI-HARNESS blocks in the selected adapters. It must preserve unmanaged bytes and unknown user fields.
 
@@ -18,6 +18,22 @@ node scripts/harness-v6.mjs verify --project <path>
 ```
 
 Inspect the concrete plan and resolve conflicts before apply. Apply checks drift and captures binding snapshots. Installation does not certify release or production; actual evidence determines status. Node unavailable or conflict means BLOCKED; report it rather than falling back to ad-hoc overwrites.
+
+## Current 7.0.x CLI targets — Codex / Claude / AGY
+
+Only these three current adapters are targeted for new workspaces:
+- Codex CLI: `AGENTS.md` managed block; native Skills `.agents/skills/`.
+- Claude Code: `CLAUDE.md` managed block; native Skills `.claude/skills/`.
+- AGY (Google Antigravity CLI): `AGENTS.md` managed block; native Skills `.agents/skills/`.
+- Gemini CLI: historical/legacy **only**. Preserve pre-existing `GEMINI.md` unmodified outside the managed block; never generate a new Gemini adapter or invoke the `gemini` executable for new projects.
+
+For a project using any single CLI, explicitly opt in at the plan stage (example: AGY):
+```powershell
+node scripts/harness-v6.mjs plan --project C:/your/project --request 'AI Harness v7.0.0 적용' --clients agy --out C:/your/project/.ai/cli-policy-plan.json
+```
+Review the plan before applying. For Claude-only use `--clients claude`; for Codex-only use `--clients codex`. Multiple targets are supported but not required. If `CLAUDE.md` already contains user instructions, its unmanaged bytes must be preserved. If missing, it is created only with explicit `claude` opt-in. Both Codex and AGY use `AGENTS.md`. No `GEMINI.md` is created. `--clients` affects project bridge planning, not client binary installation, authentication, native model selection, MCP policies or runtime interception; those need separate verified checks.
+
+**Important:** The following document is a v5-era compatibility reference; its `Gemini CLI → GEMINI.md` passages are retained for migration history and must not be used as the current AGY setup contract.
 
 ## Legacy compatibility reference (not an alternate installer)
 
