@@ -44,7 +44,7 @@ test('explicit three-client plan creates thin Claude and shared Codex/AGY AGENTS
  const agent=fs.readFileSync(path.join(project,'AGENTS.md'),'utf8');
  const claude=fs.readFileSync(path.join(project,'CLAUDE.md'),'utf8');
  assert.match(agent,/AI-HARNESS:START/);assert.match(claude,/AI-HARNESS:START/);
- assert.match(agent,/AI Harness v7/);assert.match(claude,/AI Harness v7/);
+ assert.match(agent,/Pinned version: 7\.0\.0/);assert.match(claude,/Pinned version: 7\.0\.0/);
  assert.ok(!fs.existsSync(path.join(project,'GEMINI.md')));
  assert.equal(verifyProject(project).status,'PASS');
 });
