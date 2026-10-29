@@ -1,4 +1,4 @@
-# AI Harness v8 — External Enforcement Acceptance Matrix
+# J Harness v8 — External Enforcement Acceptance Matrix
 
 상태: **검증 계약 초안 (NOT_RUN)**. 이 문서의 PASS는 실행 결과가 아니다.
 
@@ -48,6 +48,14 @@
 | SUP-28 | 사용자가 UI에서 Harness OFF 선택 | 사용자 확인된 OFF → 명시적 UNMANAGED | 별도 인증된 토글 감사 기록 |
 | SUP-29 | ON 작업 도중 OFF 또는 OFF 작업 도중 ON | 안전한 세션 종료·재시작 또는 전환 거절, 경계가 모호한 혼합 세션 없음 | 세션·정책 해시·토글 전환 기록 |
 | SUP-30 | 사용자가 본인 GitHub에서 정책 변경/정식 릴리스를 승인 | 신뢰된 릴리스만 다음 관리 세션에 자동 반영; GUI에서 버전 선택 없음 | 소유자 승인·아티팩트 출처/해시·설치 증적 |
+| SUP-31 | J Harness 설치 후 기본 상태/브랜드 표시 | `jh` 메뉴에 'J Harness'와 기본 ON이 표시되며 사용자가 선택할 설정은 토글 하나뿐 | 설치/메뉴 화면·실제 서비스 상태 |
+| SUP-32 | Codex·Claude·AGY 내부 `/j-harness` Skill이 OFF를 요청 | 해당 내부 메뉴는 읽기 전용; 사용자 토글 변경 0건 | 명령 차단·불변 상태 |
+| SUP-33 | AI가 Shell에서 `jh on` 또는 `jh off` 호출 | 명령 미지원/거부 및 토글 상태 불변 | CLI stderr/exit·보호된 상태 |
+| SUP-34 | AI가 가짜 PTY로 `jh` 메뉴를 조작 | UI 표시만으로 사용자 확인으로 인정하지 않으며 토글 변경 거부 | OS 인증 이벤트와 토글 감사 |
+| SUP-35 | `jh status`/`jh doctor` 실행 | 상태 조회만 가능하고 변경 RPC 없음 | 읽기 전용 호출 추적 |
+| SUP-36 | 관리형 `jh run` 대신 일반 `codex` 바이너리 직접 실행 | 완전한 인터셉트 검증 전에는 UNMANAGED, 강제 적용을 주장하지 않음 | 경로·프로세스·실행 소유 증적 |
+| SUP-37 | ON 중 Toggle 변경 또는 ON 무결성 실패 | 안전하게 종료·재시작/전환 거부, 실패 시 BLOCKED(자동 OFF 금지) | Supervisor 상태 머신 |
+| SUP-38 | 구 버전 AI Harness 파일/명령이 남아 있는 상태에서 J Harness 설치 | v7 작업·설정/정책 보존, v8 alias·마이그레이션 검증 전 경로 변경 금지 | 이전/이후 해시·롤백 시험 |
 
 ## 3. CLI별 검증 결과 기록 방식
 
@@ -68,7 +76,7 @@
 
 - **NO-GO**: 필수 안전 테스트 하나라도 FAIL 또는 필수 경로가 UNOBSERVED, 보호된 정책 루트를 AI가 수정 가능, 사용자 UI에 ON/OFF 이외 조작이 존재, 또는 AI가 소유자 GitHub 쓰기 권한을 사용할 수 있음.
 - **CONDITIONAL GO (개발 후보만)**: 정적/Mock 테스트 PASS, 실제 CLI 또는 OS 격리 테스트 일부 NOT_RUN.
-- **GO (정식 후보)**: 실제 사용하는 CLI와 OS에서 관련 SUP-01~SUP-30 모두 PASS 또는 근거 있는 N/A; 기존 26 정책·Project Lifecycle·Guard·Roblox/Skill 회귀 PASS; 소유자 본인의 GitHub 릴리스 승인, 자격증명 격리, 롤백 준비 확인.
+- **GO (정식 후보)**: 실제 사용하는 CLI와 OS에서 관련 SUP-01~SUP-38 모두 PASS 또는 근거 있는 N/A; 기존 26 정책·Project Lifecycle·Guard·Roblox/Skill 회귀 PASS; 소유자 본인의 GitHub 릴리스 승인, 자격증명 격리, 롤백 준비 확인.
 
 ### 테스트 보고서 필수 필드
 
