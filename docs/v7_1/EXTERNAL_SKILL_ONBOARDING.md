@@ -51,6 +51,39 @@ $expected = (Get-HarnessSkillManifest $skillDir).Hash
 
 **Compound Engineering:** 개발 과정의 장점을 선별 채택하되 기존 정책/계획/검증 엔진을 대체하지 않는다. `ce-work`·자동 PR/Push/병합·고위험 파일 변경 기능은 별도 승인 및 권한 격리 검증 전까지 비활성화한다. AGY 플러그인 지원 문서가 있다고 해도 실제 실행 환경의 권한 적용은 재시험한다.
 
+### 3-1. 2026-10-29 특정 커밋 기준 코드 감사 (1차)
+
+**고정 조사 커밋(검토 출처)**
+
+- k-skill: [02081f83ebeecfb76f1f9cdc11a991e7bebf2f09](https://github.com/NomaDamas/k-skill/commit/02081f83ebeecfb76f1f9cdc11a991e7bebf2f09)
+- Compound Engineering: [fbd794f329f5b65d0ea00a5e6487336c385ff2be](https://github.com/EveryInc/compound-engineering-plugin/commit/fbd794f329f5b65d0ea00a5e6487336c385ff2be)
+
+위 커밋에서 각 \`SKILL.md\` 및 지침 파일을 읽었으며, **전체 저장소 코드/의존성 감사 또는 설치 검증이 완료됐다는 의미는 아니다.** Git commit SHA는 리뷰 기준일 뿐, 배포 npm 패키지나 별도 호스팅 서비스가 동일한 소스/코드를 실행한다는 증거가 아니다.
+
+| Skill | 검토 근거 파일 | 확인된 위험 | 기본 판정 |
+|---|---|---|---|
+| \`kosis-stats\` | \`kosis-stats/SKILL.md\`, \`instruction.md\` | \`npx -y @nomadamas/k-skill@0 instruct\` 및 helper \`exec\` 실행; \`@0\`은 하나의 불변 패키지 아티팩트로 고정되지 않음; 기본 hosted KOSIS proxy 사용 | **원본 설치 차단**, 필요시 직접 API용 별도 최소 Skill 설계 |
+| \`kamis-food-price\` | \`kamis-food-price/SKILL.md\`, \`instruction.md\` | 같은 runtime CLI 로더 + \`k-skill-proxy.nomadamas.org\` 외부 경유 | **원본 설치 차단**, 운영자 승인 프록시/공식 API 경로 재설계 |
+| \`ce-code-review\` | \`skills/ce-code-review/SKILL.md\` | 검토 모드에서 peer CLI로 코드/차이점을 외부 모델 제공자에 보낼 수 있음; \`cross_model_review_mode: off\`는 해당 기능 설정이며 Harness 보안 경계의 대체가 아님 | **자동 교차모델 전송 보류**, 로컬 리뷰 절차만 별도 설계 |
+| \`ce-handoff\` | \`skills/ce-handoff/SKILL.md\`, \`references/create.md\` | 기본 임시 파일 기록, 명시적 요청 시 외부 URL 읽기/공유 경로 존재, 지침/개인정보 마스킹 필요 | 제한된 로컬 전용 프로토타입 후보 |
+| \`ce-compound\` | \`skills/ce-compound/SKILL.md\` | 기존 Harness 문서/메모리 정책과 중복되며 \`CONCEPTS.md\`·프로젝트 지침 파일 변경 가능 | 로컬 지식 기록 절차만 후보 |
+
+### 3-2. 코드에 추가된 정적 감사 게이트
+
+\`scripts/audit-external-skill.mjs\`는 로컬 Skill 파일을 **읽기만** 한다. \`npx -y\`, moving npm 패키지 태그, 원격 다운로드 후 Shell 실행, 전역 패키지 설치, 자동 업데이트 지시를 발견하면 설치 전 차단한다. 외부 프록시와 교차모델 전송 단서는 별도 수동 검토 항목으로 기록한다.
+
+\`\`\`powershell
+node scripts/audit-external-skill.mjs --source 'C:\ReviewedSkills\skill-name'
+node --test scripts/test-audit-external-skill.mjs
+\`\`\`
+
+판정:
+- \`BLOCKED\`: 정적 차단 패턴 있음. **설치 불가**. 단순 위험 수용으로 해제할 수 없으며, 관리되는 스냅샷에서 해당 지시/의존성을 제거·재감사·재해시해야 한다.
+- \`MANUAL_REVIEW_REQUIRED\`: 정적 차단 패턴은 없지만 **설치 승인 판정이 아니다**. 모든 관련 코드/전이 의존성/데이터 전송/라이선스 및 현재 정책의 별도 검토가 필요하다.
+- 감사기 실행 오류·누락: 설치 차단.
+
+실행기나 Sandbox에서 임의 네트워크 호출을 완벽하게 차단하는 기능은 아니다. 규칙 기반 검사만으로 난독화·런타임 동적 명령 구성·외부 패키지 postinstall·프롬프트 인젝션을 완전히 찾을 수 없으므로, 실행 단계의 최소 권한/egress 제한은 추가 작업으로 유지한다.
+
 ## 4. 차기 버전 작업 순서
 
 | 단계 | 변경 | 필요한 실증 | 병합 조건 |
