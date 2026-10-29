@@ -1,0 +1,38 @@
+name: Reviewed External Skill Gate (Candidate)
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [security/v7-reviewed-external-skills-20261029]
+permissions:
+  contents: read
+jobs:
+  reviewed-external-skill:
+    name: Offline reviewed Skill / bundled regression (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: New reviewed external Skill tests
+        shell: pwsh
+        run: ./scripts/Test-ReviewedExternalSkill.ps1
+      - name: Existing bundled Skill regression
+        shell: pwsh
+        run: ./scripts/Test-ProjectSkillInstall.ps1
+      - name: Windows PowerShell 5.1 compatibility
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-ReviewedExternalSkill.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Harness source and release validation
+        run: |
+          node scripts/validate-harness-v6.mjs
+          node scripts/validate-release-v7.mjs
