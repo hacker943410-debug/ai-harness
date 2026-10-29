@@ -12,6 +12,28 @@ test('v8 is a design-only contract, never a claim of runtime enforcement',()=>{
   assert.equal(contract.status,'DESIGN_CONTRACT_ONLY_NOT_ENFORCEMENT');
   assert.match(contract.notes.join(' '),/E2E verified/i);
 });
+test('official product is J Harness with backward-compatible repository identity',()=>{
+  assert.equal(contract.contract_id,'j-harness-v8-owner-control');
+  assert.equal(contract.product_name,'J Harness');
+  assert.equal(contract.legacy_product_name,'AI Harness');
+  assert.equal(contract.repository,'hacker943410-debug/ai-harness');
+});
+test('jh menu is trusted user-only and no agent-driven toggle commands exist',()=>{
+  const cli=contract.cli_user_experience;
+  assert.equal(cli.command,'jh');
+  assert.equal(cli.menu,'TRUSTED_LOCAL_USER_TERMINAL_UI');
+  assert.deepEqual(cli.read_only_commands,['jh status','jh doctor']);
+  assert.equal(cli.supervised_cli_entry_candidate,'jh run');
+  assert.equal(cli.noninteractive_toggles_allowed,false);
+  assert.deepEqual(cli.forbidden_commands,['jh on','jh off']);
+  assert.equal(cli.in_agent_slash_command,'READ_ONLY_STATUS_ONLY');
+  assert.equal(cli.user_presence_verification,'TRUSTED_OS_USER_CONFIRMATION_REQUIRED');
+  assert.equal(cli.terminal_tty_alone_is_authentication,false);
+  assert.equal(cli.agent_tool_pty_can_toggle,false);
+  assert.equal(cli.direct_existing_cli_auto_enforcement,'NOT_IMPLEMENTED_VERIFY_OS_INTERCEPTION');
+  assert.equal(cli.default_state_after_healthy_install,'ON');
+  assert.equal(cli.deployment_state,'DESIGN_ONLY');
+});
 test('user-adjustable surface contains only the ON/OFF toggle',()=>{
   const ui=contract.user_control_surface;
   assert.deepEqual(ui.buttons,[]);
