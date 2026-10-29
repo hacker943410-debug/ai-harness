@@ -20,6 +20,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Static external Skill auditor tests
+        run: node --test scripts/test-audit-external-skill.mjs
       - name: New reviewed external Skill tests
         shell: pwsh
         run: ./scripts/Test-ReviewedExternalSkill.ps1
