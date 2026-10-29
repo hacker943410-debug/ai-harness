@@ -60,7 +60,7 @@ if (-not $isBundled -and $manifest.Hash -cne $ExpectedTreeHash.ToLowerInvariant(
     throw 'EXTERNAL_SKILL_HASH_MISMATCH'
 }
 if (-not $isBundled) {
-    $auditScript = Join-HarnessPath $harness 'scripts/audit-external-skill.mjs'
+    $auditScript = Join-Path $PSScriptRoot 'audit-external-skill.mjs'
     if (-not (Test-Path -LiteralPath $auditScript -PathType Leaf)) {
         # A partial snapshot may not be trusted to install external executable instructions.
         throw 'EXTERNAL_SKILL_AUDITOR_MISSING'
