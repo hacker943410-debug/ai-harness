@@ -1,5 +1,5 @@
 {
-  "contract_id": "ai-harness-v8-owner-control",
+  "contract_id": "j-harness-v8-owner-control",
   "status": "DESIGN_CONTRACT_ONLY_NOT_ENFORCEMENT",
   "repository": "hacker943410-debug/ai-harness",
   "source_authority": {
@@ -63,6 +63,31 @@
   "notes": [
     "This JSON file is design data, not an access-control mechanism.",
     "External OS separation and owner-only deployment must be implemented and E2E verified before any ENFORCED claim.",
-    "Source owner identity is not proven by commit author names or by the ability to access a delegated GitHub token."
-  ]
+    "Source owner identity is not proven by commit author names or by the ability to access a delegated GitHub token.",
+    "The optional /j-harness skill/slash command is read-only and cannot grant user toggle authority.",
+    "Commands are UX contracts only; jh binary, installer and trusted user confirmation are not yet implemented."
+  ],
+  "product_name": "J Harness",
+  "legacy_product_name": "AI Harness",
+  "cli_user_experience": {
+    "command": "jh",
+    "menu": "TRUSTED_LOCAL_USER_TERMINAL_UI",
+    "read_only_commands": [
+      "jh status",
+      "jh doctor"
+    ],
+    "supervised_cli_entry_candidate": "jh run",
+    "noninteractive_toggles_allowed": false,
+    "forbidden_commands": [
+      "jh on",
+      "jh off"
+    ],
+    "in_agent_slash_command": "READ_ONLY_STATUS_ONLY",
+    "user_presence_verification": "TRUSTED_OS_USER_CONFIRMATION_REQUIRED",
+    "terminal_tty_alone_is_authentication": false,
+    "agent_tool_pty_can_toggle": false,
+    "direct_existing_cli_auto_enforcement": "NOT_IMPLEMENTED_VERIFY_OS_INTERCEPTION",
+    "default_state_after_healthy_install": "ON",
+    "deployment_state": "DESIGN_ONLY"
+  }
 }
