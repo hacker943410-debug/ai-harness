@@ -1,10 +1,21 @@
-# ADR-008 — AI가 아닌 Harness가 프로젝트 실행을 통제한다
+# ADR-008 — J Harness: AI가 아닌 Harness가 프로젝트 실행을 통제한다
 
 - 결정일: 2026-10-29
+- 공식 제품명: **J Harness** (기존 v7 ‘AI Harness’ 명칭은 역사적 이력으로 보존)
 - 상태: **승인된 제품 방향 / 아키텍처 설계 후보 / 구현 완료 아님**
 - 대상: 기존 v7.0.0, v7.0.1 Draft PR #5, 외부 Skill 보안 Draft PR #6의 후속 통합
 - 후보 릴리스: **v8.0.0** (신뢰 경계가 바뀌므로 minor 버전이 아닌 major 버전 권장)
 - 정식 운영 브랜치 `main`, 기존 릴리스와 사용자 프로젝트는 변경하지 않는다.
+
+## 0. 설치·CLI 메뉴 계약 및 제품 명칭
+
+차기 메이저 버전의 공식 명칭은 **J Harness**, 전용 터미널 명령은 `jh`이다. 이전 v7.x의 저장소 경로·릴리스·정책 식별자는 마이그레이션 검증 전까지 변경하지 않는다.
+
+**CLI 설정 경험:** 설치 후 사용자는 Windows Terminal/PowerShell에서 `jh`를 실행해 J Harness ON/OFF 단일 토글을 조작한다. `jh status`, `jh doctor`는 **읽기 전용 정보**이며 설정 항목이 아니다. `jh run`은 감독된 CLI 실행 진입점 후보이고, 사용 중인 CLI는 자동 인식한다. CLI의 `/j-harness` 같은 Skill 기반 명령은 구현하더라도 **읽기 전용 상태만 표시**한다. `jh on` / `jh off`처럼 AI Shell로 자동 호출할 수 있는 무인 변경 명령은 제공하지 않는다.
+
+**필수 보안:** 실제 ON/OFF 변경에는 모델/Tool과 다른 신뢰된 사용자 본인 확인 및 OS 권한 경계가 필요하다. 단순 대화형 터미널이나 PTY 입력만으로 인간이 직접 조작했다고 판정하지 않는다. 설치 후 `codex` 직접 실행을 모두 자동 감독한다는 최종 목표는 Supervisor 진입점·OS 격리 검증 이후에만 ENFORCED로 표시한다.
+
+**상세 UX 및 수용 기준:** `docs/v8/J_HARNESS_CLI_ONOFF_UX.md`.
 
 ## 1. 최상위 사용자 요구사항
 
@@ -129,7 +140,9 @@
 - 26개 정책 각각을 HOST_ENFORCEABLE / POST_VERIFIABLE / MODEL_GUIDANCE_ONLY / UNSUPPORTED로 매핑.
 - 실제 선택한 CLI의 일반 대화형 우회 경로를 기록. 결과물: 현황 표 및 실패하는 기준 테스트.
 
-**Phase 1 — Supervisor 최소 프로토타입**
+**Phase 1 — J Harness Supervisor 최소 프로토타입**
+- 설치 프로그램에서 `jh` 명령을 등록하고, 전용 터미널 관리자 화면을 표시한다. ON/OFF 전환을 AI Tool이 호출할 수 없도록 사용자 본인 확인을 보호된 경로에 둔다.
+- `jh status`/진단은 읽기 전용, `jh run`은 관리형 실행 후보로 분리하고, 일반 `codex` 실행은 우회 조건 검증 전까지 UNMANAGED로 표기한다.
 - 사용자 UI의 **ON/OFF 단일 토글** 및 비신뢰 프로세스의 토글 쓰기 차단, 상태 전환 감사 기록 구현.
 - GitHub 소유자가 별도 인증 경로에서 배포한 **핀 고정 릴리스만** 수용하는 read-only updater 설계.
 - 프로젝트 바깥 Trust Store와 **읽기 전용 프리플라이트·권한 결정 서비스** 구현.
@@ -146,12 +159,14 @@
 - PR #5 정책 파일 브리지, PR #6 외부 Skill 설치 보호, 26개 JIT 정책, Phase Engine, Guard/토큰 측정, Roblox MCP 등을 Supervisor 하위 모듈로 통합한다.
 - 문서와 테스트 결과만으로 완료 선언 금지; 사용자의 운영 프로젝트를 직접 변경하지 않는다.
 
-**Phase 4 — Windows Control Center**
+**Phase 4 — J Harness Windows Control Center**
 - 비개발자 대상 GUI **유일한 조작 컨트롤은 Harness ON/OFF 토글 하나**.
 - CLI/모델/정책·보안 등급/예산·Skill/버전/작업 상태/검증 기록은 **읽기 전용 상태 표시**. Harness 관리자 기능, 정책 편집, 모델·예산 선택, 수동 예외 승인 버튼은 만들지 않는다.
 - 소유자 변경은 반드시 별도 GitHub 경로에서 이루어져야 하며 GUI에서 git push·원본 변경·릴리스 승인을 대행하지 않는다.
 
 ## 7. 설계 참조
+
+- v8 CLI 사용성·ON/OFF 메뉴 단일 권한 설계: `docs/v8/J_HARNESS_CLI_ONOFF_UX.md`
 
 - 현재 저장소: `AGENTS.md`, `CORE.md`, `ROUTER.md`, `scripts/harness-guard-v6-2.mjs`, `docs/v7_0/CLI_TRIAD_COMPATIBILITY.md`.
 - OpenAI Codex App Server/SDK 및 실행 소유권: https://developers.openai.com/blog/codex-as-a-platform
