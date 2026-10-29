@@ -1,0 +1,68 @@
+{
+  "contract_id": "ai-harness-v8-owner-control",
+  "status": "DESIGN_CONTRACT_ONLY_NOT_ENFORCEMENT",
+  "repository": "hacker943410-debug/ai-harness",
+  "source_authority": {
+    "owner_login": "hacker943410-debug",
+    "owner_github_account_id": 258754438,
+    "changes_only_via": "OWNER_INTERACTIVE_GITHUB_APPROVAL",
+    "agent_git_write_allowed": false,
+    "agent_owner_credentials_allowed": false,
+    "unverified_source_updates_allowed": false,
+    "owner_approval_proven_by_access_token_alone": false,
+    "authorized_release_requires": [
+      "protected_repository_reference",
+      "owner_out_of_band_approval",
+      "verified_artifact_integrity"
+    ]
+  },
+  "user_control_surface": {
+    "buttons": [],
+    "toggles": [
+      "harness.enabled"
+    ],
+    "writable_fields": [
+      "harness.enabled"
+    ],
+    "allowed_values": [
+      "ON",
+      "OFF"
+    ],
+    "default_state": "ON",
+    "agent_writable_fields": [],
+    "display_only_fields": [
+      "observed_client",
+      "observed_model",
+      "policy_version",
+      "token_budget",
+      "skill_inventory",
+      "execution_mode",
+      "enforcement_level",
+      "verification_results"
+    ],
+    "manual_cli_selection": false,
+    "manual_model_selection": false,
+    "manual_skill_selection": false,
+    "manual_policy_selection": false,
+    "manual_budget_selection": false,
+    "manual_version_selection": false,
+    "manual_exception_selection": false
+  },
+  "runtime_state_policy": {
+    "authenticated_user_toggle_only": true,
+    "toggle_storage_outside_agent_workspace": true,
+    "direct_agent_toggle_request": "DENY",
+    "on_healthy": "MANAGED",
+    "on_unhealthy": "BLOCKED",
+    "off": "UNMANAGED",
+    "unresolved_toggle": "BLOCKED",
+    "mid_session_switch": "STOP_AND_RESTART_OR_DENY",
+    "auto_off_on_failure": false,
+    "unmanaged_cli_cannot_claim_enforcement": true
+  },
+  "notes": [
+    "This JSON file is design data, not an access-control mechanism.",
+    "External OS separation and owner-only deployment must be implemented and E2E verified before any ENFORCED claim.",
+    "Source owner identity is not proven by commit author names or by the ability to access a delegated GitHub token."
+  ]
+}
