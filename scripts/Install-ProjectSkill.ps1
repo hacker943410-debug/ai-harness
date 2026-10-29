@@ -59,6 +59,17 @@ $manifest = Get-HarnessSkillManifest $source
 if (-not $isBundled -and $manifest.Hash -cne $ExpectedTreeHash.ToLowerInvariant()) {
     throw 'EXTERNAL_SKILL_HASH_MISMATCH'
 }
+if (-not $isBundled) {
+    $auditScript = Join-HarnessPath $harness 'scripts/audit-external-skill.mjs'
+    if (-not (Test-Path -LiteralPath $auditScript -PathType Leaf)) {
+        # A partial snapshot may not be trusted to install external executable instructions.
+        throw 'EXTERNAL_SKILL_AUDITOR_MISSING'
+    }
+    & node $auditScript --source $source | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw 'EXTERNAL_SKILL_STATIC_AUDIT_BLOCKED: remove dynamic remote execution/auto-update instructions from the reviewed snapshot, then re-review and re-hash.'
+    }
+}
     $clientDir = Join-HarnessPath $harness 'settings' 'clients'
     $descriptors = @()
     if ($Client -eq 'AllNative') {
