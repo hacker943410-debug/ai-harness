@@ -1,0 +1,5 @@
+import fs from 'node:fs';import path from 'node:path';import {projectSlot,legacyProjectSlot,atomic,json,readJson,noLinks} from './io.mjs';
+export function event(h,project,kind,data={}){const slot=projectSlot(h,project);noLinks(slot);const file=path.join(slot,'events.jsonl');noLinks(file);fs.mkdirSync(slot,{recursive:true});const row={utc:new Date().toISOString(),kind,...data};fs.appendFileSync(file,JSON.stringify(row)+'\n');return row;}
+export function events(h,project){return[legacyProjectSlot(h,project),projectSlot(h,project)].flatMap(slot=>{const f=path.join(slot,'events.jsonl');noLinks(f);return fs.existsSync(f)?fs.readFileSync(f,'utf8').trim().split('\n').filter(Boolean).map(JSON.parse):[];});}
+export function projectState(h,project){return readJson(path.join(projectSlot(h,project),'workflow.json'))??readJson(path.join(legacyProjectSlot(h,project),'workflow.json'));}
+export function saveProject(h,project,value){atomic(path.join(projectSlot(h,project),'workflow.json'),json(value));}

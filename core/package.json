@@ -1,0 +1,1 @@
+{"name":"j-harness-core","version":"8.0.0-core-beta.1","private":true,"type":"module","engines":{"node":">=22"},"description":"J Harness development workflow and Codex instructions adapter; no OS isolation.","scripts":{"test":"node --test tests/core.test.mjs","demo":"node demo/server.mjs"}}
