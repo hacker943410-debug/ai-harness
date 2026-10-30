@@ -12,7 +12,7 @@ PASS ambiguous tag and branch require an explicit ref
 PASS major source update stages v6 without changing shared v5 HEAD or bytes
 PASS repository checker failure blocks success
 PASS missing repository checker blocks success
-What if: Performing the operation "Install verified Skill 'dashboard-builder' into .agents/skills/dashboard-builder, .claude/skills/dashboard-builder" on target "C:\Users\pangyo\AppData\Local\Temp\h51-a34f9c\한글프로젝트".
+What if: Performing the operation "Install verified Skill 'dashboard-builder' into .agents/skills/dashboard-builder, .claude/skills/dashboard-builder" on target "%USERPROFILE%\AppData\Local\Temp\h51-a34f9c\한글프로젝트".
 PASS WhatIf leaves a Korean project and environment unchanged
 PASS AllNative installs two unique destinations with full hashes
 PASS reference tampering is detected and overwrite requires Force
