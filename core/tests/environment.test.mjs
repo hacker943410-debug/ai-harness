@@ -94,3 +94,17 @@ test('command line implements only inspect and plan, never install/apply',t=>{
  assert.equal(denied.status,2);
  assert.deepEqual(fs.readdirSync(f.root),before);
 });
+
+test('candidate jh environment command is read-only and does not require installed Core',t=>{
+ const f=fixture(t),cli=fileURLToPath(new URL('../cli.mjs',import.meta.url));
+ const before=fs.readdirSync(f.root);
+ const test=spawnSync(process.execPath,[cli,'environment','plan','--client','agy','--profile','roblox'],{cwd:f.root,encoding:'utf8',timeout:15000});
+ assert.equal(test.status,0,test.stderr);
+ const result=JSON.parse(test.stdout);
+ assert.equal(result.kind,'J_HARNESS_BOOTSTRAP_PLAN');
+ assert.equal(result.selectedClient,'agy');
+ assert.equal(result.hostChanged,false);
+ assert.deepEqual(fs.readdirSync(f.root),before);
+ const denied=spawnSync(process.execPath,[cli,'environment','install'],{cwd:f.root,encoding:'utf8',timeout:15000});
+ assert.equal(denied.status,1);
+});
