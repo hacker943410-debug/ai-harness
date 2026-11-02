@@ -19,6 +19,8 @@
 ## 개발자 시험 명령
 Node가 이미 있는 개발 PC에서:
 
+    node core/cli.mjs environment inspect --client codex --profile general
+    node core/cli.mjs environment plan --client agy --profile general
     node core/environment/doctor.mjs inspect --client codex --profile general
     node core/environment/doctor.mjs plan --client agy --profile general
     node core/environment/doctor.mjs plan --client codex --profile roblox
