@@ -2,6 +2,7 @@
 import path from 'node:path';import fs from 'node:fs';import process from 'node:process';import {spawn} from 'node:child_process';import {createInterface} from 'node:readline/promises';
 import {home,version} from './lib/io.mjs';import {install,status,toggle,uninstall} from './lib/install.mjs';import {resolveCodex} from './lib/codex.mjs';
 import * as hub from './lib/skills.mjs';import * as flow from './lib/workflow.mjs';import {events,projectState} from './lib/events.mjs';
+import {inspectEnvironment,planEnvironment} from './environment/doctor.mjs';
 const argv=process.argv.slice(2),tail=argv.indexOf('--'),commandArgs=tail<0?[]:argv.splice(tail+1);if(tail>=0)argv.pop();
 function option(name,fallback){const i=argv.indexOf('--'+name);if(i<0)return fallback;const value=argv[i+1];if(value===undefined||value.startsWith('--'))throw Error('OPTION_VALUE_REQUIRED_'+name);argv.splice(i,2);return value;}
 function flag(name){const i=argv.indexOf('--'+name);if(i<0)return false;argv.splice(i,1);return true;}
@@ -11,6 +12,13 @@ try{
  if(cmd==='install')print(install(h));
  else if(cmd==='status')print(status(h));
  else if(cmd==='doctor'){const observed=status(h);const located=resolveCodex();print({...observed,cli:{installed:!!located,version:observed.codexVersion??null,versionSource:'CACHED_AT_INSTALL_NOT_LIVE_EXECUTION',execution:located},environmentHome:home(),profileMismatch:home()!==h,projectHasAgents:fs.existsSync(path.join(project,'AGENTS.md')),projectHasOverride:fs.existsSync(path.join(project,'AGENTS.override.md')),notes:['Global instructions apply to new Codex sessions. Project guidance can override them.','No config.toml, authentication, MCP registration, service, or OS account changes are needed.','A linked file alone is not proof of model behavior.']});}
+ else if(cmd==='environment'){
+  const mode=argv.shift()||'inspect',client=option('client','codex'),profile=option('profile','general');
+  if(!['inspect','plan'].includes(mode)||argv.length)throw Error('ENVIRONMENT_READONLY_INSPECT_OR_PLAN_ONLY');
+  const examined=inspectEnvironment({client,profile});
+  print(mode==='plan'?planEnvironment(examined):examined);
+  if(mode==='inspect'&&examined.blocked.length)process.exitCode=3;
+ }
  else if(cmd==='on'||cmd==='off')print(toggle(h,cmd.toUpperCase()));
  else if(cmd==='uninstall')print(uninstall(h));
  else if(cmd==='begin')print(flow.begin(h,project,argv.join(' ')));
@@ -37,5 +45,5 @@ try{
   const child=spawn(cli.file,[...cli.prefix,...(argv.length?[argv.join(' ')]:[])],{cwd:project,env:{...process.env,CODEX_HOME:h},stdio:'inherit',windowsHide:false});child.on('error',e=>{console.error(e.message);process.exitCode=1;});child.on('exit',code=>{process.exitCode=code??1;});
  }
  else if(cmd===undefined){if(!process.stdin.isTTY)print({product:'J Harness Core',version,...status(h),menu:['ON','OFF'],help:'jh on | jh off | jh status | jh doctor | jh start'});else{const rl=createInterface({input:process.stdin,output:process.stdout});print(status(h));try{const value=(await rl.question('J Harness: 1 ON / 2 OFF / Enter 종료: ')).trim();if(value==='1'||value==='2')print(toggle(h,value==='1'?'ON':'OFF'));}finally{rl.close();}}}
- else throw Error('Usage: jh [on|off|status|doctor|start|begin|advance|verify|skills|policy|progress|finish|uninstall]');
+ else throw Error('Usage: jh [environment inspect|environment plan|on|off|status|doctor|start|begin|advance|verify|skills|policy|progress|finish|uninstall]');
 }catch(error){console.error(JSON.stringify({product:'J Harness Core',result:'ERROR',reason:error.message}));process.exitCode=1;}
