@@ -33,9 +33,11 @@ jobs:
       - name: Build unsigned Windows package with pinned official Node binary
         shell: pwsh
         run: |
-          $nodePath=(Get-Command node -CommandType Application).Source
+          # GitHub actions/node-versions may repackage node.exe: never trust it as the official pinned artifact.
+          $nodePath=Join-Path $env:RUNNER_TEMP 'official-node-v22.22.2.exe'
           $expected='ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3'
-          if ((Get-FileHash -LiteralPath $nodePath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'Node exe is not official pinned Windows v22.22.2' }
+          Invoke-WebRequest -Uri 'https://nodejs.org/dist/v22.22.2/win-x64/node.exe' -OutFile $nodePath -MaximumRedirection 0
+          if ((Get-FileHash -LiteralPath $nodePath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'Downloaded official Node exe failed pinned SHA256' }
           node core/build-windows-bootstrap.mjs --out "$env:RUNNER_TEMP\jh-phase2-dist" --node-binary "$nodePath"
       - name: End-to-end isolated install, doctor, preserve, uninstall
         shell: pwsh
