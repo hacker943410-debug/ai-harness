@@ -149,14 +149,23 @@ try {
 } catch {
     $failure=$_.Exception.Message
     $rollback='NOT_REQUIRED'
-    if ($linked) {
+    # Core setup may have linked global guidance before its post-install doctor failed.
+    # Detect the actual transaction state, not only the wrapper's $linked flag.
+    $stateFile=Join-Path $targetCore 'install.json'
+    if ($linked -or (Test-Path -LiteralPath $stateFile -PathType Leaf)) {
         try {
-            $rollbackResult=& $nodeTarget (Join-Path $packageRoot 'core\setup.mjs') uninstall 2>&1
-            if ($LASTEXITCODE -ne 0) { throw 'UNINSTALL_NONZERO' }
+            $previous=$ErrorActionPreference
+            try {
+                $ErrorActionPreference='Continue'
+                $rollbackResult=& $nodeTarget (Join-Path $packageRoot 'core\setup.mjs') uninstall 2>&1
+                $rollbackExit=$LASTEXITCODE
+            } finally { $ErrorActionPreference=$previous }
+            if ($rollbackExit -ne 0) { throw 'UNINSTALL_NONZERO' }
             $rollback='CORE_UNLINKED_ARCHIVED'
         } catch { $rollback='MANUAL_RECOVERY_REQUIRED' }
     } elseif (Test-Path -LiteralPath $targetCore) { $rollback='PARTIAL_CORE_PRESERVED_MANUAL_REVIEW_REQUIRED' }
-    if ($createdNode -and (HashMatches $nodeTarget $manifest.node.sha256)) {
+    # Do not break a preserved partial runtime by deleting the executable it may need.
+    if ($createdNode -and $rollback -notmatch 'MANUAL|PARTIAL' -and (HashMatches $nodeTarget $manifest.node.sha256)) {
         Remove-Item -LiteralPath $nodeTarget -Force
         $rollback+='; NEW_PINNED_NODE_REMOVED'
     }
