@@ -77,13 +77,49 @@ jobs:
           if($LASTEXITCODE -ne 0){throw 'Installed launcher failed'}
           $doctor=$doctorText | ConvertFrom-Json
           if($doctor.effective -ne 'CONNECTED_FOR_NEW_SESSIONS' -or $doctor.backupStatus -ne 'MATCH'){throw 'Core doctor failed'}
+          # Repeating first-time install must refuse to touch a running or installed Core.
+          $originalErrorMode=$ErrorActionPreference
+          try {
+            $ErrorActionPreference='Continue'
+            & powershell.exe -NoProfile -File $bootstrap -Action Install -Client codex -ApproveInstall -CodexHome $testCodexHome -ManagedRoot $runtime 1>$null 2>$null
+            $duplicateExit=$LASTEXITCODE
+          } finally { $ErrorActionPreference=$originalErrorMode }
+          if($duplicateExit -eq 0){throw 'Second install incorrectly succeeded'}
+          if((Get-FileHash -LiteralPath (Join-Path $testCodexHome 'config.toml')).Hash -ne $pins['config.toml']){throw 'Second install changed original configuration'}
           $uninstallText=& powershell.exe -NoProfile -File $remove -CodexHome $testCodexHome -ManagedRoot $runtime -ApproveUninstall
           if($LASTEXITCODE -ne 0){throw 'Uninstall rollback failed'}
           $uninstall=$uninstallText | ConvertFrom-Json
           if($uninstall.result -ne 'CORE_UNLINKED_ARCHIVED'){throw 'Unexpected uninstall result'}
           foreach($n in @('AGENTS.md','config.toml','auth.json')){if((Get-FileHash -LiteralPath (Join-Path $testCodexHome $n)).Hash -ne $pins[$n]){throw "Original bytes not restored: $n"}}
           if(!(Test-Path -LiteralPath $nodeInstalled)){throw 'Runtime cache unexpectedly removed'}
-          Write-Output 'PASS: pinned Node; isolated fake Codex; Core installation; doctor; original auth and guidance; uninstall'
+          # An unsigned distribution checksum is checked at Plan time; corrupted files fail closed.
+          $catalog=Join-Path $package 'core\knowledge\categories.json'
+          $clean=Join-Path $scratch 'categories.clean'
+          Copy-Item -LiteralPath $catalog -Destination $clean
+          try {
+            Add-Content -LiteralPath $catalog -Value 'malicious-ci-byte'
+            $originalErrorMode=$ErrorActionPreference
+            try {
+              $ErrorActionPreference='Continue'
+              & powershell.exe -NoProfile -File $bootstrap -Action Plan -Client codex -CodexHome $testCodexHome -ManagedRoot $runtime 1>$null 2>$null
+              $tamperExit=$LASTEXITCODE
+            } finally { $ErrorActionPreference=$originalErrorMode }
+            if($tamperExit -eq 0){throw 'Tampered package passed manifest verification'}
+          } finally { Copy-Item -LiteralPath $clean -Destination $catalog -Force }
+          # No approval: first-time install is not allowed even with bundled Node.
+          $secondHome=Join-Path $scratch 'fresh-no-consent'
+          New-Item -ItemType Directory -Path $secondHome -Force | Out-Null
+          $originalErrorMode=$ErrorActionPreference
+          try {
+            $ErrorActionPreference='Continue'
+            & powershell.exe -NoProfile -File $bootstrap -Action Install -Client codex -CodexHome $secondHome -ManagedRoot (Join-Path $scratch 'no-consent-managed') 1>$null 2>$null
+            $noConsentExit=$LASTEXITCODE
+          } finally { $ErrorActionPreference=$originalErrorMode }
+          if($noConsentExit -eq 0 -or (Test-Path -LiteralPath (Join-Path $scratch 'no-consent-managed'))){throw 'Unapproved install created files'}
+          # Run existing Core regression only after fake CLI setup in PATH; no real model calls.
+          node --test core/tests/core.test.mjs core/tests/stability.test.mjs
+          if($LASTEXITCODE -ne 0){throw 'Existing Core regression failed'}
+          Write-Output 'PASS: pinned Node; simulated Codex; install+doctor; exact uninstall; duplicate/consent/tamper rejection; Core regressions'
       - name: Pack unsigned portable installer ZIP
         shell: pwsh
         run: |
