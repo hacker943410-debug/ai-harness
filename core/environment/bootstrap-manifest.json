@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "product": "J Harness Portable Bootstrap",
+  "channel": "v8-environment-phase2-draft",
+  "node": {
+    "version": "22.22.2",
+    "url": "https://nodejs.org/dist/v22.22.2/win-x64/node.exe",
+    "sha256": "ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3",
+    "source": "Node.js official SHASUMS256.txt, win-x64/node.exe"
+  },
+  "supported_host": "Windows x64",
+  "supported_active_cli": "codex",
+  "post_install_claim": "CONNECTED_FOR_NEW_SESSIONS_NOT_MODEL_ENFORCED",
+  "requires_operator_approval": true,
+  "changes_permitted": [
+    "private J Harness runtime cache",
+    "approved managed block in existing Codex global instructions"
+  ],
+  "changes_forbidden": [
+    "system PATH",
+    "registry",
+    "Windows accounts",
+    "GitHub authorization",
+    "Codex auth files",
+    "global npm packages"
+  ]
+}

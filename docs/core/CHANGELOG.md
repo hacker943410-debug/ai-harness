@@ -15,3 +15,10 @@
 - Dependency plan never installs packages or changes Windows settings; no three-CLI subscription requirement.
 - Owner-approved SHA-256 checked single-file offline staging primitive for future self-contained installation.
 - Windows/Linux CI negative tests. Full install/rollback and enforced Supervisor remain NOT_IMPLEMENTED.
+
+## Environment Bootstrap Phase 2 — unsigned candidate (not released)
+- Native Windows CMD + PowerShell bootstrap with no system-installed Node.js requirement when distributed with pinned official Node v22.22.2.
+- Explicit operator consent, SHA-256 gate, private runtime cache, Core setup and real doctor verification.
+- Portable uninstall and exact existing AGENTS/config/auth checks in isolated GitHub Actions Windows test.
+- Neither Codex itself nor third-party dependencies are auto-installed yet; Claude/AGY/OS Supervisor remain not implemented.
+- ZIP checksums are not owner signatures and this branch is not production-safe by default.
