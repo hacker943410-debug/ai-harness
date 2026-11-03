@@ -149,6 +149,8 @@ jobs:
           $archives=@(Get-ChildItem -LiteralPath $badHome -Filter 'j-harness-core.uninstalled-*')
           if($archives.Count -lt 1){throw 'Rollback archive was not retained'}
           Write-Output 'PASS: pinned Node; simulated Codex; install/doctor/uninstall; refusal, consent, package tamper, forced doctor failure rollback; Core regressions'
+          # Expected rejected child commands leave a nonzero LASTEXITCODE; the assertions above passed.
+          exit 0
       - name: Pack unsigned portable installer ZIP
         shell: pwsh
         run: |
