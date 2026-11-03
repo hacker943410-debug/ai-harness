@@ -1,0 +1,94 @@
+name: J Harness v8 Phase2 Portable Windows Installer Candidate
+on:
+  push:
+    branches: [feature/v8-environment-bootstrap-phase2]
+  pull_request:
+    branches: [feature/v8-environment-bootstrap-phase1]
+permissions:
+  contents: read
+jobs:
+  environment-contract:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test core/tests/environment.test.mjs
+      - run: node --check core/build-windows-bootstrap.mjs
+      - run: node --check core/environment/doctor.mjs
+  windows-installer:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.2'
+      - name: Build unsigned Windows package with pinned official Node binary
+        shell: pwsh
+        run: |
+          $nodePath=(Get-Command node -CommandType Application).Source
+          $expected='ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3'
+          if ((Get-FileHash -LiteralPath $nodePath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'Node exe is not official pinned Windows v22.22.2' }
+          node core/build-windows-bootstrap.mjs --out "$env:RUNNER_TEMP\jh-phase2-dist" --node-binary "$nodePath"
+      - name: End-to-end isolated install, doctor, preserve, uninstall
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $package=Join-Path $env:RUNNER_TEMP 'jh-phase2-dist'
+          $bootstrap=Join-Path $package 'bootstrap\Bootstrap-JHarness.ps1'
+          $remove=Join-Path $package 'bootstrap\Uninstall-JHarness.ps1'
+          $scratch=Join-Path $env:RUNNER_TEMP 'jh-phase2-fixture'
+          $home=Join-Path $scratch 'codex-home'
+          $runtime=Join-Path $scratch 'managed'
+          $fakeBin=Join-Path $scratch 'bin'
+          New-Item -ItemType Directory -Force -Path $home,$fakeBin | Out-Null
+          $fake=Join-Path $fakeBin 'node_modules\@openai\codex\bin'
+          New-Item -ItemType Directory -Force -Path $fake | Out-Null
+          Set-Content -LiteralPath (Join-Path $fake 'codex.js') -Value "console.log('codex-cli 0.166.0 fake-for-CI-only')" -Encoding UTF8
+          Set-Content -LiteralPath (Join-Path $fakeBin 'codex.cmd') -Value ('@echo off'+[Environment]::NewLine+'echo codex-cli fake-for-CI-only') -Encoding ASCII
+          $env:PATH=$fakeBin+';'+$env:PATH
+          $env:CODEX_HOME=$home
+          Set-Content -LiteralPath (Join-Path $home 'AGENTS.md') -Value ('# Existing user guidance'+[Environment]::NewLine+'Do not replace my rules.') -Encoding UTF8
+          Set-Content -LiteralPath (Join-Path $home 'config.toml') -Value "model = 'existing-model'" -Encoding UTF8
+          Set-Content -LiteralPath (Join-Path $home 'auth.json') -Value '{"test_marker":"NO_REAL_SECRETS"}' -Encoding UTF8
+          $pins=@{}
+          foreach($n in @('AGENTS.md','config.toml','auth.json')) { $pins[$n]=(Get-FileHash -LiteralPath (Join-Path $home $n)).Hash }
+          $planText=& powershell.exe -NoProfile -File $bootstrap -Action Plan -Client codex -CodexHome $home -ManagedRoot $runtime
+          if($LASTEXITCODE -ne 0){throw 'Preflight failed'}
+          $plan=$planText | ConvertFrom-Json
+          if($plan.installed -ne $false -or $plan.nodeSource -ne 'BUNDLED_PINNED' -or (Test-Path -LiteralPath $runtime)) { throw 'Preflight was not read only' }
+          $installText=& powershell.exe -NoProfile -File $bootstrap -Action Install -Client codex -ApproveInstall -CodexHome $home -ManagedRoot $runtime
+          if($LASTEXITCODE -ne 0){throw 'Bootstrap install failed'}
+          $installed=$installText | ConvertFrom-Json
+          if(!$installed.installed -or $installed.connection -ne 'CONNECTED_FOR_NEW_SESSIONS'){throw 'Core not connected'}
+          foreach($n in @('config.toml','auth.json')){if((Get-FileHash -LiteralPath (Join-Path $home $n)).Hash -ne $pins[$n]){throw "User config changed: $n"}}
+          $nodeInstalled=Join-Path $runtime 'node-v22.22.2\node.exe'
+          $jh=Join-Path $home 'j-harness-core\bin\jh.cmd'
+          $doctorText=& $jh doctor
+          if($LASTEXITCODE -ne 0){throw 'Installed launcher failed'}
+          $doctor=$doctorText | ConvertFrom-Json
+          if($doctor.effective -ne 'CONNECTED_FOR_NEW_SESSIONS' -or $doctor.backupStatus -ne 'MATCH'){throw 'Core doctor failed'}
+          $uninstallText=& powershell.exe -NoProfile -File $remove -CodexHome $home -ManagedRoot $runtime -ApproveUninstall
+          if($LASTEXITCODE -ne 0){throw 'Uninstall rollback failed'}
+          $uninstall=$uninstallText | ConvertFrom-Json
+          if($uninstall.result -ne 'CORE_UNLINKED_ARCHIVED'){throw 'Unexpected uninstall result'}
+          foreach($n in @('AGENTS.md','config.toml','auth.json')){if((Get-FileHash -LiteralPath (Join-Path $home $n)).Hash -ne $pins[$n]){throw "Original bytes not restored: $n"}}
+          if(!(Test-Path -LiteralPath $nodeInstalled)){throw 'Runtime cache unexpectedly removed'}
+          Write-Output 'PASS: pinned Node; isolated fake Codex; Core installation; doctor; original auth and guidance; uninstall'
+      - name: Pack unsigned portable installer ZIP
+        shell: pwsh
+        run: |
+          $dist=Join-Path $env:RUNNER_TEMP 'jh-phase2-dist'
+          Compress-Archive -Path (Join-Path $dist '*') -DestinationPath (Join-Path $env:RUNNER_TEMP 'J_Harness_Phase2_Unsigned_Windows_Candidate.zip') -CompressionLevel Optimal
+      - uses: actions/upload-artifact@v4
+        with:
+          name: J-Harness-Phase2-Unsigned-NotForProduction
+          path: ${{ runner.temp }}\J_Harness_Phase2_Unsigned_Windows_Candidate.zip
+          retention-days: 14
