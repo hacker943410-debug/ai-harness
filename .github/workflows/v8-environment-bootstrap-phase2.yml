@@ -119,7 +119,36 @@ jobs:
           # Run existing Core regression only after fake CLI setup in PATH; no real model calls.
           node --test core/tests/core.test.mjs core/tests/stability.test.mjs
           if($LASTEXITCODE -ne 0){throw 'Existing Core regression failed'}
-          Write-Output 'PASS: pinned Node; simulated Codex; install+doctor; exact uninstall; duplicate/consent/tamper rejection; Core regressions'
+          # Force a post-link doctor failure in an isolated, deliberately modified fixture.
+          # Recompute its unsigned manifest to prove SHA alone is not publisher authentication.
+          $broken=Join-Path $scratch 'broken-package'
+          New-Item -ItemType Directory -Path $broken -Force | Out-Null
+          Copy-Item -Path (Join-Path $package '*') -Destination $broken -Recurse
+          $brokenDoctor=Join-Path $broken 'core\environment\doctor.mjs'
+          Set-Content -LiteralPath $brokenDoctor -Value "throw Error('FORCED_TEST_DOCTOR_FAILURE')" -Encoding UTF8
+          $brokenManifest=Join-Path $broken 'SHA256_MANIFEST.json'
+          $inventory=Get-Content -LiteralPath $brokenManifest -Raw | ConvertFrom-Json
+          foreach($entry in $inventory.files){
+            $entry.sha256=(Get-FileHash -LiteralPath (Join-Path $broken ($entry.path.Replace('/','\'))) -Algorithm SHA256).Hash.ToLowerInvariant()
+          }
+          $inventory | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $brokenManifest -Encoding UTF8
+          $badHome=Join-Path $scratch 'failed-doctor-home'
+          $badManaged=Join-Path $scratch 'failed-doctor-runtime'
+          New-Item -ItemType Directory -Path $badHome -Force | Out-Null
+          Set-Content -LiteralPath (Join-Path $badHome 'AGENTS.md') -Value '# Keep my original guidance' -Encoding UTF8
+          $badGuidanceHash=(Get-FileHash -LiteralPath (Join-Path $badHome 'AGENTS.md')).Hash
+          $originalErrorMode=$ErrorActionPreference
+          try {
+            $ErrorActionPreference='Continue'
+            & powershell.exe -NoProfile -File (Join-Path $broken 'bootstrap\Bootstrap-JHarness.ps1') -Action Install -Client codex -ApproveInstall -CodexHome $badHome -ManagedRoot $badManaged 1>$null 2>$null
+            $failureExit=$LASTEXITCODE
+          } finally { $ErrorActionPreference=$originalErrorMode }
+          if($failureExit -eq 0){throw 'Forced post-link doctor failure incorrectly returned success'}
+          if((Get-FileHash -LiteralPath (Join-Path $badHome 'AGENTS.md')).Hash -ne $badGuidanceHash){throw 'Rollback did not restore the original guidance bytes'}
+          if(Test-Path -LiteralPath (Join-Path $badHome 'j-harness-core')){throw 'Failed linked Core remains active after rollback'}
+          $archives=@(Get-ChildItem -LiteralPath $badHome -Filter 'j-harness-core.uninstalled-*')
+          if($archives.Count -lt 1){throw 'Rollback archive was not retained'}
+          Write-Output 'PASS: pinned Node; simulated Codex; install/doctor/uninstall; refusal, consent, package tamper, forced doctor failure rollback; Core regressions'
       - name: Pack unsigned portable installer ZIP
         shell: pwsh
         run: |
