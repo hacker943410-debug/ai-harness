@@ -123,17 +123,28 @@ try {
     $env:CODEX_HOME = $CodexHome
     $entry = Join-Path $packageRoot 'core\setup.mjs'
     if (-not (Test-Path -LiteralPath $entry -PathType Leaf)) { throw 'PACKAGED_CORE_ENTRY_MISSING' }
-    $installOutput = & $nodeTarget $entry install 2>&1
-    if ($LASTEXITCODE -ne 0) { throw ('CORE_INSTALL_FAILED: '+(($installOutput | Out-String).Substring(0,[Math]::Min(500,($installOutput | Out-String).Length)))) }
+    # Windows PowerShell 5 treats native STDERR as an ErrorRecord when redirected.
+    # Core setup prints an informational message to STDERR on success; don't mistake it for an install failure.
+    $eapBefore=$ErrorActionPreference
+    try {
+        $ErrorActionPreference='Continue'
+        $installOutput = & $nodeTarget $entry install 2>&1
+        $installExit = $LASTEXITCODE
+    } finally { $ErrorActionPreference=$eapBefore }
+    if ($installExit -ne 0) {
+        $diagnostic=($installOutput | Out-String).Trim()
+        if ($diagnostic.Length -gt 1200) { $diagnostic=$diagnostic.Substring(0,1200) }
+        throw ('CORE_INSTALL_FAILED: '+$diagnostic)
+    }
     $linked=$true
     $doctorOut = & $nodeTarget $entry run doctor 2>&1
     if ($LASTEXITCODE -ne 0) { throw 'POST_INSTALL_DOCTOR_FAILED' }
     $doctor = ($doctorOut | Out-String) | ConvertFrom-Json
     if ($doctor.effective -ne 'CONNECTED_FOR_NEW_SESSIONS' -or $doctor.backupStatus -ne 'MATCH') { throw 'POST_INSTALL_CONNECTION_NOT_VERIFIED' }
     $plan.installed=$true
-    $plan.connection='CONNECTED_FOR_NEW_SESSIONS'
-    $plan.modelPolicyFollowed='NOT_ATTESTED_REQUIRES_REAL_CODEX_SESSION'
-    $plan.nodePath=$nodeTarget
+    $plan['connection']='CONNECTED_FOR_NEW_SESSIONS'
+    $plan['modelPolicyFollowed']='NOT_ATTESTED_REQUIRES_REAL_CODEX_SESSION'
+    $plan['nodePath']=$nodeTarget
     $plan | ConvertTo-Json -Depth 8
 } catch {
     $failure=$_.Exception.Message
