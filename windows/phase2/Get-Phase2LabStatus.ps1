@@ -12,13 +12,15 @@ $pipe=$null
 try {
   $pipe=[IO.Pipes.NamedPipeClientStream]::new('.', $PipeName, [IO.Pipes.PipeDirection]::InOut)
   $pipe.Connect($TimeoutMs)
-  $pipe.ReadTimeout=$TimeoutMs
-  $pipe.WriteTimeout=$TimeoutMs
+  # PipeStream timeout property setters may throw on Windows PowerShell 5.1.
+  # Use a bounded asynchronous response wait instead.
   $writer=[IO.StreamWriter]::new($pipe,[Text.UTF8Encoding]::new($false),1024,$true)
   $reader=[IO.StreamReader]::new($pipe,[Text.UTF8Encoding]::new($false),$false,1024,$true)
   try {
     $writer.AutoFlush=$true;$writer.WriteLine('status')
-    $message=$reader.ReadLine() | ConvertFrom-Json
+    $lineTask=$reader.ReadLineAsync()
+    if(-not $lineTask.Wait($TimeoutMs)){throw 'LAB_STATUS_RESPONSE_TIMEOUT'}
+    $message=$lineTask.Result | ConvertFrom-Json
     if($message.state -eq 'BLOCKED' -and $message.enforcement -eq 'NOT_ATTESTED' -and $message.launchAuthorized -eq $false) {
       $result.reason='READ_ONLY_LAB_SERVICE_OBSERVED'
     } else {
