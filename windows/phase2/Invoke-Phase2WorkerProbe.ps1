@@ -30,11 +30,10 @@ function PipeRequest([string]$op) {
   $pipe=[System.IO.Pipes.NamedPipeClientStream]::new('.', $PipeName, [System.IO.Pipes.PipeDirection]::InOut)
   try {
     $pipe.Connect(3500)
-    $pipe.ReadTimeout=3500
-    $pipe.WriteTimeout=3500
+    # ReadTimeout/WriteTimeout are not supported by every Windows PipeStream.
     $writer=[System.IO.StreamWriter]::new($pipe,[Text.UTF8Encoding]::new($false),1024,$true)
     $reader=[System.IO.StreamReader]::new($pipe,[Text.UTF8Encoding]::new($false),$false,1024,$true)
-    try {$writer.AutoFlush=$true;$writer.WriteLine($op);$line=$reader.ReadLine();if (-not $line) {throw 'EMPTY_BROKER_REPLY'};return ($line | ConvertFrom-Json)}
+    try {$writer.AutoFlush=$true;$writer.WriteLine($op);$lineTask=$reader.ReadLineAsync();if(-not $lineTask.Wait(3500)){throw 'WORKER_PIPE_RESPONSE_TIMEOUT'};$line=$lineTask.Result;if (-not $line) {throw 'EMPTY_BROKER_REPLY'};return ($line | ConvertFrom-Json)}
     finally {$reader.Dispose();$writer.Dispose()}
   } finally {$pipe.Dispose()}
 }
