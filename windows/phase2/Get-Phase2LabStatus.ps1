@@ -27,5 +27,7 @@ try {
   } finally {$reader.Dispose();$writer.Dispose()}
 } catch {
   $result.reason='SUPERVISOR_UNREACHABLE'
+  # Never serialize arbitrary exception messages or secret-bearing IPC payloads.
+  $result['labErrorType']=$_.Exception.GetType().Name
 } finally {if ($pipe) {$pipe.Dispose()}}
 [pscustomobject]$result
