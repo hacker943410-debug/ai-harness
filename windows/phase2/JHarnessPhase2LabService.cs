@@ -149,8 +149,8 @@ public sealed class JHarnessPhase2LabService : ServiceBase
                     active = pipe;
                     pipe.WaitForConnection();
                     if (stopping) return;
-                    pipe.ReadTimeout = 3000;
-                    pipe.WriteTimeout = 3000;
+                    // Avoid unsupported PipeStream timeout property setters in .NET Framework.
+                    // This is a read-only disposable lab, not a hardened production IPC service.
                     var request = new StringBuilder();
                     int c;
                     while (request.Length < 80 && (c = pipe.ReadByte()) >= 0 && c != '\n')
