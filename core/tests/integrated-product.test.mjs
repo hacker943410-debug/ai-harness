@@ -46,3 +46,13 @@ test('product scripts do not alter persistent OS settings or create accounts',()
    assert.doesNotMatch(s,/SetEnvironmentVariable\([^)]*User|SetEnvironmentVariable\([^)]*Machine|Set-ItemProperty\s+.*HKCU:|Set-ItemProperty\s+.*HKLM:|New-LocalUser|New-Service|sc\.exe\s+create/i);
  }
 });
+test('installed runtime uses shipped cli.mjs and installed unlink module, never assumes setup.mjs is copied',()=>{
+ const a=load('core/product/Install-JHarnessProduct.ps1');
+ const b=load('core/product/Installed-JHarness.ps1');
+ const c=load('core/product/Core-Uninstall.mjs');
+ assert.match(a,/j-harness-core\\runtime\\core\\cli\.mjs/);
+ assert.match(b,/\$coreCli doctor/);
+ assert.match(b,/Core-Uninstall\.mjs/);
+ assert.match(c,/lib','install\.mjs/);
+ assert.doesNotMatch(b,/\$setup/);
+});

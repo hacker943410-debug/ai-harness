@@ -13,14 +13,14 @@ if([IO.Path]::GetFullPath([string]$receipt.managedRoot) -ne $root){throw 'J_HARN
 $node=[string]$receipt.nodePath
 $cli=[string]$receipt.cliPath
 $codexHome=[string]$receipt.codexHome
-$setup=Join-Path $codexHome 'j-harness-core\runtime\core\setup.mjs'
+$coreCli=Join-Path $codexHome 'j-harness-core\runtime\core\cli.mjs'
 $sha='ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3'
 if($node -ne (Join-Path $root 'node-v22.22.2\node.exe')){throw 'J_HARNESS_NODE_OUTSIDE_OWN_ROOT'}
 function Assert-NoReparse([string]$p){
  $q=[IO.Path]::GetFullPath($p)
  while($q){if(Test-Path -LiteralPath $q){if(((Get-Item -LiteralPath $q -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'REPARSE_REFUSED'}};$parent=[IO.Path]::GetDirectoryName($q);if(-not $parent -or $parent -eq $q){break};$q=$parent}
 }
-foreach($p in @($root,$receiptFile,$node,$cli,$codexHome,$setup)){Assert-NoReparse $p}
+foreach($p in @($root,$receiptFile,$node,$cli,$codexHome,$coreCli)){Assert-NoReparse $p}
 if(-not(Test-Path -LiteralPath $node -PathType Leaf) -or (Get-FileHash -LiteralPath $node -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sha){throw 'J_HARNESS_RUNTIME_NODE_HASH_INVALID'}
 if([string]$receipt.cliSha256 -match '^[a-f0-9]{64}$'){
  if(-not(Test-Path -LiteralPath $cli -PathType Leaf) -or (Get-FileHash -LiteralPath $cli -Algorithm SHA256).Hash.ToLowerInvariant() -ne [string]$receipt.cliSha256){throw 'J_HARNESS_PRIVATE_CLI_HASH_INVALID'}
@@ -30,14 +30,14 @@ try {
  $env:Path=(Split-Path -Parent $node)+[IO.Path]::PathSeparator+(Split-Path -Parent $cli)+[IO.Path]::PathSeparator+$env:Path
  $env:CODEX_HOME=$codexHome
  if($Action -eq 'Doctor'){
-  if(-not(Test-Path -LiteralPath $setup -PathType Leaf)){throw 'J_HARNESS_CORE_MISSING'}
-  & $node $setup run doctor
+  if(-not(Test-Path -LiteralPath $coreCli -PathType Leaf)){throw 'J_HARNESS_CORE_MISSING'}
+  & $node $coreCli doctor
   if($LASTEXITCODE -ne 0){throw 'J_HARNESS_DOCTOR_FAILED'}
   return
  }
  if($Action -eq 'Start'){
-  if(-not(Test-Path -LiteralPath $setup -PathType Leaf)){throw 'J_HARNESS_CORE_MISSING'}
-  $doctor=& $node $setup run doctor
+  if(-not(Test-Path -LiteralPath $coreCli -PathType Leaf)){throw 'J_HARNESS_CORE_MISSING'}
+  $doctor=& $node $coreCli doctor
   if($LASTEXITCODE -ne 0){throw 'J_HARNESS_DOCTOR_FAILED_START_BLOCKED'}
   try{$state=($doctor | Out-String)|ConvertFrom-Json}catch{throw 'J_HARNESS_DOCTOR_OUTPUT_INVALID'}
   if($state.effective -ne 'CONNECTED_FOR_NEW_SESSIONS' -or $state.backupStatus -ne 'MATCH'){
@@ -51,8 +51,8 @@ try {
  }
  if($Action -eq 'Uninstall'){
   if(-not $ApproveUninstall){throw 'EXPLICIT_UNINSTALL_APPROVAL_REQUIRED'}
-  if(-not(Test-Path -LiteralPath $setup -PathType Leaf)){throw 'CORE_MISSING_MANUAL_RECOVERY_REQUIRED'}
-  $result=& $node $setup uninstall
+  if(-not(Test-Path -LiteralPath $coreCli -PathType Leaf)){throw 'CORE_MISSING_MANUAL_RECOVERY_REQUIRED'}
+  $result=& $node (Join-Path $PSScriptRoot 'Core-Uninstall.mjs')
   if($LASTEXITCODE -ne 0){throw 'J_HARNESS_CORE_UNINSTALL_FAILED_KEEP_RECEIPT'}
   # Preserve all original Codex credentials, config and MCP. Only unlink the managed guidance block.
   $removed=New-Object System.Collections.Generic.List[string]
@@ -76,8 +76,10 @@ try {
   }
   Remove-Item -LiteralPath $receiptFile -Force -ErrorAction Stop
   # Keep archived Core for audit/recovery. Remove only known owned app source.
-  $program=Join-Path $PSScriptRoot 'Installed-JHarness.ps1'
-  try{Remove-Item -LiteralPath $program -Force -ErrorAction Stop}catch{$removed.Add('app_script_retained_for_manual_cleanup')}
+  foreach($name in @('Core-Uninstall.mjs','Installed-JHarness.ps1')) {
+    $program=Join-Path $PSScriptRoot $name
+    try{Remove-Item -LiteralPath $program -Force -ErrorAction Stop}catch{$removed.Add(('app_script_retained:'+ $name))}
+  }
   [ordered]@{result='UNLINKED_AND_ORIGINAL_GUIDANCE_RESTORED';archivesPreserved=$true;removed=$removed.ToArray();credentialsChanged=$false;globalPathChanged=$false} | ConvertTo-Json -Depth 7
  }
 } finally {$env:Path=$envPathBefore;$env:CODEX_HOME=$homeBefore}

@@ -29,7 +29,7 @@ $bundledCli=Join-Path $packageRoot 'vendor\codex.exe'
 $appDir=Join-Path $ManagedRoot 'app'
 $receipt=Join-Path $appDir 'receipt.json'
 $node=Join-Path $ManagedRoot 'node-v22.22.2\node.exe'
-$installed=Join-Path $CodexHome 'j-harness-core\runtime\core\setup.mjs'
+$installed=Join-Path $CodexHome 'j-harness-core\runtime\core\cli.mjs'
 function Check-SafePath([string]$value) {
  if($value.StartsWith('\\') -or $value.StartsWith('//')){throw 'UNC_PATH_REFUSED'}
  $current=[IO.Path]::GetFullPath($value)
@@ -114,7 +114,9 @@ try {
   if(-not(Test-Path -LiteralPath $installed -PathType Leaf)){throw 'INSTALLED_CORE_ENTRY_MISSING'}
   New-Item -ItemType Directory -Path $appDir -ErrorAction Stop | Out-Null
   $createdProduct=$true
-  Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Installed-JHarness.ps1') -Destination (Join-Path $appDir 'Installed-JHarness.ps1') -ErrorAction Stop
+  foreach($name in @('Installed-JHarness.ps1','Core-Uninstall.mjs')) {
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination (Join-Path $appDir $name) -ErrorAction Stop
+  }
   foreach($name in @('J_Harness_Start.cmd','J_Harness_Doctor.cmd','J_Harness_Remove.cmd')){
     $from=Join-Path $PSScriptRoot $name;$to=Join-Path $ManagedRoot $name
     if(Test-Path -LiteralPath $to){throw ('EXISTING_LAUNCHER_PRESERVED: '+$name)}
