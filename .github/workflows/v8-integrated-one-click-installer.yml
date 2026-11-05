@@ -1,0 +1,103 @@
+name: J Harness v8 integrated one-click Windows installer (Draft)
+on:
+  pull_request:
+    branches: [feature/v8-environment-bootstrap-phase2]
+    paths:
+      - 'core/product/**'
+      - 'core/build-integrated-product.mjs'
+      - 'core/tests/integrated-product.test.mjs'
+      - '.github/workflows/v8-integrated-one-click-installer.yml'
+      - 'docs/core/INTEGRATED_FIRST_USE_BETA_KO.md'
+permissions:
+  contents: read
+jobs:
+  source-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: New integrated product + existing environment contract
+        run: |
+          node --check core/build-integrated-product.mjs
+          node --test core/tests/integrated-product.test.mjs core/tests/environment.test.mjs
+  windows-first-use:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.2'
+      - name: Fetch and SHA-pin official Windows Node (no system install)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $node=Join-Path $env:RUNNER_TEMP 'node-pinned-22.22.2.exe'
+          Invoke-WebRequest 'https://nodejs.org/dist/v22.22.2/win-x64/node.exe' -OutFile $node
+          if((Get-FileHash -LiteralPath $node -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3') {throw 'NODE_RELEASE_DIGEST_MISMATCH'}
+          "JH_NODE_PINNED=$node" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Build integrated unsigned Windows package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $out=Join-Path $env:RUNNER_TEMP 'jh-integrated-unsigned'
+          node core/build-integrated-product.mjs --out "$out" --node-binary "$env:JH_NODE_PINNED"
+          if($LASTEXITCODE -ne 0){throw 'PACKAGE_BUILD_FAILED'}
+          if(-not(Test-Path -LiteralPath (Join-Path $out 'J_Harness_Install.cmd'))){throw 'SINGLE_INSTALL_ENTRY_MISSING'}
+          if(Test-Path -LiteralPath (Join-Path $out 'J_Harness_Setup.cmd')){throw 'LEGACY_INSTALL_ENTRY_PRESENT'}
+          "JH_PRODUCT_DIST=$out" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Real Windows isolated first install, doctor, uninstall, byte-level restore
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          if($env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:RUNNER_OS -ne 'Windows' -or $env:GITHUB_ACTIONS -ne 'true') {throw 'DISPOSABLE_RUNNER_REQUIRED'}
+          $lab=Join-Path $env:RUNNER_TEMP ('jh-integrated-test-'+[guid]::NewGuid().ToString('N'))
+          $codexHome=Join-Path $lab 'codex-profile'
+          $managed=Join-Path $lab 'managed-app'
+          [IO.Directory]::CreateDirectory($codexHome) | Out-Null
+          $original='USER GUIDANCE: DO NOT CHANGE THIS TEXT. 12345' + "`r`n"
+          $originalFile=Join-Path $codexHome 'AGENTS.md'
+          [IO.File]::WriteAllText($originalFile,$original,[Text.UTF8Encoding]::new($false))
+          [IO.File]::WriteAllText((Join-Path $codexHome 'auth.json'),'DUMMY_PLACEHOLDER_DO_NOT_USE',[Text.UTF8Encoding]::new($false))
+          $before=(Get-FileHash -LiteralPath $originalFile -Algorithm SHA256).Hash
+          $authBefore=(Get-FileHash -LiteralPath (Join-Path $codexHome 'auth.json') -Algorithm SHA256).Hash
+          $installer=Join-Path $env:JH_PRODUCT_DIST 'core\product\Install-JHarnessProduct.ps1'
+          $oldPATH=$env:Path
+          try {
+            $plan=& $installer -Action Plan -CodexHome $codexHome -ManagedRoot $managed | ConvertFrom-Json
+            if($plan.action -ne 'Plan' -or $plan.requiresApproval -ne $true){throw 'READ_ONLY_PLAN_FAILED'}
+            if($plan.cli.mode -ne 'DOWNLOAD_PINNED_PRIVATE_CODEX' -and $plan.cli.mode -ne 'REUSE_EXISTING_NATIVE_CODEX' -and $plan.cli.mode -ne 'INSTALL_BUNDLED_PINNED_CODEX') {throw 'UNEXPECTED_CLI_SOURCE'}
+            $started=Get-Date
+            $install=& $installer -Action Install -ApproveInstall -CodexHome $codexHome -ManagedRoot $managed | ConvertFrom-Json
+            if($install.result -ne 'INSTALLED_INTEGRATED_BETA'){throw 'INSTALLER_DID_NOT_COMPLETE'}
+            $session=& (Join-Path $managed 'app\Installed-JHarness.ps1') -Action Doctor | ConvertFrom-Json
+            if($session.effective -ne 'CONNECTED_FOR_NEW_SESSIONS' -or $session.backupStatus -ne 'MATCH'){throw 'INSTALLED_DOCTOR_FAILED'}
+            $now=(Get-FileHash -LiteralPath $originalFile -Algorithm SHA256).Hash
+            if($now -eq $before){throw 'MANAGED_BLOCK_NOT_CONNECTED'}
+            if((Get-FileHash -LiteralPath (Join-Path $codexHome 'auth.json') -Algorithm SHA256).Hash -ne $authBefore){throw 'AUTH_DATA_CHANGED'}
+            $removed=& (Join-Path $managed 'app\Installed-JHarness.ps1') -Action Uninstall -ApproveUninstall | ConvertFrom-Json
+            if($removed.result -ne 'UNLINKED_AND_ORIGINAL_GUIDANCE_RESTORED'){throw 'UNINSTALL_FAILED'}
+            if((Get-FileHash -LiteralPath $originalFile -Algorithm SHA256).Hash -ne $before){throw 'ORIGINAL_USER_GUIDANCE_NOT_RESTORED'}
+            if((Get-FileHash -LiteralPath (Join-Path $codexHome 'auth.json') -Algorithm SHA256).Hash -ne $authBefore){throw 'AUTH_DATA_CHANGED_AFTER_UNINSTALL'}
+            if($env:Path -ne $oldPATH){throw 'PROCESS_PATH_LEAK'}
+            [ordered]@{result='PASS_REAL_WINDOWS_FIRST_USE';installMode=$install.cliMode;portableNode=$true;codexVersion='rust-v0.166.0';configuredGuidance='RESTORED_BYTE_EXACT';auth='PRESERVED_BYTE_EXACT';modelCalls=0;osSecurityEnforced=$false;elapsedSeconds=[math]::Round(((Get-Date)-$started).TotalSeconds,1)} | ConvertTo-Json -Depth 5
+          } finally {
+            if($lab -and (Split-Path -Parent $lab) -eq $env:RUNNER_TEMP -and (Split-Path -Leaf $lab) -like 'jh-integrated-test-*'){
+              Remove-Item -LiteralPath $lab -Recurse -Force -ErrorAction SilentlyContinue
+            }
+          }
+      - name: Preserve unsigned Windows install package for owner review (not release)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: J-Harness-Integrated-Windows-Unsigned-NotForProduction
+          path: ${{ runner.temp }}/jh-integrated-unsigned/
+          retention-days: 7
+          if-no-files-found: error
