@@ -83,16 +83,6 @@ function Assert-TrustStoreAcl([string]$protectedPath,[string]$workspacePath,[str
     }
   }
 }
-function Wait-Pipe([string]$pipeName,[int]$seconds=18) {
-  for($attempt=0;$attempt -lt $seconds*4;$attempt++) {
-    $client=[System.IO.Pipes.NamedPipeClientStream]::new('.', $pipeName, [IO.Pipes.PipeDirection]::InOut)
-    try {
-      try {$client.Connect(125);return $true}catch [TimeoutException]{}
-    } finally {$client.Dispose()}
-    Start-Sleep -Milliseconds 250
-  }
-  return $false
-}
 try {
   # Dedicated local user, never a real account. No privilege escalation and no persistent login.
   $rand=[guid]::NewGuid().ToString('N')
@@ -136,9 +126,20 @@ try {
   $serviceCreated=$true
   & sc.exe start $name | Out-Null
   if($LASTEXITCODE -ne 0){throw 'SERVICE_START_FAILED'}
-  if (-not (Wait-Pipe $pipeName)) {throw 'SERVICE_PIPE_READY_TIMEOUT'}
-  $liveStatus=& (Join-Path $PSScriptRoot 'Get-Phase2LabStatus.ps1') -PipeName $pipeName
-  if($liveStatus.state -ne 'BLOCKED' -or $liveStatus.reason -ne 'READ_ONLY_LAB_SERVICE_OBSERVED' -or $liveStatus.launchAuthorized -ne $false) {throw 'LIVE_STATUS_CLIENT_FAIL_CLOSED_VERIFICATION_FAILED'}
+  # An empty pipe connection previously consumed the single-client service slot.
+  # Poll the real read-only protocol instead and fail closed on exhaustion.
+  $liveStatus=$null
+  $ready=$false
+  for($statusAttempt=1;$statusAttempt -le 24;$statusAttempt++) {
+    $liveStatus=& (Join-Path $PSScriptRoot 'Get-Phase2LabStatus.ps1') -PipeName $pipeName
+    if($liveStatus.state -eq 'BLOCKED' -and $liveStatus.reason -eq 'READ_ONLY_LAB_SERVICE_OBSERVED' -and $liveStatus.launchAuthorized -eq $false) {
+      $ready=$true
+      break
+    }
+    if($statusAttempt -lt 24){Start-Sleep -Milliseconds 350}
+  }
+  $outcome['liveStatusDiagnostic']=@{attempts=$statusAttempt;reason=[string]$liveStatus.reason;state=[string]$liveStatus.state;launchAuthorized=[bool]$liveStatus.launchAuthorized;errorType=[string]$liveStatus.labErrorType}
+  if(-not $ready) {throw ('LIVE_STATUS_CLIENT_FAIL_CLOSED_VERIFICATION_FAILED: '+$liveStatus.reason)}
   $svc=Get-CimInstance Win32_Service -Filter ("Name='{0}'" -f $name)
   if (-not $svc -or $svc.StartName -notlike '*LocalService*') {throw ('SERVICE_ACCOUNT_NOT_LOCALSERVICE: '+$svc.StartName)}
   $outcome.windowsServiceStarted='PASS_SCM_LOCALSERVICE'
