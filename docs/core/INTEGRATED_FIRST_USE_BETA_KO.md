@@ -30,3 +30,12 @@
 - Codex CLI `rust-v0.166.0` 공식 `codex-x86_64-pc-windows-msvc.exe` SHA-256: `9d563ee4e0441ff9d59d612013e0460ddf8e5709735c2d9f6b98b7ef8ca4eb42`
 
 **출시 판정: 제한 범위 CI 결과만으로 GO 불가. 실제 윈도우 설치 시험과 보안 강제 검증은 별도 게이트입니다.**
+
+
+## 동일 PC 재설치와 첫 실행 준비 확인 (2026-11-06 개발 후보)
+
+- `J_Harness_Doctor.cmd`는 Core 무결성과 Codex 버전 및 `codex login status`의 성공 여부만 확인합니다. 인증정보 자체를 읽거나 출력하지 않고 모델도 호출하지 않습니다.
+- `SIGN_IN_REQUIRED_IN_CODEX`이면 `J_Harness_Start.cmd`로 시작한 공식 Codex가 직접 사용자 인증을 진행합니다. J Harness가 로그인 토큰이나 비밀번호를 받지 않습니다.
+- 제거할 때 J Harness 소유 파일만 삭제하고, **제품 폴더가 비어 있을 때만** 해당 폴더를 제거합니다. 사용자 추가 파일이 있으면 그대로 보존합니다.
+- Windows CI는 설치→진단→제거뿐 아니라 **재설치→재진단→다시 제거→기존 사용자 지침/인증파일 해시 보존**까지 검사합니다.
+- 이러한 진단·재설치 성공은 AI 모델 호출이나 OS 수준 Supervisor 강제를 인증하는 증거가 아닙니다.

@@ -1,6 +1,6 @@
 # Installed J Harness user launcher. This is not an independently authenticated supervisor.
 [CmdletBinding()]
-param([ValidateSet('Start','Doctor','Uninstall')][string]$Action='Start',[switch]$ApproveUninstall)
+param([ValidateSet('Start','Doctor','Verify','Uninstall')][string]$Action='Start',[switch]$ApproveUninstall)
 $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $receiptFile=Join-Path $PSScriptRoot 'receipt.json'
@@ -33,6 +33,33 @@ try {
   if(-not(Test-Path -LiteralPath $coreCli -PathType Leaf)){throw 'J_HARNESS_CORE_MISSING'}
   & $node $coreCli doctor
   if($LASTEXITCODE -ne 0){throw 'J_HARNESS_DOCTOR_FAILED'}
+  return
+ }
+ if($Action -eq 'Verify'){
+  # Read-only first-use readiness. Never inspect auth.json content or call models.
+  if(-not(Test-Path -LiteralPath $coreCli -PathType Leaf)){throw 'J_HARNESS_CORE_MISSING'}
+  $rawDoctor=& $node $coreCli doctor
+  if($LASTEXITCODE -ne 0){throw 'J_HARNESS_CORE_DOCTOR_FAILED'}
+  try{$observed=($rawDoctor|Out-String)|ConvertFrom-Json}catch{throw 'J_HARNESS_CORE_DOCTOR_INVALID'}
+  $version=& $cli --version
+  if($LASTEXITCODE -ne 0 -or -not($version -match 'codex')){throw 'CODEX_VERSION_PROBE_FAILED'}
+  $savedPreference=$ErrorActionPreference
+  try {
+    # Login status returns nonzero when user must sign in. Do not print account metadata.
+    $ErrorActionPreference='Continue'
+    & $cli login status *> $null
+    $loginExit=$LASTEXITCODE
+  } finally {$ErrorActionPreference=$savedPreference}
+  $coreReady=($observed.effective -eq 'CONNECTED_FOR_NEW_SESSIONS' -and $observed.backupStatus -eq 'MATCH')
+  [ordered]@{
+    product='J Harness';mode='ADVISORY_NOT_OS_ENFORCED';
+    readiness=$(if($coreReady){'READY_FOR_FIRST_INTERACTIVE_START'}else{'BLOCKED_CORE_NEEDS_REVIEW'});
+    effective=[string]$observed.effective;backupStatus=[string]$observed.backupStatus;
+    codexVersion=($version|Out-String).Trim();
+    authentication=$(if($loginExit -eq 0){'LOGGED_IN'}else{'SIGN_IN_REQUIRED_IN_CODEX'});
+    next=$(if(-not $coreReady){'Inspect J Harness Core diagnostics'}else{'Launch J_Harness_Start.cmd; Codex manages its own login'});
+    modelCalls=0;tokenContentRead=$false;osSecurityEnforced=$false
+  } | ConvertTo-Json -Depth 6
   return
  }
  if($Action -eq 'Start'){
@@ -80,6 +107,12 @@ try {
     $program=Join-Path $PSScriptRoot $name
     try{Remove-Item -LiteralPath $program -Force -ErrorAction Stop}catch{$removed.Add(('app_script_retained:'+ $name))}
   }
+  # Remove the owned app directory only when empty; preserve unexpected user data.
+  if((Test-Path -LiteralPath $PSScriptRoot -PathType Container) -and
+      @(Get-ChildItem -LiteralPath $PSScriptRoot -Force).Count -eq 0) {
+    Remove-Item -LiteralPath $PSScriptRoot -Force -ErrorAction Stop
+    $removed.Add('empty_owned_app_directory')
+  }else{$removed.Add('nonempty_app_directory_preserved')}
   [ordered]@{result='UNLINKED_AND_ORIGINAL_GUIDANCE_RESTORED';archivesPreserved=$true;removed=$removed.ToArray();credentialsChanged=$false;globalPathChanged=$false} | ConvertTo-Json -Depth 7
  }
 } finally {$env:Path=$envPathBefore;$env:CODEX_HOME=$homeBefore}

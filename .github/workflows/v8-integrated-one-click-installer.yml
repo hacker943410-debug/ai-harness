@@ -79,6 +79,9 @@ jobs:
             if($install.result -ne 'INSTALLED_INTEGRATED_BETA'){throw 'INSTALLER_DID_NOT_COMPLETE'}
             $session=& (Join-Path $managed 'app\Installed-JHarness.ps1') -Action Doctor | ConvertFrom-Json
             if($session.effective -ne 'CONNECTED_FOR_NEW_SESSIONS' -or $session.backupStatus -ne 'MATCH'){throw 'INSTALLED_DOCTOR_FAILED'}
+            $preStart=& (Join-Path $managed 'app\Installed-JHarness.ps1') -Action Verify | ConvertFrom-Json
+            if($preStart.readiness -ne 'READY_FOR_FIRST_INTERACTIVE_START' -or $preStart.modelCalls -ne 0 -or $preStart.tokenContentRead -ne $false){throw 'CODEX_NONINTERACTIVE_FIRST_USE_FAILED'}
+            if($preStart.authentication -ne 'SIGN_IN_REQUIRED_IN_CODEX'){throw 'UNEXPECTED_CI_AUTHENTICATION'}
             $now=(Get-FileHash -LiteralPath $originalFile -Algorithm SHA256).Hash
             if($now -eq $before){throw 'MANAGED_BLOCK_NOT_CONNECTED'}
             if((Get-FileHash -LiteralPath (Join-Path $codexHome 'auth.json') -Algorithm SHA256).Hash -ne $authBefore){throw 'AUTH_DATA_CHANGED'}
@@ -86,8 +89,19 @@ jobs:
             if($removed.result -ne 'UNLINKED_AND_ORIGINAL_GUIDANCE_RESTORED'){throw 'UNINSTALL_FAILED'}
             if((Get-FileHash -LiteralPath $originalFile -Algorithm SHA256).Hash -ne $before){throw 'ORIGINAL_USER_GUIDANCE_NOT_RESTORED'}
             if((Get-FileHash -LiteralPath (Join-Path $codexHome 'auth.json') -Algorithm SHA256).Hash -ne $authBefore){throw 'AUTH_DATA_CHANGED_AFTER_UNINSTALL'}
+            if(Test-Path -LiteralPath (Join-Path $managed 'app')){throw 'REINSTALL_BLOCKED_BY_LEFTOVER_APP_DIRECTORY'}
+            # Same-machine reinstallation with the real pinned Codex binary.
+            $second=& $installer -Action Install -ApproveInstall -CodexHome $codexHome -ManagedRoot $managed | ConvertFrom-Json
+            if($second.result -ne 'INSTALLED_INTEGRATED_BETA'){throw 'REINSTALL_FAILED'}
+            $secondDoctor=& (Join-Path $managed 'app\Installed-JHarness.ps1') -Action Doctor | ConvertFrom-Json
+            if($secondDoctor.effective -ne 'CONNECTED_FOR_NEW_SESSIONS'){throw 'REINSTALL_DOCTOR_FAILED'}
+            $secondRemove=& (Join-Path $managed 'app\Installed-JHarness.ps1') -Action Uninstall -ApproveUninstall | ConvertFrom-Json
+            if($secondRemove.result -ne 'UNLINKED_AND_ORIGINAL_GUIDANCE_RESTORED'){throw 'SECOND_UNINSTALL_FAILED'}
+            if(Test-Path -LiteralPath (Join-Path $managed 'app')){throw 'SECOND_UNINSTALL_LEFT_PRODUCT_FOLDER'}
+            if((Get-FileHash -LiteralPath $originalFile -Algorithm SHA256).Hash -ne $before){throw 'SECOND_UNINSTALL_GUIDANCE_NOT_RESTORED'}
+            if((Get-FileHash -LiteralPath (Join-Path $codexHome 'auth.json') -Algorithm SHA256).Hash -ne $authBefore){throw 'SECOND_UNINSTALL_AUTH_CHANGED'}
             if($env:Path -ne $oldPATH){throw 'PROCESS_PATH_LEAK'}
-            [ordered]@{result='PASS_REAL_WINDOWS_FIRST_USE';installMode=$install.cliMode;portableNode=$true;codexVersion='rust-v0.166.0';configuredGuidance='RESTORED_BYTE_EXACT';auth='PRESERVED_BYTE_EXACT';modelCalls=0;osSecurityEnforced=$false;elapsedSeconds=[math]::Round(((Get-Date)-$started).TotalSeconds,1)} | ConvertTo-Json -Depth 5
+            [ordered]@{result='PASS_REAL_WINDOWS_FIRST_USE';reinstall='PASS';noninteractiveFirstUse='PASS';installMode=$install.cliMode;portableNode=$true;codexVersion='rust-v0.166.0';configuredGuidance='RESTORED_BYTE_EXACT';auth='PRESERVED_BYTE_EXACT';modelCalls=0;osSecurityEnforced=$false;elapsedSeconds=[math]::Round(((Get-Date)-$started).TotalSeconds,1)} | ConvertTo-Json -Depth 5
           } finally {
             if($lab -and (Split-Path -Parent $lab) -eq $env:RUNNER_TEMP -and (Split-Path -Leaf $lab) -like 'jh-integrated-test-*'){
               Remove-Item -LiteralPath $lab -Recurse -Force -ErrorAction SilentlyContinue

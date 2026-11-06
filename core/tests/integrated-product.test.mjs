@@ -56,3 +56,21 @@ test('installed runtime uses shipped cli.mjs and installed unlink module, never 
  assert.match(c,/lib','install\.mjs/);
  assert.doesNotMatch(b,/\$setup/);
 });
+
+test('first-use check queries Codex login status without reading credential contents or making model calls',()=>{
+ const script=load('core/product/Installed-JHarness.ps1');
+ const launcher=load('core/product/J_Harness_Doctor.cmd');
+ assert.match(script, /'Verify'/);
+ assert.match(script, /& \$cli login status/);
+ assert.match(script, /SIGN_IN_REQUIRED_IN_CODEX/);
+ assert.match(script, /modelCalls=0/);
+ assert.match(script, /tokenContentRead=\$false/);
+ assert.doesNotMatch(script, /Get-Content[^\n]*auth\.json/i);
+ assert.match(launcher, /-Action Verify/);
+});
+test('uninstall removes only empty owned product directory to allow reinstall',()=>{
+ const script=load('core/product/Installed-JHarness.ps1');
+ assert.match(script, /Get-ChildItem -LiteralPath \$PSScriptRoot -Force/);
+ assert.match(script, /empty_owned_app_directory/);
+ assert.match(script, /nonempty_app_directory_preserved/);
+});
