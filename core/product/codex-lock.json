@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "provider": "OpenAI",
+  "repository": "openai/codex",
+  "release": "rust-v0.166.0",
+  "asset": "codex-x86_64-pc-windows-msvc.exe",
+  "url": "https://github.com/openai/codex/releases/download/rust-v0.166.0/codex-x86_64-pc-windows-msvc.exe",
+  "sha256": "9d563ee4e0441ff9d59d612013e0460ddf8e5709735c2d9f6b98b7ef8ca4eb42",
+  "size": 371735856,
+  "platform": "Windows x64",
+  "origin": "GitHub OpenAI codex rust-v0.166.0 release asset digest",
+  "notAnOwnerSignature": true
+}
