@@ -1,0 +1,5 @@
+{
+  "codex":{"implementation":"GLOBAL_AGENTS_BRIDGE_AND_SKILLS_HUB","verifiedCli":"0.166.0","nativeDiscovery":"VERIFIED_WITH_LOOPBACK_TRANSPORT","realModelWorkflow":"NOT_RUN","auth":"EXISTING_CLI_AUTH_UNCHANGED","scope":"SELECTED_CODEX_HOME_NEW_SESSIONS"},
+  "claude":{"implementation":"NOT_IMPLEMENTED","officialIntegrationReview":"PENDING_CODEX_REAL_MODEL_ACCEPTANCE","autoInstall":false},
+  "agy":{"implementation":"NOT_IMPLEMENTED","officialIntegrationReview":"PENDING_CODEX_REAL_MODEL_ACCEPTANCE","autoInstall":false}
+}

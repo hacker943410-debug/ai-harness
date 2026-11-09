@@ -1,5 +1,8 @@
 # AI Harness v7.0.0
 
+**J Harness v8 환경 자동구성 개발 후보 (미출시):** [Phase 1 설치 진단·의존성 계획 가이드](docs/core/ENVIRONMENT_BOOTSTRAP_PHASE1_KO.md). 사용자가 Node/Git/CLI/라이브러리를 직접 구성하지 않아도 되는 원클릭 설치기를 목표로 하며, 이번 브랜치에서 구현된 것은 읽기 전용 Preflight와 계획 엔진입니다. 공식 v8 Core beta.1 자체는 기존 Node 22+ 및 Codex를 요구하고, 사용자 PC에 대한 프로그램 설치를 자동 수행하지 않습니다.
+
+
 A beginner-guided development harness with executable phase gates and safe, version-pinned project installation, adoption and updates.
 
 **v7.0 Roblox Studio (opt-in):** [릴리즈 변경 사항](docs/v7_0/RELEASE_NOTES_v7.0.0.md), [실기 검증 요약](docs/v7_0/LIVE_VERIFICATION_SUMMARY.md), [상세 설치·운영 가이드](docs/v7_0/INSTALLATION_AND_OPERATIONS.md), [검증 매트릭스](docs/v7_0/VERIFICATION_MATRIX.md)를 참고하세요. For Codex and Roblox Studio MCP onboarding use [Roblox MCP setup](docs/v7_0/ROBLOX_MCP_SETUP.md) and [architecture / validation](docs/v7_0/ROBLOX_CAPABILITY_ARCHITECTURE.md). Doctor registration checks remain separate from actual Studio connectivity. PROJECT ETERNAL-specific design remains a [reference profile](docs/v7_0/PROJECT_ETERNAL_REQUIREMENTS.md).

@@ -1,0 +1,11 @@
+{
+ "beginner":{"title":"초보자 안내","policies":["P09","P14"],"sources":["beginner-mode.md","briefing-protocol.md"]},
+ "analysis":{"title":"요구사항·설계","policies":["P07","P10","P18"],"sources":["project-mode-router.md"]},
+ "implementation":{"title":"개발·코딩","policies":["P04","P23","P26"],"sources":[]},
+ "verification":{"title":"테스트·품질","policies":["P06","P11"],"sources":["verification-profiles.md"]},
+ "recovery":{"title":"오류 분석·수정","policies":["P08","P13"],"sources":[]},
+ "security":{"title":"보안 기본 점검","policies":["P17","P15"],"sources":[]},
+ "handoff":{"title":"문서화·인도","policies":["P09","P24"],"sources":["briefing-protocol.md"]},
+ "context":{"title":"컨텍스트·토큰 효율","policies":["P05","P03"],"sources":["token-policy.md"]},
+ "skills":{"title":"Skills 활용","policies":["P15","P17"],"sources":["CAPABILITY_ACQUISITION.md"]}
+}
