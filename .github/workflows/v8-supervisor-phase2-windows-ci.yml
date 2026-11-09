@@ -1,0 +1,73 @@
+# Owner-reviewed development PR only. Does NOT register a production J Harness service.
+# The workflow intentionally uses pull_request: new workflow_dispatch files on feature
+# branches cannot be started through the standard GitHub Actions manual UI initially.
+name: J Harness v8 Phase2 disposable Windows lab (PR-only)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - feature/v8-environment-bootstrap-phase2
+    paths:
+      - .github/workflows/v8-supervisor-phase2-windows-ci.yml
+      - core/supervisor/**
+      - core/tests/supervisor-*.test.mjs
+      - core/tests/cli-toggle-hardening.test.mjs
+      - windows/phase2/**
+      - patches/prepare-cli-toggle-hardening.mjs
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jh-phase2-lab-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  source-contract:
+    name: Supervisor unit & POSIX lab — no host installation
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login == 'hacker943410-debug' &&
+      github.event.pull_request.head.ref == 'feature/v8-supervisor-phase2-windows-ci'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run all supervisor unit, static-contract and POSIX lab checks
+        run: node --test core/tests/supervisor-*.test.mjs core/tests/cli-toggle-hardening.test.mjs
+      - name: Identify reviewed source revision
+        run: |
+          printf 'Source commit: %s\n' "$GITHUB_SHA"
+          printf 'Runner: %s\n' "$RUNNER_ENVIRONMENT"
+
+  windows-boundary:
+    name: Windows 2022 LocalService + distinct worker token
+    needs: source-contract
+    if: needs.source-contract.result == 'success'
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run disposable OS-boundary checks (NO CLI launch or owner credentials)
+        shell: powershell
+        run: |
+          .\windows\phase2\Invoke-Phase2WindowsCILab.ps1 `
+            -IAmInDisposableGitHubWindowsRunner `
+            -ExpectedGithubSha "$env:GITHUB_SHA" `
+            -EvidenceDirectory "$env:RUNNER_TEMP\jh-phase2-evidence"
+      - name: Preserve test evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: j-harness-phase2-windows-evidence-unsigned
+          path: ${{ runner.temp }}\jh-phase2-evidence\*.json
+          if-no-files-found: error
+          retention-days: 7
