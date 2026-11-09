@@ -703,6 +703,25 @@
       ],
       "risk": "medium",
       "notes": "Original AI Harness-authored instruction skill only. Does not bundle Office conversion/rendering engines; artifact quality not independently validated. Optional project-scoped install."
+    },
+    {
+      "id": "jh-company-word",
+      "source": "hacker943410-debug/ai-harness",
+      "status": "candidate",
+      "official": false,
+      "bundled_path": "core/skills/jh-company-word",
+      "capabilities": [
+        "company_word",
+        "reference_template",
+        "document_creation",
+        "document_validation"
+      ],
+      "domains": [
+        "documents",
+        "office"
+      ],
+      "risk": "medium",
+      "notes": "Generic reference-backed skill and stdlib helpers; company assets stay private. Synthetic CI does not establish Word/render/model behavior; local reference and visual evidence required."
     }
   ]
 }

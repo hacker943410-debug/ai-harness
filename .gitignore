@@ -38,6 +38,10 @@ tools-root.id
 
 # ---- 빌드 산출물 / 도구 ----
 node_modules/
+__pycache__/
+*.py[cod]
+company-word-private/
+private-word-profiles/
 package-lock.json
 *.log
 *.tmp

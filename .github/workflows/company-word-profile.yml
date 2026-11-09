@@ -1,0 +1,43 @@
+name: Company Word profile and preservation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - core/skills/jh-company-word/**
+      - core/tests/test_company_word.py
+      - core/lib/io.mjs
+      - core/tests/company-word-packaging.test.mjs
+      - catalogs/skill-catalog.json
+      - harness/manifest.yaml
+      - .github/workflows/company-word-profile.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-profile:
+    name: Company Word synthetic profile (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    timeout-minutes: 8
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Synthetic positive and negative preservation tests
+        run: python -m unittest discover -s core/tests -p test_company_word.py -v
+      - name: Core discovery and clean Python packaging
+        run: node --test core/tests/company-word-packaging.test.mjs
+      - name: Existing source and Office contracts
+        run: |
+          node scripts/validate-office-skills-v6-1.mjs
+          node scripts/validate-harness-v6.mjs
+          node scripts/validate-release-v7.mjs

@@ -273,7 +273,16 @@
     "workflows/GOOGLE_WORKSPACE_MCP.md",
     "workflows/GOOGLE_WORKSPACE_SETUP.md",
     "workflows/HARNESS_INSTALL.md",
-    "workflows/SHARED_RUNTIME.md"
+    "workflows/SHARED_RUNTIME.md",
+    "core/skills/jh-company-word/SKILL.md",
+    "core/skills/jh-company-word/agents/openai.yaml",
+    "core/skills/jh-company-word/references/format-profile.md",
+    "core/skills/jh-company-word/references/quality.md",
+    "core/skills/jh-company-word/scripts/Render-CompanyWord.ps1",
+    "core/skills/jh-company-word/scripts/company_word.py",
+    "core/tests/test_company_word.py",
+    "core/tests/company-word-packaging.test.mjs",
+    "docs/core/COMPANY_WORD_PROFILE_KO.md"
   ],
   "compatibility": {
     "supported_from": [
