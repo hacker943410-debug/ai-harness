@@ -1,132 +1,54 @@
-name: J Harness alpha.1 owner-requested one-shot prerelease
+name: Finalize verified J Harness v8.0.0-alpha.1 draft
 on:
   push:
     branches: [feature/v8-integrated-installer-first-use]
     paths: ['.github/workflows/v8-alpha1-publish.yml']
 permissions: {}
 jobs:
-  alpha-release:
+  publish-existing-draft-only:
     if: >-
       github.repository == 'hacker943410-debug/ai-harness' &&
       github.actor == 'hacker943410-debug' &&
       github.ref == 'refs/heads/feature/v8-integrated-installer-first-use'
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 5
     permissions:
       contents: write
-      actions: read
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: hacker943410-debug/ai-harness
+      RELEASE_ID: '438646193'
       TAG: v8.0.0-alpha.1
       SOURCE_SHA: ce9f36c9fe46e15197e967d84a752d0dcbff989c
-      RUN_ID: '42206534550'
-      ARTIFACT_ID: '13496693593'
-      ARTIFACT_NAME: J-Harness-Integrated-Windows-Unsigned-NotForProduction
     steps:
-      - name: Checkout exact tested release source
-        uses: actions/checkout@v4
-        with:
-          ref: ce9f36c9fe46e15197e967d84a752d0dcbff989c
-          persist-credentials: false
-      - name: Verify release input provenance and no conflicting release
+      - name: Verify exact draft release, immutable source, asset digests, and successful CI
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-          test "$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq .conclusion)" = "success"
-          test "$(gh api "repos/$REPO/actions/artifacts/$ARTIFACT_ID" --jq .expired)" = "false"
-          test "$(gh api "repos/$REPO/actions/artifacts/$ARTIFACT_ID" --jq .name)" = "$ARTIFACT_NAME"
-          if gh release view "$TAG" -R "$REPO" >/dev/null 2>&1; then echo 'Existing release must not be overwritten'; exit 1; fi
-          if gh api "repos/$REPO/git/ref/tags/$TAG" >/dev/null 2>&1; then echo 'Existing tag must not be overwritten'; exit 1; fi
-      - name: Retrieve the previous successful Windows build output
+          gh api "repos/$REPO/releases/$RELEASE_ID" > release.json
+          test "$(jq -r .tag_name release.json)" = "$TAG"
+          test "$(jq -r .draft release.json)" = "true"
+          test "$(jq -r .prerelease release.json)" = "true"
+          test "$(jq -r .target_commitish release.json)" = "$SOURCE_SHA"
+          test "$(jq -r '.assets|length' release.json)" = "3"
+          test "$(jq -r '.assets[]|select(.name=="J_Harness_v8.0.0-alpha.1_Windows_x64.zip")|.digest' release.json)" = "sha256:213bc7d292be9a6f56cf77b08f5011adb5ef7ee042f7b78871c567119ce9a855"
+          test "$(jq -r '.assets[]|select(.name=="JHarness-Install-Alpha.ps1")|.digest' release.json)" = "sha256:28273c2bdae72344dee5ebf9c07f4ec698a408e6f4d9d9f718a5f99d20847598"
+          test "$(jq -r '.assets[]|select(.name=="SHA256SUMS.txt")|.digest' release.json)" = "sha256:f1a91b7d829ad8b01db39ef795d9e7ce794fe202858b40baaf4edd87aa491d78"
+          test "$(gh api "repos/$REPO/actions/runs/42206534550" --jq .conclusion)" = "success"
+          if gh api "repos/$REPO/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo 'Unexpected existing tag; refusing draft publication'
+            exit 1
+          fi
+          echo 'MATCHED_EXPECTED_DRAFT_AND_THREE_SIGNED_DIGEST_FIELDS'
+      - name: Publish GitHub Pre-release only after all checks
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p release-payload release-ready
-          gh run download "$RUN_ID" -R "$REPO" -n "$ARTIFACT_NAME" -D release-payload
-          test -f release-payload/SHA256_MANIFEST.json
-          test -f release-payload/J_Harness_Install.cmd
-      - name: Verify every package file and create ZIP
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import hashlib,json,pathlib,zipfile
-          root=pathlib.Path("release-payload").resolve()
-          m=json.loads((root/"SHA256_MANIFEST.json").read_text(encoding="utf-8"))
-          assert m.get("product")=="J Harness Phase2 Portable Bootstrap"
-          assert m.get("trust")=="UNSIGNED_DRAFT_INTEGRATION_ARTIFACT"
-          rows=m.get("files")
-          assert isinstance(rows,list) and len(rows)>=100
-          seen=set()
-          for row in rows:
-              name=row["path"]
-              assert name and "\\" not in name and ":" not in name
-              relative=pathlib.PurePosixPath(name)
-              assert not relative.is_absolute() and ".." not in relative.parts and "." not in relative.parts
-              assert name not in seen
-              seen.add(name)
-              file=root.joinpath(*relative.parts)
-              assert file.is_file() and not file.is_symlink() and file.resolve().is_relative_to(root)
-              assert hashlib.sha256(file.read_bytes()).hexdigest()==row["sha256"].lower(),name
-          actual={p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file()}
-          assert actual==seen|{"SHA256_MANIFEST.json"}
-          assert hashlib.sha256((root/"vendor/node.exe").read_bytes()).hexdigest()=="ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3"
-          assert "J_Harness_Setup.cmd" not in actual and "J_Harness_Install.cmd" in actual
-          zipname="release-ready/J_Harness_v8.0.0-alpha.1_Windows_x64.zip"
-          with zipfile.ZipFile(zipname,"w",compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
-              for name in sorted(actual):
-                  z.write(root/name,name)
-          print("VERIFIED_WINDOWS_PACKAGE_FILES",len(actual))
-          print("ZIP_SHA256",hashlib.sha256(pathlib.Path(zipname).read_bytes()).hexdigest())
-          PY
-          cp scripts/Install-JHarnessFromGitHub.ps1 release-ready/JHarness-Install-Alpha.ps1
-          (cd release-ready && sha256sum J_Harness_v8.0.0-alpha.1_Windows_x64.zip JHarness-Install-Alpha.ps1 > SHA256SUMS.txt)
-      - name: Create accurate alpha release notes
-        shell: bash
-        run: |
-          cat > release-ready/RELEASE_NOTES.md <<'EOF'
-          ## J Harness v8.0.0-alpha.1 — Windows x64 CLI and ZIP
-
-          This is a test-only Pre-release, not a Stable or security-enforced product.
-
-          ASSETS
-          * J_Harness_v8.0.0-alpha.1_Windows_x64.zip: extract ZIP, run J_Harness_Install.cmd, review plan, and type INSTALL to consent.
-          * JHarness-Install-Alpha.ps1: install from Windows PowerShell without preinstalling Node.js, Git, or gh. Downloads pinned source, verifies official Node and Codex executables, and asks for INSTALL consent.
-          * SHA256SUMS.txt: release asset checksums (not a digital publisher signature).
-
-          POWERSHELL CLI INSTALL
-          1. Download JHarness-Install-Alpha.ps1 from this release into a local folder.
-          2. Review its contents with Get-Content.
-          3. Run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\JHarness-Install-Alpha.ps1 -Action Plan
-          4. Run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\JHarness-Install-Alpha.ps1 -Action Install
-
-          Requires Windows x64. Ships app-local Node 22.22.2, and installs verified Codex CLI 0.166.0 into an app-private folder when missing (around 372 MB extra download). Existing Codex authentication and guidance are preserved in tested Windows CI; any interactive sign-in goes through official Codex.
-
-          EVIDENCE
-          Full Windows source-contract, GUI install/uninstall/reinstall, and PowerShell-only installation checks: https://github.com/hacker943410-debug/ai-harness/actions/runs/42206534550
-          Reviewed release source: ce9f36c9fe46e15197e967d84a752d0dcbff989c
-
-          LIMITATIONS
-          Unsigned Alpha for disposable test PCs; do not use for sensitive production work. Does not enforce Supervisor OS isolation or tamperproof ON/OFF. Real user sign-in and model coding session are NOT tested. Claude/AGY adapters and signed installer are NOT present. Windows x64 only. Global PATH, existing credentials, main branch and stable release are not changed.
-          EOF
-      - name: Create as draft with three assets, validate, then publish Pre-release
-        shell: bash
-        run: |
-          set -euo pipefail
-          gh release create "$TAG" -R "$REPO" \
-            release-ready/J_Harness_v8.0.0-alpha.1_Windows_x64.zip \
-            release-ready/JHarness-Install-Alpha.ps1 \
-            release-ready/SHA256SUMS.txt \
-            --target "$SOURCE_SHA" \
-            --title 'J Harness v8.0.0-alpha.1 — Windows x64 CLI and ZIP' \
-            --prerelease --draft \
-            --notes-file release-ready/RELEASE_NOTES.md
-          test "$(gh api "repos/$REPO/releases/tags/$TAG" --jq .draft)" = "true"
-          test "$(gh api "repos/$REPO/releases/tags/$TAG" --jq .prerelease)" = "true"
-          test "$(gh api "repos/$REPO/releases/tags/$TAG" --jq '.assets|length')" = "3"
-          gh release edit "$TAG" -R "$REPO" --draft=false
+          gh api --method PATCH "repos/$REPO/releases/$RELEASE_ID" -F draft=false -F prerelease=true > published.json
+          test "$(jq -r .draft published.json)" = "false"
+          test "$(jq -r .prerelease published.json)" = "true"
+          test "$(jq -r .tag_name published.json)" = "$TAG"
           test "$(gh api "repos/$REPO/releases/tags/$TAG" --jq .draft)" = "false"
           test "$(gh api "repos/$REPO/releases/tags/$TAG" --jq .prerelease)" = "true"
-          echo "ALPHA_RELEASE=https://github.com/$REPO/releases/tag/$TAG"
+          test "$(gh api "repos/$REPO/releases/tags/$TAG" --jq '.assets|length')" = "3"
+          echo "ALPHA_PRERELEASE_PUBLISHED=https://github.com/$REPO/releases/tag/$TAG"
