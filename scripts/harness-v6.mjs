@@ -30,7 +30,7 @@ try {
     }
     case 'diagnose': result = diagnoseProject(project); break;
     case 'plan': {
-      result = planProject({ project, sourceRoot: options.source || source, request, config: options.config ? readJson(options.config) : {} });
+      result = planProject({ project, sourceRoot: options.source || source, request, config: { ...(options.config ? readJson(options.config) : {}), ...(options.clients !== undefined ? { client_targets: options.clients.split(',') } : {}) } });
       if (options.out) {
         const outPath = path.resolve(options.out);
         const rel = path.relative(project, outPath).replaceAll('\\', '/');

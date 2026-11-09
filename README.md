@@ -4,7 +4,9 @@ A beginner-guided development harness with executable phase gates and safe, vers
 
 **v7.0 Roblox Studio (opt-in):** [릴리즈 변경 사항](docs/v7_0/RELEASE_NOTES_v7.0.0.md), [실기 검증 요약](docs/v7_0/LIVE_VERIFICATION_SUMMARY.md), [상세 설치·운영 가이드](docs/v7_0/INSTALLATION_AND_OPERATIONS.md), [검증 매트릭스](docs/v7_0/VERIFICATION_MATRIX.md)를 참고하세요. For Codex and Roblox Studio MCP onboarding use [Roblox MCP setup](docs/v7_0/ROBLOX_MCP_SETUP.md) and [architecture / validation](docs/v7_0/ROBLOX_CAPABILITY_ARCHITECTURE.md). Doctor registration checks remain separate from actual Studio connectivity. PROJECT ETERNAL-specific design remains a [reference profile](docs/v7_0/PROJECT_ETERNAL_REQUIREMENTS.md).
 
-**CLI로 저장소를 처음 열거나 PR #3을 검증한다면:** [CLI 접속·브랜치 선택·Codex 검증·Jev·병합 전 점검 상세 가이드](docs/v6_2/CLI_ACCESS_AND_OPERATIONS_GUIDE.md)를 먼저 확인하세요. 이 가이드는 v6.2 후보용이며 별도의 설치 또는 정식 릴리스를 의미하지 않습니다.
+**CLI로 저장소에 처음 접속한다면:** [CLI 접속·브랜치 선택·Codex 검증·Jev·병합 전 점검 상세 가이드](docs/v6_2/CLI_ACCESS_AND_OPERATIONS_GUIDE.md)를 먼저 확인하세요. 이전 v6.2 개발 시점의 CLI 운영 가이드로, 최신 설치 및 선택한 CLI의 정책 연결에는 아래의 v7.0 호환성 안내를 우선 적용하세요.
+
+**Model-neutral Harness, choose ONE CLI:** [optional Codex / Claude / AGY policy compatibility](docs/v7_0/CLI_TRIAD_COMPATIBILITY.md). No need to install or subscribe to all three. Codex and AGY use `AGENTS.md`; Claude uses `CLAUDE.md`. When needed, opt in to one: `--clients agy` / `--clients codex` / `--clients claude`; multiple CLI targets are optional. Gemini CLI is legacy-only for this workflow. Same canonical policies, but real instruction uptake and executable guard enforcement remain distinct; no automatic installation, subscription or model switching.
 
 Use one request in any connected project:
 
