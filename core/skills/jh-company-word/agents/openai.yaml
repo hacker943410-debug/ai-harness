@@ -1,0 +1,4 @@
+interface:
+  display_name: "회사 Word 양식"
+  short_description: "등록한 회사 문서의 표지·본문·표·머리말 양식을 재사용합니다"
+  default_prompt: "Use $jh-company-word to create this document using my registered company Word format."
