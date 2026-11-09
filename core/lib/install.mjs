@@ -16,6 +16,10 @@ export function install(h,{source=sourceCore}={}){
  try{
   const runtime=path.join(stage,'runtime'),core=path.join(runtime,'core');fs.mkdirSync(core,{recursive:true});
   for(const name of ['lib','knowledge','skills'])copyTree(path.join(source,name),path.join(core,name));
+  // Phase1 introduced a runtime import from cli.mjs. Include only its readonly module,
+  // never the installer/bootstrap scripts in the persistent Codex runtime.
+  fs.mkdirSync(path.join(core,'environment'),{recursive:true});
+  fs.copyFileSync(path.join(source,'environment/doctor.mjs'),path.join(core,'environment/doctor.mjs'));
   for(const name of ['cli.mjs','package.json'])fs.copyFileSync(path.join(source,name),path.join(core,name));
   const repository=path.dirname(source);copyTree(path.join(repository,'policies'),path.join(runtime,'policies'));
   fs.mkdirSync(path.join(runtime,'knowledge'),{recursive:true});
