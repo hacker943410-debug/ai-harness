@@ -12,6 +12,7 @@ on:
       - 'core/tests/cli-distribution.test.mjs'
       - 'core/tests/Test-OwnedRuntimeCleanup.ps1'
       - 'docs/releases/v8.0.0-alpha.1.md'
+      - 'docs/releases/v8.0.0-alpha.2.md'
 permissions:
   contents: read
 jobs:
@@ -28,7 +29,7 @@ jobs:
       - name: New integrated product + existing environment contract
         run: |
           node --check core/build-integrated-product.mjs
-          node --test core/tests/integrated-product.test.mjs core/tests/environment.test.mjs core/tests/cli-distribution.test.mjs
+          node --test core/tests/integrated-product.test.mjs core/tests/environment.test.mjs core/tests/cli-distribution.test.mjs core/tests/company-word-packaging.test.mjs
   windows-first-use:
     runs-on: windows-2022
     timeout-minutes: 45
@@ -156,6 +157,11 @@ jobs:
             if(-not(Test-Path -LiteralPath $installed -PathType Leaf)){throw 'CLI_INSTALLED_ENTRY_MISSING'}
             $doctor=& $installed -Action Doctor | ConvertFrom-Json
             if($doctor.effective -ne 'CONNECTED_FOR_NEW_SESSIONS'){throw 'CLI_INSTALLED_CORE_NOT_CONNECTED'}
+            $node=Join-Path $managed 'node-v22.22.2\node.exe'
+            $core=Join-Path $codexHome 'j-harness-core\runtime\core\cli.mjs'
+            $skill=& $node $core skills read jh-company-word --codex-home $codexHome --project $lab | ConvertFrom-Json
+            if($LASTEXITCODE -ne 0 -or $skill.name -ne 'jh-company-word' -or $skill.kind -ne 'BUILTIN'){throw 'CLI_COMPANY_WORD_PATCH_NOT_INSTALLED'}
+            if(-not(Test-Path -LiteralPath (Join-Path $codexHome 'j-harness-core\runtime\core\skills\jh-company-word\scripts\company_word.py'))){throw 'CLI_COMPANY_WORD_HELPER_MISSING'}
             $readiness=& $installed -Action Verify | ConvertFrom-Json
             if($readiness.readiness -ne 'READY_FOR_FIRST_INTERACTIVE_START' -or $readiness.tokenContentRead -ne $false){throw 'CLI_READINESS_FAILED'}
             if((Get-FileHash $auth -Algorithm SHA256).Hash -ne $authBefore){throw 'CLI_AUTH_CHANGED'}

@@ -1,6 +1,20 @@
-# AI Harness v7.0.0
+# J Harness — Windows v8.0.0-alpha.2 / policy runtime v7.0.0
 
-**J Harness v8 환경 자동구성 개발 후보 (미출시):** [Phase 1 설치 진단·의존성 계획 가이드](docs/core/ENVIRONMENT_BOOTSTRAP_PHASE1_KO.md). 사용자가 Node/Git/CLI/라이브러리를 직접 구성하지 않아도 되는 원클릭 설치기를 목표로 하며, 이번 브랜치에서 구현된 것은 읽기 전용 Preflight와 계획 엔진입니다. 공식 v8 Core beta.1 자체는 기존 Node 22+ 및 Codex를 요구하고, 사용자 PC에 대한 프로그램 설치를 자동 수행하지 않습니다.
+**Windows 설치:** [v8.0.0-alpha.2 릴리스](https://github.com/hacker943410-debug/ai-harness/releases/tag/v8.0.0-alpha.2) · [설치·업데이트 안내](docs/releases/v8.0.0-alpha.2.md). 회사 Word 스킬과 동일한 native/builtin 스킬 탐색 수정을 포함한 Alpha입니다. 내부 Core 버전은 `8.0.0-core-beta.1`, 공통 정책 버전은 `7.0.0`입니다.
+
+Windows x64 PowerShell에서 다음 명령을 실행합니다. 아래 `main` 주소는 현재 배포용 스크립트를 받으며, 스크립트가 설치하는 소스는 검증된 불변 커밋으로 고정됩니다. 설치 전 내용을 확인하고 `INSTALL`을 입력합니다. 별도 Node·Git 설치는 필요하지 않습니다.
+
+```powershell
+$u = 'https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/scripts/Install-JHarnessFromGitHub.ps1'
+Invoke-WebRequest -Uri $u -OutFile .\JHarness-Install-Alpha.ps1
+Get-Content .\JHarness-Install-Alpha.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\JHarness-Install-Alpha.ps1 -Action Plan
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\JHarness-Install-Alpha.ps1 -Action Install
+```
+
+**기존 Alpha 설치는 자동 덮어쓰지 않습니다.** 먼저 기존 제거 명령으로 관리 연결을 해제한 뒤 새 설치기를 실행하세요. 사용자 인증·관리 밖의 지침·개인 Word 프로필은 보존하며, 자세한 확인·복구 절차는 위 설치 안내에 있습니다. 서명·OS 보안 강제·실제 모델 세션까지 검증된 정식 제품은 아닙니다. 회사 원본 양식은 공개 배포하지 않으므로 다른 PC에서는 개인 프로필을 별도로 준비해야 합니다.
+
+아래는 기존 공통 정책 런타임과 프로젝트 연결 안내입니다. `install.ps1` 한 줄 명령은 소스를 받는 별도 경로이며 Windows 제품 설치기를 실행하지 않습니다.
 
 
 A beginner-guided development harness with executable phase gates and safe, version-pinned project installation, adoption and updates.

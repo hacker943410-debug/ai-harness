@@ -11,7 +11,7 @@ param(
 $ErrorActionPreference='Stop'
 $ProgressPreference='SilentlyContinue'
 # Reviewed source includes bounded owned-runtime cleanup and verified service removal.
-$sourceSha='245d6bec629d7bc0a72223b19ae427d124c1673c'
+$sourceSha='a882c02f46905237e8fd843a7ca66c0ea1322fe3'
 $nodeSha='ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3'
 $nodeUrl='https://nodejs.org/dist/v22.22.2/win-x64/node.exe'
 $archiveUrl='https://github.com/hacker943410-debug/ai-harness/archive/'+$sourceSha+'.zip'
@@ -41,7 +41,7 @@ function Assert-SafePath([string]$p) {
 Assert-SafePath $CodexHome
 Assert-SafePath $ManagedRoot
 $plan=[ordered]@{
- product='J Harness';channel='v8.0.0-alpha.1-pinned-cli-preview';action=$Action
+ product='J Harness';channel='v8.0.0-alpha.2-pinned-cli-preview';action=$Action
  sourceRevision=$sourceSha;platform='Windows x64';client='codex'
  node='private pinned v22.22.2';codex='official pinned v0.166.0 if not installed'
  codexHome=$CodexHome;managedRoot=$ManagedRoot
