@@ -6,7 +6,9 @@ param(
     [string]$HarnessRoot,
     [string]$Client = 'AllNative',
     [switch]$AllowDiscoveryOnly,
-    [switch]$Force
+    [switch]$Force,
+    [string]$ReviewedSourceDirectory,
+    [string]$ExpectedTreeHash
 )
 if (-not $HarnessRoot) { $HarnessRoot = Split-Path -Parent $PSScriptRoot }
 $ErrorActionPreference = 'Stop'
@@ -33,9 +35,41 @@ $record = [pscustomobject]@{
     scope = 'project'; reason = $Reason; status = 'installed'; config_path = $null
     recorded_at = (Get-HarnessUtcStamp)
 }
-if ($entry.PSObject.Properties.Name -contains 'bundled_path' -and $entry.bundled_path) {
+# External Skill acquisition/review is separate from installation (no npx or network).
+$isBundled = ($entry.PSObject.Properties.Name -contains 'bundled_path') -and [bool]$entry.bundled_path
+if ($isBundled) {
+    if ($ReviewedSourceDirectory -or $ExpectedTreeHash) { throw 'BUNDLED_SKILL_REVIEW_OVERRIDE_NOT_ALLOWED' }
     $source = Get-HarnessProjectPath $harness $entry.bundled_path
-    $manifest = Get-HarnessSkillManifest $source
+} else {
+    if (-not $ReviewedSourceDirectory -or -not $ExpectedTreeHash) {
+        throw 'EXTERNAL_SKILL_REVIEW_REQUIRED: supply -ReviewedSourceDirectory and -ExpectedTreeHash.'
+    }
+    if ($ExpectedTreeHash -notmatch '^[a-fA-F0-9]{64}$') { throw 'EXTERNAL_SKILL_HASH_INVALID' }
+    $source = (Resolve-Path -LiteralPath $ReviewedSourceDirectory -ErrorAction Stop).Path
+    if (-not (Test-Path -LiteralPath $source -PathType Container)) { throw 'EXTERNAL_SKILL_SOURCE_NOT_DIRECTORY' }
+    $sourceFull = [IO.Path]::GetFullPath($source).TrimEnd([char[]]'\\/')
+    $projectFull = [IO.Path]::GetFullPath($project).TrimEnd([char[]]'\\/')
+    $comparison = if ($script:HarnessIsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+    if ($sourceFull.Equals($projectFull, $comparison) -or
+        $sourceFull.StartsWith($projectFull + [IO.Path]::DirectorySeparatorChar, $comparison)) {
+        throw 'EXTERNAL_SKILL_SOURCE_INSIDE_PROJECT'
+    }
+}
+$manifest = Get-HarnessSkillManifest $source
+if (-not $isBundled -and $manifest.Hash -cne $ExpectedTreeHash.ToLowerInvariant()) {
+    throw 'EXTERNAL_SKILL_HASH_MISMATCH'
+}
+if (-not $isBundled) {
+    $auditScript = Join-Path $PSScriptRoot 'audit-external-skill.mjs'
+    if (-not (Test-Path -LiteralPath $auditScript -PathType Leaf)) {
+        # A partial snapshot may not be trusted to install external executable instructions.
+        throw 'EXTERNAL_SKILL_AUDITOR_MISSING'
+    }
+    & node $auditScript --source $source | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw 'EXTERNAL_SKILL_STATIC_AUDIT_BLOCKED: remove dynamic remote execution/auto-update instructions from the reviewed snapshot, then re-review and re-hash.'
+    }
+}
     $clientDir = Join-HarnessPath $harness 'settings' 'clients'
     $descriptors = @()
     if ($Client -eq 'AllNative') {
@@ -156,16 +190,4 @@ if ($entry.PSObject.Properties.Name -contains 'bundled_path' -and $entry.bundled
     }
     try { Remove-HarnessSkillWorkPath $project $transactionRelative }
     catch { Write-Warning "Installation committed; backup cleanup is pending at '$transactionRelative'." }
-} else {
-    if (-not $PSCmdlet.ShouldProcess($project, "Install external Skill '$Id' from the catalog source")) { return }
-    $previousTelemetry = $env:DISABLE_TELEMETRY
-    try {
-        $env:DISABLE_TELEMETRY = '1'
-        Push-Location -LiteralPath $project
-        try { & npx skills add $entry.source --skill $Id; $skillsExitCode = $LASTEXITCODE } finally { Pop-Location }
-        if ($skillsExitCode -ne 0) { throw "Skills CLI exited with code $skillsExitCode." }
-    } finally { $env:DISABLE_TELEMETRY = $previousTelemetry }
-    $lock.capabilities = @(@($lock.capabilities | Where-Object { -not ($_.type -eq 'skill' -and $_.id -eq $Id) }) + $record)
-    Write-HarnessJson -Path $lockPath -InputObject $lock -Depth 12
-}
 Write-Output "Installed project skill '$Id' for $Client. Restart the agent session if the client requires rediscovery."

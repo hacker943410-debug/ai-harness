@@ -1,0 +1,15 @@
+import fs from 'node:fs';import path from 'node:path';import {fileURLToPath} from 'node:url';import {copyTree,treeFiles,json,version} from './lib/io.mjs';
+const core=path.dirname(fileURLToPath(import.meta.url)),source=path.dirname(core),output=path.resolve(process.argv[2]??path.join(source,'artifacts/jh-core-package'));
+if(output===core||output.startsWith(core+path.sep)||fs.existsSync(output))throw Error('NEW_OUTPUT_OUTSIDE_CORE_REQUIRED');
+fs.mkdirSync(output,{recursive:true});
+for(const folder of ['core','policies','skills/dashboard-builder'])copyTree(path.join(source,folder),path.join(output,folder));
+fs.mkdirSync(path.join(output,'harness/runtime'),{recursive:true});fs.mkdirSync(path.join(output,'workflows'),{recursive:true});
+for(const name of ['beginner-mode.md','briefing-protocol.md','project-mode-router.md','verification-profiles.md','token-policy.md'])fs.copyFileSync(path.join(source,'harness/runtime',name),path.join(output,'harness/runtime',name));
+fs.copyFileSync(path.join(source,'workflows/CAPABILITY_ACQUISITION.md'),path.join(output,'workflows/CAPABILITY_ACQUISITION.md'));
+copyTree(path.join(source,'docs/core'),path.join(output,'docs/core'));
+fs.copyFileSync(path.join(source,'docs/core/USER_GUIDE_KO.md'),path.join(output,'README_KO.md'));
+for(const name of ['Install-JHarness.cmd','Update-JHarness.cmd','Uninstall-JHarness.cmd','jh.cmd'])fs.writeFileSync(path.join(output,name),fs.readFileSync(path.join(source,name),'utf8').replace(/\r\n?/g,'\n').replace(/\n/g,'\r\n'));
+fs.copyFileSync(path.join(source,'LICENSE'),path.join(output,'LICENSE'));
+const rows=treeFiles(output).map(row=>({...row,path:row.path.split(path.sep).join('/')}));
+fs.writeFileSync(path.join(output,'SHA256_MANIFEST.json'),json({product:'J Harness Core',version,scope:'DISTRIBUTION_CHECKSUMS_NOT_OWNER_SIGNATURE',files:rows}));
+console.log(json({output,version,files:treeFiles(output).length,servicesRequired:false,modelCallsPerformed:0}));

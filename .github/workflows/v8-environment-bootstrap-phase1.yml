@@ -1,0 +1,31 @@
+name: J Harness v8 Environment Bootstrap Phase1
+on:
+  push:
+    branches: [feature/v8-environment-bootstrap-phase1]
+  pull_request:
+    branches: [release/j-harness-core-beta.1, main]
+permissions:
+  contents: read
+jobs:
+  environment-bootstrap:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Environment planner and non-mutation tests
+        run: node --test core/tests/environment.test.mjs
+      - name: Existing Core code syntax guards
+        run: node --check core/setup.mjs && node --check core/environment/doctor.mjs
+      - name: Native Windows preflight without Node dependency
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $result = powershell.exe -NoProfile -File core/environment/Preflight-JHarness.ps1 -Client codex -Profile general | ConvertFrom-Json
+          if ($result.stage -ne 'PHASE_1_CANDIDATE' -or $result.hostChanged -ne $false -or $result.installPerformed -ne $false) { throw 'Unsafe Windows preflight result' }

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "product": "J Harness Environment Bootstrap",
+  "state": "PHASE_1_DESIGN_LOCK_NOT_AN_INSTALLER",
+  "runtime": {
+    "node_min_major": 22,
+    "final_distribution": "BUNDLED_OWNER_PINNED",
+    "runtime_bundle_available": false,
+    "owner_verified_sha256": null
+  },
+  "clients": [
+    {
+      "name": "codex",
+      "optional_if_not_selected": true
+    },
+    {
+      "name": "claude",
+      "optional_if_not_selected": true
+    },
+    {
+      "name": "agy",
+      "optional_if_not_selected": true
+    }
+  ],
+  "profiles": {
+    "general": [],
+    "roblox": [
+      "rojo",
+      "stylua",
+      "selene"
+    ]
+  },
+  "installation": {
+    "default": "READ_ONLY_PLAN",
+    "approval_required": true,
+    "source_pinning_required": true,
+    "global_installs_allowed": false,
+    "host_changes_authorized": false,
+    "trusted_publisher_manifest_available": false,
+    "installer_implementation": "NOT_IMPLEMENTED"
+  },
+  "protected": [
+    "existing CLI authentication",
+    "existing user AGENTS/CLAUDE files",
+    "existing OS account/ACL",
+    "existing GitHub credentials",
+    "existing project files"
+  ]
+}

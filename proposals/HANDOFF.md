@@ -45,7 +45,7 @@ Codex 등록(세 클라이언트 `IN_SYNC`) / Drive 스냅샷 `v3.0.0` 발행.
 | 현재 HEAD | `git -C C:\AI-Harness log --oneline -1` 로 확인 (여기 적지 않는다 — 아래 참고) |
 | 기준점 태그 | `v3.0.0` (현재 릴리즈) / `v2.2.0` = `9e142bf` (v3 이전 롤백 지점) |
 | 버전 정본 | `POLICY_INDEX.yaml` 의 `harness_version`. git 태그·`plugin.json`·Drive 스냅샷 라벨은 그 값을 따라간다 |
-| 도구 루트 (Layer B) | `%LOCALAPPDATA%\AI-Tools` = `C:\Users\<사용자>\AppData\Local\AI-Tools` |
+| 도구 루트 (Layer B) | `%LOCALAPPDATA%\AI-Tools` = `%USERPROFILE%\AppData\Local\AI-Tools` |
 | 레거시 도구 루트 | `C:\AI-Tools` (**남겨 두기로 결정됨**, ACL 제한 완료, 비밀값 없음) |
 | OAuth 프로필 | `%USERPROFILE%\.config\google-workspace-mcp\profiles\default` (도구 루트 **밖**) |
 
@@ -356,7 +356,7 @@ M5 에서 도구 루트 양쪽은 잠갔지만 정작 실행되는 `.ps1` 과 �
     **3계층 분리가 실제로 지켜졌다는 증거다.** 설계가 문서에만 있었으면
     지금 히스토리 재작성을 하고 있었을 것이다.
 
-    사용자명은 일반화했다(`C:\Users\hacke` → `C:\Users\<사용자>`, HANDOFF·PROPOSAL 2곳).
+    로컬 사용자 프로필 경로는 `%USERPROFILE%` 형태로 일반화했다.
     **히스토리에는 남는다.** 윈도우 사용자명은 재작성 비용을 치를 만한 비밀이 아니다.
 
     **V7(§11 "private 저장소 marketplace 미검증") 해소.**
