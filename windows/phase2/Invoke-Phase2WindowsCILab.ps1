@@ -222,3 +222,6 @@ try {
   $outcome | ConvertTo-Json -Depth 8
 }
 if($outcome.result -ne 'PASS_WINDOWS_PHASE2_LIMITED_SCOPE_NO_CLI_ENFORCEMENT') {exit 2}
+# An expected sc query 1060 confirms deletion but must not escape as the
+# successful lab's process status through the GitHub PowerShell wrapper.
+exit 0

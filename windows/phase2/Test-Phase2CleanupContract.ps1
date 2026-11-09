@@ -72,4 +72,21 @@ foreach($failure in @('stop','wait','status')) {
   Assert-Equal $script:disposed 1 ($failure+' failure disposes controller')
   Assert-Equal $script:deletes 0 ($failure+' failure prevents deletion')
 }
-Write-Output 'PASS: cleanup mock regression (7 cases); no real services or accounts accessed.'
+# Exercise only the parsed completion statements in a separate PowerShell host.
+# Match GitHub's propagation of LASTEXITCODE without running any lab entrypoint.
+$mainTry=@($ast.EndBlock.Statements | Where-Object {$_ -is [Management.Automation.Language.TryStatementAst]})
+if($mainTry.Count -ne 1) {throw 'LAB_MAIN_TRY_NOT_UNIQUE'}
+$completion=@($ast.EndBlock.Statements | Where-Object {$_.Extent.StartLineNumber -gt $mainTry[0].Extent.EndLineNumber})
+if($completion.Count -lt 1) {throw 'LAB_COMPLETION_NOT_FOUND'}
+$completionText=($completion | ForEach-Object {$_.Extent.Text}) -join [Environment]::NewLine
+$hostExecutable=(Get-Process -Id $PID).Path
+foreach($case in @(
+  @{result='FAIL_OR_INCONCLUSIVE';native=0;expected=2},
+  @{result='FAIL_CLEANUP_MANUAL_REVIEW_REQUIRED';native=0;expected=2},
+  @{result='PASS_WINDOWS_PHASE2_LIMITED_SCOPE_NO_CLI_ENFORCEMENT';native=1060;expected=0}
+)) {
+  $simulation=("`$outcome=@{{result='{0}'}};`$LASTEXITCODE={1};" -f $case.result,$case.native)+[Environment]::NewLine+$completionText+[Environment]::NewLine+'exit $LASTEXITCODE'
+  & $hostExecutable -NoProfile -NonInteractive -Command $simulation | Out-Null
+  Assert-Equal $LASTEXITCODE $case.expected ('lab completion '+$case.result)
+}
+Write-Output 'PASS: cleanup mock regression (7 cases) and process completion (3 cases); no real services or accounts accessed.'
