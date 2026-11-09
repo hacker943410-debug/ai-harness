@@ -7,7 +7,7 @@ const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const read=p=>fs.readFileSync(path.join(repo,p),'utf8');
 test('CLI installer downloads immutable repository source and validates Node before building',()=>{
  const s=read('scripts/Install-JHarnessFromGitHub.ps1');
- assert.match(s,/1f35cc0b3cb4824534179ea9dfc35d6c25964fdd/);
+ assert.match(s,/d8491d7e5aadb63afe62b5333b6b9d749924c78a/);
  assert.match(s,/ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3/);
  assert.match(s,/Expand-Archive/);
  assert.match(s,/Get-FileHash/);
