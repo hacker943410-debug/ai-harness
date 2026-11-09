@@ -10,7 +10,21 @@ export function list(h,project,{includeUser=true}={}){const root=rootFor(h),runt
  const seen=new Set();return rows.filter(r=>{if(seen.has(r.file))return false;seen.add(r.file);return true;});
 }
 export function search(h,project,query,options){safeText(query);const q=query.toLowerCase(),terms=[...new Set([...q.split(/[^\p{L}\p{N}-]+/u),...['웹','고객','crm','개발','테스트','dashboard','대시보드','검증','web','bug','오류'].filter(t=>q.includes(t))])].filter(t=>t.length>1);return list(h,project,options).filter(r=>r.supported!==false).map(r=>{const text=(r.name+' '+r.description).toLowerCase();let score=terms.reduce((n,t)=>n+(text.includes(t)?1:0),0);if(r.name==='jh-web-quality'&&/웹|고객|web|crm/i.test(q))score+=3;if(r.name==='jh-guided-development'&&/개발|만들|앱|build|app/i.test(q))score+=2;return{...r,score};}).filter(r=>r.score>0).sort((a,b)=>b.score-a.score);}
-export function readSkill(h,project,id,options){requireOn(h);const matches=list(h,project,options).filter(r=>r.name===id&&r.sha256);if(matches.length!==1)throw Error('SKILL_MISSING_OR_DUPLICATE_USE_UNIQUE_REGISTERED_NAME');const row=matches[0];if(row.kind==='INSTALLED_DISCOVERED_NOT_AUTO_APPROVED')throw Error('DISCOVERED_SKILL_REQUIRES_LOCAL_REVIEW_AND_REGISTRATION');if(row.kind==='APPROVED_EXTERNAL'){const registered=readJson(path.join(rootFor(h),'skills-registry.json'),[]).find(x=>x.name===id);if(!registered||inspect(path.dirname(row.file)).treeSha256!==registered.treeSha256)throw Error('REGISTERED_SKILL_CHANGED_REVIEW_REQUIRED');}const content=fs.readFileSync(row.file,'utf8');return{...row,content,queryOnly:true,claim:'CONTENT_RETURNED_NOT_PROOF_OF_MODEL_BEHAVIOR'};}
+export function readSkill(h,project,id,options){
+ requireOn(h);const matches=list(h,project,options).filter(r=>r.name===id&&r.sha256);
+ let row=matches.length===1?matches[0]:null;
+ if(matches.length>1){
+  const canonical=matches.filter(r=>r.kind==='BUILTIN');
+  if(canonical.length===1&&matches.every(r=>r===canonical[0]||r.kind==='INSTALLED_DISCOVERED_NOT_AUTO_APPROVED')){
+   const fingerprint=inspect(path.dirname(canonical[0].file)).treeSha256;
+   if(matches.every(r=>inspect(path.dirname(r.file)).treeSha256===fingerprint))row={...canonical[0],equivalentDiscoveredCopies:matches.length-1};
+  }
+ }
+ if(!row)throw Error('SKILL_MISSING_OR_DUPLICATE_USE_UNIQUE_REGISTERED_NAME');
+ if(row.kind==='INSTALLED_DISCOVERED_NOT_AUTO_APPROVED')throw Error('DISCOVERED_SKILL_REQUIRES_LOCAL_REVIEW_AND_REGISTRATION');
+ if(row.kind==='APPROVED_EXTERNAL'){const registered=readJson(path.join(rootFor(h),'skills-registry.json'),[]).find(x=>x.name===id);if(!registered||inspect(path.dirname(row.file)).treeSha256!==registered.treeSha256)throw Error('REGISTERED_SKILL_CHANGED_REVIEW_REQUIRED');}
+ const content=fs.readFileSync(row.file,'utf8');return{...row,content,queryOnly:true,claim:'CONTENT_RETURNED_NOT_PROOF_OF_MODEL_BEHAVIOR'};
+}
 export function inspect(directory){noLinks(directory);const rows=treeFiles(directory),manifest=path.join(directory,'SKILL.md'),meta=metadata(manifest),risks=[];for(const row of rows){if(/\.(?:ps1|cmd|bat|sh|py|mjs|js|exe|dll)$/i.test(row.path))risks.push({file:row.path,risk:'EXECUTABLE_OR_SCRIPT_REQUIRES_REVIEW'});}return{...meta,files:rows,treeSha256:hash(JSON.stringify(rows)),risk:risks.length?'SCRIPT_REVIEW_REQUIRED':'INSTRUCTIONS_REVIEW_REQUIRED',risks,remoteDownload:false,executed:false};}
 export function register(h,directory,source,reviewHash,approved){requireOn(h);if(!approved)throw Error('EXPLICIT_REVIEW_APPROVAL_REQUIRED');if(!/^https:\/\//.test(source??''))throw Error('HTTPS_SOURCE_REFERENCE_REQUIRED_NO_DOWNLOAD');const url=new URL(source);if(url.username||url.password)throw Error('SOURCE_MUST_NOT_CONTAIN_CREDENTIALS');const observed=inspect(directory);if(observed.treeSha256!==reviewHash)throw Error('REVIEW_HASH_MISMATCH');const folder=path.join(rootFor(h),'registered',observed.name);if(fs.existsSync(folder))throw Error('REGISTERED_SKILL_ALREADY_EXISTS');copyTree(directory,folder);const registry=path.join(rootFor(h),'skills-registry.json'),rows=readJson(registry,[]);rows.push({name:observed.name,source,treeSha256:observed.treeSha256,risk:observed.risk,approvedVia:'EXPLICIT_CLI_REVIEW_FLAG_NOT_OS_ATTESTATION',utc:new Date().toISOString()});atomic(registry,json(rows));return rows.at(-1);}
 export function record(h,project,id,result,note){requireOn(h);if(!['APPLIED','FAILED','NOT_RUN'].includes(result))throw Error('SKILL_RESULT_REQUIRED');safeText(note);const skill=readSkill(h,project,id);

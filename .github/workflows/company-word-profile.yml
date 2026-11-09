@@ -6,6 +6,7 @@ on:
       - core/skills/jh-company-word/**
       - core/tests/test_company_word.py
       - core/lib/io.mjs
+      - core/lib/skills.mjs
       - core/tests/company-word-packaging.test.mjs
       - catalogs/skill-catalog.json
       - harness/manifest.yaml
