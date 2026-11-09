@@ -1,0 +1,41 @@
+# J Harness v8 — 통합 설치형 첫 사용 후보 (Windows x64)
+
+**현재 상태: 2026-11-09 `v8.0.0-alpha.1` GitHub 공개 Pre-release.** Windows x64·Codex 테스트용 설치 패키지이며, Stable/실사용 보안 제품은 **NO-GO**입니다. [릴리스 다운로드](https://github.com/hacker943410-debug/ai-harness/releases/tag/v8.0.0-alpha.1).
+
+## 완성된 사용자 동선
+
+1. [GitHub Alpha 릴리스](https://github.com/hacker943410-debug/ai-harness/releases/tag/v8.0.0-alpha.1)에서 `J_Harness_v8.0.0-alpha.1_Windows_x64.zip`을 내려받아 압축을 풉니다. 별도 CLI 방식으로는 같은 릴리스의 `JHarness-Install-Alpha.ps1`을 실행할 수 있습니다.
+2. `J_Harness_Install.cmd`를 실행합니다. PowerShell이 **읽기 전용 계획**과 모든 패키지 파일의 SHA-256을 확인합니다.
+3. 설명을 검토하고 `INSTALL` 입력으로 설치를 허가합니다. 설치는 Node.js v22.22.2를 앱 전용 경로에 구성합니다.
+4. 기존 네이티브 Codex CLI가 있으면 재사용합니다. 없다면 공개된 공식 `openai/codex` 릴리스 `rust-v0.166.0`의 Windows x64 바이너리를 앱 전용 경로로 내려받고 **고정 SHA-256을 검증**합니다. CLI 다운로드 용량은 약 372 MB입니다.
+5. 기존 Codex `AGENTS.md`에 J Harness가 소유하는 명확히 구분된 블록을 삽입하되, 원본은 백업·복원합니다. 인증·모델·MCP 설정을 변경하지 않습니다.
+6. 설치된 앱 경로에 `J_Harness_Start.cmd`, `J_Harness_Doctor.cmd`, `J_Harness_Remove.cmd`가 생성됩니다. 시작 실행 시 앱 전용 Node를 PATH에 **프로세스 한정**으로만 추가합니다. 글로벌 PATH는 변경하지 않습니다.
+7. Codex가 사용자 로그인을 요구하면 **Codex 자체 로그인 과정**을 이용합니다. J Harness는 인증 토큰을 수집하지 않습니다.
+8. 제거 시 `UNINSTALL`을 승인하면 기존 Codex 지침을 복원하고 앱이 설치한 파일만 정리합니다. 기존 사용자 설정과 보안 증거/백업은 임의로 삭제하지 않습니다.
+
+## 현재 사용 제한과 명확한 비구현
+
+- **현재 지원 OS는 Windows x64만**이며 모든 Windows PC를 보장하지 않습니다. 관리 정책으로 앱 실행·다운로드가 차단된 PC는 지원하지 않습니다.
+- 인터넷 연결이 필요합니다. 오프라인 CLI 포함 배포 빌드 옵션은 별도 제공하지만 큰 용량이며 실제 E2E 검증 이후 사용해야 합니다.
+- `Codex` **한 개만 자동 준비**합니다. Claude Code·AGY는 기존 환경을 건드리지 않고, 각각의 공식 설치/실사용 어댑터는 후속 개발입니다. 세 개를 모두 구독할 필요는 없습니다.
+- 이 버전은 **정책 안내형(advisory)** Core입니다. CLI 내부의 모든 파일/Shell/MCP 명령을 OS 보안으로 가로채거나, 사용자의 ON/OFF를 AI에서 확실히 격리했다고 주장하지 않습니다. 기존 Supervisor 실험 PASS는 아직 이 통합 설치기를 보호하지 않습니다.
+- 설치 동의 `INSTALL`은 사용자 전용 보안 인증이 아닙니다.
+- ZIP 자체 SHA-256은 손상 감지이지 **발행자 인증/디지털 서명**은 아닙니다. 공식 배포 전 서명·공급망 신뢰·실제 PC 설치 테스트가 필요합니다.
+- 기존 Core가 이미 연결된 경우 자동 덮어쓰기/마이그레이션을 하지 않고 중단합니다. 안전한 업데이트 경로 구현이 필요합니다.
+- 기존 앱 데이터와 프로젝트는 임의로 삭제하지 않습니다. 다운로드 실패·해시 불일치·Core 실패는 설치를 차단하고 복구를 시도합니다.
+
+## 고정 공급자 자료
+
+- Node.js v22.22.2 공식 `win-x64/node.exe` SHA-256: `ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3`
+- Codex CLI `rust-v0.166.0` 공식 `codex-x86_64-pc-windows-msvc.exe` SHA-256: `9d563ee4e0441ff9d59d612013e0460ddf8e5709735c2d9f6b98b7ef8ca4eb42`
+
+**출시 판정: 제한 범위 CI 결과만으로 GO 불가. 실제 윈도우 설치 시험과 보안 강제 검증은 별도 게이트입니다.**
+
+
+## 동일 PC 재설치와 첫 실행 준비 확인 (2026-11-06 개발 후보)
+
+- `J_Harness_Doctor.cmd`는 Core 무결성과 Codex 버전 및 `codex login status`의 성공 여부만 확인합니다. 인증정보 자체를 읽거나 출력하지 않고 모델도 호출하지 않습니다.
+- `SIGN_IN_REQUIRED_IN_CODEX`이면 `J_Harness_Start.cmd`로 시작한 공식 Codex가 직접 사용자 인증을 진행합니다. J Harness가 로그인 토큰이나 비밀번호를 받지 않습니다.
+- 제거할 때 J Harness 소유 파일만 삭제하고, **제품 폴더가 비어 있을 때만** 해당 폴더를 제거합니다. 사용자 추가 파일이 있으면 그대로 보존합니다.
+- Windows CI는 설치→진단→제거뿐 아니라 **재설치→재진단→다시 제거→기존 사용자 지침/인증파일 해시 보존**까지 검사합니다.
+- 이러한 진단·재설치 성공은 AI 모델 호출이나 OS 수준 Supervisor 강제를 인증하는 증거가 아닙니다.
