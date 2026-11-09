@@ -6,7 +6,7 @@ if not exist "%JH_MANAGED%\app\Installed-JHarness.ps1" (
  exit /b 2
 )
 echo Uninstall only J Harness managed components and restore original Codex instructions.
-set /p JH_CONSENT=Type UNINSTALL to confirm: 
+set /p "JH_CONSENT=Type UNINSTALL to confirm: "
 if /I not "%JH_CONSENT%"=="UNINSTALL" exit /b 0
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%JH_MANAGED%\app\Installed-JHarness.ps1" -Action Uninstall -ApproveUninstall
 set "JH_EXIT=%ERRORLEVEL%"

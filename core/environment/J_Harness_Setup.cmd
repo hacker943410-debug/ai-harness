@@ -13,7 +13,7 @@ echo This program will copy pinned Node to your private application folder
 echo and add one managed block to the existing Codex global instructions.
 echo It will not change system PATH, credentials or Windows accounts.
 echo This unsigned candidate DOES NOT provide OS security enforcement.
-set /p JH_OK=Type INSTALL to approve, or press Enter to cancel: 
+set /p "JH_OK=Type INSTALL to approve, or press Enter to cancel: "
 if /I not "%JH_OK%"=="INSTALL" (
   echo Cancelled. No changes made.
   exit /b 0

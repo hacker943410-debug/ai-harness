@@ -17,7 +17,7 @@ echo Adds a managed block to the existing Codex instructions only.
 echo Does not edit account login, global PATH, registry or other CLIs.
 echo This beta does NOT enforce OS-level agent isolation.
 echo.
-set /p JH_CONSENT=Type INSTALL to approve, otherwise press Enter: 
+set /p "JH_CONSENT=Type INSTALL to approve, otherwise press Enter: "
 if /I not "%JH_CONSENT%"=="INSTALL" (
   echo Cancelled without changes.
   exit /b 0

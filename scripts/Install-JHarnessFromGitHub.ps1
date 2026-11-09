@@ -1,4 +1,4 @@
-# J Harness v8 alpha: Windows x64, PowerShell-only CLI installer.
+﻿# J Harness v8 alpha: Windows x64, PowerShell-only CLI installer.
 # Unsigned and advisory. Owner consent required; no OS-enforced AI security.
 [CmdletBinding()]
 param(
@@ -86,10 +86,10 @@ try{
  if((Get-FileHash -LiteralPath $node -Algorithm SHA256).Hash.ToLowerInvariant() -ne $nodeSha){throw 'NODE_BINARY_SHA256_MISMATCH'}
  $nodeVersion=& $node --version
  if($LASTEXITCODE -ne 0 -or ($nodeVersion|Out-String).Trim() -ne 'v22.22.2'){throw 'PINNED_NODE_EXECUTION_FAILED'}
- & $node (Join-Path $repo 'core\build-integrated-product.mjs') --out $package --node-binary $node
+ & $node (Join-Path (Join-Path $repo 'core') 'build-integrated-product.mjs') --out $package --node-binary $node
  if($LASTEXITCODE -ne 0){throw 'INTEGRATED_PACKAGE_BUILD_FAILED'}
  if(-not(Test-Path -LiteralPath (Join-Path $package 'SHA256_MANIFEST.json') -PathType Leaf)){throw 'PACKAGE_MANIFEST_MISSING'}
- $installer=Join-Path $package 'core\product\Install-JHarnessProduct.ps1'
+ $installer=Join-Path (Join-Path (Join-Path $package 'core') 'product') 'Install-JHarnessProduct.ps1'
  if(-not(Test-Path -LiteralPath $installer -PathType Leaf)){throw 'INSTALLER_ENTRY_MISSING'}
  if($Action -eq 'Package'){
   $dest=[IO.Path]::GetFullPath($Destination)
