@@ -10,7 +10,8 @@ param(
 )
 $ErrorActionPreference='Stop'
 $ProgressPreference='SilentlyContinue'
-$sourceSha='a4f8e258d729f302e701d00a52610b778821fcaf'
+# Reviewed source includes bounded owned-runtime cleanup and verified service removal.
+$sourceSha='325fd92475cf8586e09f32514f0cf3f212efdba5'
 $nodeSha='ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3'
 $nodeUrl='https://nodejs.org/dist/v22.22.2/win-x64/node.exe'
 $archiveUrl='https://github.com/hacker943410-debug/ai-harness/archive/'+$sourceSha+'.zip'
