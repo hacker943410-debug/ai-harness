@@ -3,7 +3,7 @@ on:
   push:
     branches: [feature/v8-environment-bootstrap-phase1]
   pull_request:
-    branches: [release/j-harness-core-beta.1]
+    branches: [release/j-harness-core-beta.1, main]
 permissions:
   contents: read
 jobs:

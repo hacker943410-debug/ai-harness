@@ -17,6 +17,10 @@ function inspect(f,extra={}){
  return inspectEnvironment({client:'codex',profile:'general',platform:'linux',nodeVersion:'22.16.0',
    envPath:f.bin,separator:path.delimiter,...extra});
 }
+function linkOrSkip(t,target,link,type){
+ try{fs.symlinkSync(target,link,type);return true;}
+ catch(e){if(['EPERM','EACCES','ENOTSUP'].includes(e.code)){t.skip('symlink unavailable: '+e.code);return false;}throw e;}
+}
 test('one CLI is enough, and read-only inventory cannot change user files',t=>{
  const f=fixture(t);f.tool('codex');const before=fs.readdirSync(f.bin);
  const result=inspect(f);
@@ -60,13 +64,48 @@ test('Roblox dependencies are conditional only',t=>{
  }
  assert.deepEqual(b.blocked,[]);
 });
-test('symlinks and unsafe executable names are rejected',t=>{
+test('unsafe executable names are rejected',()=>{
+ assert.throws(()=>findExecutable('../../bin/sh'),/INVALID_TOOL_NAME/);
+});
+test('discovery follows a linked PATH directory without executing its CLI',t=>{
+ const f=fixture(t);f.tool('codex');
+ const link=path.join(f.root,'linked-bin');
+ if(!linkOrSkip(t,f.bin,link,process.platform==='win32'?'junction':'dir'))return;
+ const result=inspect(f,{envPath:link});
+ assert.deepEqual(result.blocked,[]);
+ assert.equal(result.steps.find(x=>x.id==='codex').observed,'FOUND_NOT_EXECUTED');
+ assert.equal(result.steps.find(x=>x.id==='codex').path,path.join(link,'codex'));
+ assert.equal(result.evidence.modelSessionVerified,false);
+});
+test('discovery follows package-manager CLI launchers without executing them',t=>{
  const f=fixture(t);const real=f.tool('codex');
  const link=path.join(f.bin,'agy');
- try{fs.symlinkSync(real,link)}
- catch(e){if(['EPERM','EACCES','ENOTSUP'].includes(e.code)){t.diagnostic('symlink unavailable');return}throw e}
- assert.equal(findExecutable('agy',{envPath:f.bin,platform:'linux'}),null);
- assert.throws(()=>findExecutable('../../bin/sh'),/INVALID_TOOL_NAME/);
+ if(!linkOrSkip(t,real,link,'file'))return;
+ const result=inspect(f,{client:'agy'});
+ assert.deepEqual(result.blocked,[]);
+ assert.equal(result.steps.find(x=>x.id==='agy').path,link);
+ assert.equal(result.steps.find(x=>x.id==='agy').observed,'FOUND_NOT_EXECUTED');
+});
+test('a broken launcher does not hide a valid later PATH entry',t=>{
+ const f=fixture(t),first=path.join(f.root,'first');fs.mkdirSync(first);
+ if(!linkOrSkip(t,path.join(f.root,'missing'),path.join(first,'codex'),'file'))return;
+ const real=f.tool('codex');
+ assert.equal(findExecutable('codex',{envPath:[first,f.bin].join(path.delimiter),platform:'linux'}),real);
+});
+test('a broken Windows extension does not hide a valid fallback in the same directory',t=>{
+ const f=fixture(t);
+ if(!linkOrSkip(t,path.join(f.root,'missing'),path.join(f.bin,'codex.exe'),'file'))return;
+ const real=f.tool('codex.cmd');
+ assert.equal(findExecutable('codex',{envPath:f.bin,platform:'win32'}),real);
+});
+test('pinned staging still refuses linked source and managed-root paths',t=>{
+ const f=fixture(t),source=f.tool('source.bin'),linkedRoot=path.join(f.root,'linked-bin');
+ if(!linkOrSkip(t,f.bin,linkedRoot,process.platform==='win32'?'junction':'dir'))return;
+ const base={source,expectedSha256:sha256(fs.readFileSync(source)),component:'node',fileName:'node.exe',managedRoot:path.join(f.root,'managed'),approved:true};
+ assert.throws(()=>stagePinnedLocalFile({...base,source:path.join(linkedRoot,'source.bin')}),/SYMLINK_PATH_REFUSED/);
+ assert.throws(()=>stagePinnedLocalFile({...base,managedRoot:path.join(linkedRoot,'managed')}),/SYMLINK_PATH_REFUSED/);
+ assert.equal(fs.existsSync(base.managedRoot),false);
+ assert.equal(fs.existsSync(path.join(f.bin,'managed')),false);
 });
 test('offline pinned file preparation is opt-in, verifies SHA, and never overwrites',t=>{
  const f=fixture(t),source=path.join(f.root,'source.bin'),managedRoot=path.join(f.root,'managed');

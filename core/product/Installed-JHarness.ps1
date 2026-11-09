@@ -20,6 +20,21 @@ function Assert-NoReparse([string]$p){
  $q=[IO.Path]::GetFullPath($p)
  while($q){if(Test-Path -LiteralPath $q){if(((Get-Item -LiteralPath $q -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'REPARSE_REFUSED'}};$parent=[IO.Path]::GetDirectoryName($q);if(-not $parent -or $parent -eq $q){break};$q=$parent}
 }
+function Remove-OwnedRuntimeFile([string]$LiteralPath,[string]$ExpectedSha256){
+ if($ExpectedSha256 -notmatch '^[a-f0-9]{64}$'){throw 'OWNED_RUNTIME_EXPECTED_HASH_REQUIRED'}
+ # A just-exited executable can remain locked briefly on Windows. Retry only
+ # this owned file, rechecking its path and digest before every delete attempt.
+ for($attempt=0;$attempt -le 10;$attempt++){
+  Assert-NoReparse $LiteralPath
+  if(-not(Test-Path -LiteralPath $LiteralPath -PathType Leaf)){return $false}
+  if((Get-FileHash -LiteralPath $LiteralPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $ExpectedSha256){throw 'OWNED_RUNTIME_CHANGED_PRESERVED'}
+  try{Remove-Item -LiteralPath $LiteralPath -Force -ErrorAction Stop;return $true}
+  catch{
+   if($attempt -eq 10 -or (-not($_.Exception -is [IO.IOException]) -and -not($_.Exception -is [UnauthorizedAccessException]))){throw}
+   Start-Sleep -Milliseconds 200
+  }
+ }
+}
 foreach($p in @($root,$receiptFile,$node,$cli,$codexHome,$coreCli)){Assert-NoReparse $p}
 if(-not(Test-Path -LiteralPath $node -PathType Leaf) -or (Get-FileHash -LiteralPath $node -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sha){throw 'J_HARNESS_RUNTIME_NODE_HASH_INVALID'}
 if([string]$receipt.cliSha256 -match '^[a-f0-9]{64}$'){
@@ -86,10 +101,10 @@ try {
   if($receipt.privateCliCreated -eq $true) {
    $privateExpected=Join-Path $root 'cli\codex-v0.166.0\codex.exe'
    if($cli -ne $privateExpected){throw 'UNINSTALL_PRIVATE_CLI_PATH_INVALID'}
-   if(Test-Path -LiteralPath $cli){Remove-Item -LiteralPath $cli -Force -ErrorAction Stop;$removed.Add('owned_private_codex')}
+   if(Remove-OwnedRuntimeFile $cli ([string]$receipt.cliSha256)){$removed.Add('owned_private_codex')}
   }
   if($receipt.nodeOwned -eq $true -and (Test-Path -LiteralPath $node)){
-   Remove-Item -LiteralPath $node -Force -ErrorAction Stop;$removed.Add('owned_private_node')
+   if(Remove-OwnedRuntimeFile $node $sha){$removed.Add('owned_private_node')}
   }
   foreach($name in @('J_Harness_Start.cmd','J_Harness_Doctor.cmd','J_Harness_Remove.cmd')){
     $launcher=Join-Path $root $name

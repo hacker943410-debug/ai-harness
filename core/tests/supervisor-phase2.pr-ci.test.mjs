@@ -10,10 +10,13 @@ const workflow=read('.github/workflows/v8-supervisor-phase2-windows-ci.yml');
 const script=read('windows/phase2/Invoke-Phase2WindowsCILab.ps1');
 const worker=read('windows/phase2/Invoke-Phase2WorkerProbe.ps1');
 
-test('branch-only PR CI without workflow_dispatch default-branch dependency',()=>{
+test('owner-only PR CI includes source integration on main without a dispatch dependency',()=>{
   assert.match(workflow,/^on:\s*\n\s+pull_request:/m);
   assert.match(workflow,/branches:\s*\n\s+- feature\/v8-environment-bootstrap-phase2/);
   assert.match(workflow,/github\.event\.pull_request\.head\.ref == 'feature\/v8-supervisor-phase2-windows-ci'/);
+  assert.match(workflow,/branches:\s*\n\s+- feature\/v8-environment-bootstrap-phase2\s*\n\s+- main/);
+  assert.match(workflow,/github\.event\.pull_request\.base\.ref == 'main'/);
+  assert.match(workflow,/Test-Phase2CleanupContract\.ps1/);
   assert.match(workflow,/github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
   assert.match(workflow,/github\.event\.pull_request\.user\.login == 'hacker943410-debug'/);
   assert.doesNotMatch(workflow,/workflow_dispatch:|pull_request_target:|\n\s+push:/);

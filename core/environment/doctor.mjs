@@ -11,17 +11,16 @@ export function findExecutable(name,{envPath=process.env.PATH||'',platform=proce
   if(!/^[a-z][a-z0-9-]*$/.test(name))throw Error('INVALID_TOOL_NAME');
   const extensions=platform==='win32'?['.exe','.cmd','.bat','']:[''];
   for(const dir of envPath.split(separator).filter(Boolean)){
+    const root=path.resolve(dir);
     try{
-      const root=path.resolve(dir);
-      if(!fs.statSync(root).isDirectory()||fs.lstatSync(root).isSymbolicLink())continue;
-      for(const ext of extensions){
-        const candidate=path.join(root,name+ext);
-        if(fs.existsSync(candidate)){
-          const stat=fs.lstatSync(candidate);
-          if(stat.isFile()&&!stat.isSymbolicLink())return candidate;
-        }
-      }
-    }catch{/* inaccessible PATH entry: not installed */}
+      if(!fs.statSync(root).isDirectory())continue;
+    }catch{continue;/* inaccessible PATH entry */}
+    for(const ext of extensions){
+      const candidate=path.join(root,name+ext);
+      // Discovery follows package-manager links without executing or trusting them.
+      try{if(fs.statSync(candidate).isFile())return candidate;}
+      catch{/* missing, broken or inaccessible candidate: try the next extension */}
+    }
   }
   return null;
 }

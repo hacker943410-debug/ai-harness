@@ -35,6 +35,35 @@ $outcome=[ordered]@{product='J Harness';phase='PHASE2_WINDOWS_CI';runner='GITHUB
 function WriteEvidence {
   [IO.File]::WriteAllText((Join-Path $EvidenceDirectory 'PHASE2_WINDOWS_CI_RESULT.json'),($outcome|ConvertTo-Json -Depth 8),[Text.UTF8Encoding]::new($false))
 }
+function Stop-Phase2LabService([string]$serviceName) {
+  $controller=$null
+  try {
+    $controller=Get-Service -Name $serviceName -ErrorAction Stop
+    Stop-Service -Name $serviceName -ErrorAction Stop
+    $controller.WaitForStatus([ServiceProcess.ServiceControllerStatus]::Stopped,[TimeSpan]::FromSeconds(10))
+    $controller.Refresh()
+    if($controller.Status -ne 'Stopped') {throw 'SERVICE_NOT_STOPPED'}
+  } finally {
+    # An open ServiceController handle can keep SCM deletion pending.
+    if($null -ne $controller) {$controller.Dispose()}
+  }
+}
+function Remove-Phase2LabService([string]$serviceName) {
+  Stop-Phase2LabService $serviceName
+  & sc.exe delete $serviceName | Out-Null
+  $deleteExit=$LASTEXITCODE
+  if($deleteExit -ne 0 -and $deleteExit -ne 1072) {throw 'SC_DELETE_FAILED'}
+  # sc delete success can mean only "marked for deletion". Require absence,
+  # and distinguish absence (1060) from access errors or pending deletion (1072).
+  for($attempt=1;$attempt -le 20;$attempt++) {
+    & sc.exe query $serviceName | Out-Null
+    $queryExit=$LASTEXITCODE
+    if($queryExit -eq 1060) {return}
+    if($queryExit -ne 0 -and $queryExit -ne 1072) {throw 'SERVICE_REMOVAL_QUERY_FAILED'}
+    if($attempt -lt 20) {Start-Sleep -Milliseconds 250}
+  }
+  throw 'SERVICE_REMOVAL_NOT_CONFIRMED'
+}
 function Set-LabAcl([string]$directory,[string]$agentSid,[string]$agentRights,[switch]$LocalServiceRead) {
   $acl=New-Object Security.AccessControl.DirectorySecurity
   $acl.SetAccessRuleProtection($true,$false)
@@ -160,11 +189,7 @@ try {
   $outcome.originalPolicyUntouched=if((Get-FileHash $policyFile -Algorithm SHA256).Hash -eq $originalPolicy){'PASS'}else{'FAIL'}
   $outcome.originalStateUntouched=if((Get-FileHash $stateFile -Algorithm SHA256).Hash -eq $originalState){'PASS'}else{'FAIL'}
   if($outcome.originalPolicyUntouched -ne 'PASS' -or $outcome.originalStateUntouched -ne 'PASS') {throw 'TRUST_STORE_CHANGED'}
-  Stop-Service -Name $name -ErrorAction Stop
-  $stopped=Get-Service -Name $name -ErrorAction Stop
-  $stopped.WaitForStatus([ServiceProcess.ServiceControllerStatus]::Stopped,[TimeSpan]::FromSeconds(10))
-  $stopped.Refresh()
-  if($stopped.Status -ne 'Stopped') {throw 'SERVICE_NOT_STOPPED'}
+  Stop-Phase2LabService $name
   $unreachable=$true
   $client=[System.IO.Pipes.NamedPipeClientStream]::new('.', $pipeName, [IO.Pipes.PipeDirection]::InOut)
   try {try {$client.Connect(350);$unreachable=$false}catch [TimeoutException]{} }
@@ -179,7 +204,7 @@ try {
   $outcome.failure=($_.Exception.GetType().Name+': '+$_.Exception.Message)
 } finally {
   if($serviceCreated){
-    try {Stop-Service -Name $name -ErrorAction SilentlyContinue; & sc.exe delete $name | Out-Null; if($LASTEXITCODE -ne 0){throw 'SC_DELETE_FAILED'}} catch {$cleanupErrors.Add('SERVICE_CLEANUP_FAILED')}
+    try {Remove-Phase2LabService $name} catch {$cleanupErrors.Add('SERVICE_CLEANUP_FAILED')}
   }
   if($agent){try{Remove-LocalUser -Name $userName -ErrorAction Stop}catch{$cleanupErrors.Add('ACCOUNT_CLEANUP_FAILED')}}
   if($parentCreated){

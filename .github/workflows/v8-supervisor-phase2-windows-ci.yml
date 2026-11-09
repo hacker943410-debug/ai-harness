@@ -8,6 +8,7 @@ on:
     types: [opened, synchronize, reopened]
     branches:
       - feature/v8-environment-bootstrap-phase2
+      - main
     paths:
       - .github/workflows/v8-supervisor-phase2-windows-ci.yml
       - core/supervisor/**
@@ -29,7 +30,8 @@ jobs:
     if: >-
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.login == 'hacker943410-debug' &&
-      github.event.pull_request.head.ref == 'feature/v8-supervisor-phase2-windows-ci'
+      (github.event.pull_request.head.ref == 'feature/v8-supervisor-phase2-windows-ci' ||
+       github.event.pull_request.base.ref == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 7
     steps:
@@ -59,6 +61,8 @@ jobs:
       - name: Run disposable OS-boundary checks (NO CLI launch or owner credentials)
         shell: powershell
         run: |
+          & powershell.exe -NoProfile -NonInteractive -File windows/phase2/Test-Phase2CleanupContract.ps1
+          if($LASTEXITCODE -ne 0){throw 'CLEANUP_CONTRACT_REGRESSION_FAILED'}
           .\windows\phase2\Invoke-Phase2WindowsCILab.ps1 `
             -IAmInDisposableGitHubWindowsRunner `
             -ExpectedGithubSha "$env:GITHUB_SHA" `

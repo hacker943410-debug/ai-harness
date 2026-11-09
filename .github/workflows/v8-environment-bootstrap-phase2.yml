@@ -3,7 +3,7 @@ on:
   push:
     branches: [feature/v8-environment-bootstrap-phase2]
   pull_request:
-    branches: [feature/v8-environment-bootstrap-phase1]
+    branches: [feature/v8-environment-bootstrap-phase1, main]
 permissions:
   contents: read
 jobs:

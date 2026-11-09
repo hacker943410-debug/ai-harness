@@ -1,7 +1,7 @@
 name: J Harness v8 integrated one-click Windows installer (Draft)
 on:
   pull_request:
-    branches: [feature/v8-environment-bootstrap-phase2]
+    branches: [feature/v8-environment-bootstrap-phase2, main]
     paths:
       - 'core/product/**'
       - 'core/build-integrated-product.mjs'
@@ -10,6 +10,7 @@ on:
       - 'docs/core/INTEGRATED_FIRST_USE_BETA_KO.md'
       - 'scripts/Install-JHarnessFromGitHub.ps1'
       - 'core/tests/cli-distribution.test.mjs'
+      - 'core/tests/Test-OwnedRuntimeCleanup.ps1'
       - 'docs/releases/v8.0.0-alpha.1.md'
 permissions:
   contents: read
@@ -61,6 +62,8 @@ jobs:
         run: |
           $ErrorActionPreference='Stop'
           if($env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:RUNNER_OS -ne 'Windows' -or $env:GITHUB_ACTIONS -ne 'true') {throw 'DISPOSABLE_RUNNER_REQUIRED'}
+          & powershell.exe -NoProfile -File core/tests/Test-OwnedRuntimeCleanup.ps1
+          if($LASTEXITCODE -ne 0){throw 'OWNED_RUNTIME_CLEANUP_REGRESSION_FAILED'}
           $lab=Join-Path $env:RUNNER_TEMP ('jh-integrated-test-'+[guid]::NewGuid().ToString('N'))
           $codexHome=Join-Path $lab 'codex-profile'
           $managed=Join-Path $lab 'managed-app'
