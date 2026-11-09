@@ -1,10 +1,10 @@
 # J Harness v8 — 통합 설치형 첫 사용 후보 (Windows x64)
 
-**현재 상태: 개발용 Draft, 정식 배포 전 NO-GO.**
+**현재 상태: 2026-11-09 `v8.0.0-alpha.1` GitHub 공개 Pre-release.** Windows x64·Codex 테스트용 설치 패키지이며, Stable/실사용 보안 제품은 **NO-GO**입니다. [릴리스 다운로드](https://github.com/hacker943410-debug/ai-harness/releases/tag/v8.0.0-alpha.1).
 
 ## 완성된 사용자 동선
 
-1. GitHub CI 산출물 `J-Harness-Integrated-Windows-Unsigned` ZIP의 압축을 풉니다.
+1. [GitHub Alpha 릴리스](https://github.com/hacker943410-debug/ai-harness/releases/tag/v8.0.0-alpha.1)에서 `J_Harness_v8.0.0-alpha.1_Windows_x64.zip`을 내려받아 압축을 풉니다. 별도 CLI 방식으로는 같은 릴리스의 `JHarness-Install-Alpha.ps1`을 실행할 수 있습니다.
 2. `J_Harness_Install.cmd`를 실행합니다. PowerShell이 **읽기 전용 계획**과 모든 패키지 파일의 SHA-256을 확인합니다.
 3. 설명을 검토하고 `INSTALL` 입력으로 설치를 허가합니다. 설치는 Node.js v22.22.2를 앱 전용 경로에 구성합니다.
 4. 기존 네이티브 Codex CLI가 있으면 재사용합니다. 없다면 공개된 공식 `openai/codex` 릴리스 `rust-v0.166.0`의 Windows x64 바이너리를 앱 전용 경로로 내려받고 **고정 SHA-256을 검증**합니다. CLI 다운로드 용량은 약 372 MB입니다.
