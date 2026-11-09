@@ -118,6 +118,35 @@ class CompanyWordTests(unittest.TestCase):
         red = cw.descendants(parsed, 'color')[0]
         self.assertEqual(cw.text(red.parentNode.parentNode), 'CONFIDENTIAL')
 
+    def test_requested_title_can_contain_original_running_text(self):
+        self.content['running_title'] = 'Old subject | CONFIDENTIAL revised'
+        self.build()
+        self.assertEqual(cw.verify(self.profile, self.output)['status'], 'STRUCTURAL_PASS_VISUAL_REQUIRED')
+
+    def test_unchanged_requested_running_title_is_valid(self):
+        self.content['running_title'] = 'Old subject'
+        self.build()
+        self.assertEqual(cw.verify(self.profile, self.output)['status'], 'STRUCTURAL_PASS_VISUAL_REQUIRED')
+
+    def test_existing_simple_total_field_is_replaced_without_nesting(self):
+        footer = f'<w:ftr xmlns:w="{W}"><w:p><w:fldSimple w:instr=" PAGE "><w:r><w:t>1</w:t></w:r></w:fldSimple><w:r><w:t> / </w:t></w:r><w:fldSimple w:instr=" NUMPAGES "><w:r><w:t>46</w:t></w:r></w:fldSimple></w:p></w:ftr>'
+        fixture(self.source, {'word/footer1.xml': footer.encode()})
+        self.build()
+        parsed = cw.xml(cw.package(self.output)['word/footer1.xml'])
+        fields = cw.descendants(parsed, 'fldSimple')
+        self.assertEqual(len(fields), 2)
+        self.assertEqual(fields[1].getAttributeNS(W, 'instr').strip(), 'SECTIONPAGES')
+        self.assertEqual(len(cw.descendants(fields[1], 'fldSimple')), 0)
+
+    def test_existing_complex_total_field_is_updated_without_new_field(self):
+        footer = f'<w:ftr xmlns:w="{W}"><w:p><w:r><w:t>1</w:t></w:r><w:r><w:t> / </w:t></w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText> NUM</w:instrText></w:r><w:r><w:instrText>PAGES </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>46</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p></w:ftr>'
+        fixture(self.source, {'word/footer1.xml': footer.encode()})
+        self.build()
+        parsed = cw.xml(cw.package(self.output)['word/footer1.xml'])
+        self.assertEqual(len(cw.descendants(parsed, 'fldSimple')), 0)
+        instruction = ''.join(n.firstChild.data if n.firstChild else '' for n in cw.descendants(parsed, 'instrText'))
+        self.assertEqual(instruction.strip(), 'SECTIONPAGES')
+
     def test_split_static_footer_total_becomes_a_section_page_field(self):
         footer = f'<w:ftr xmlns:w="{W}"><w:p><w:r><w:t>1</w:t></w:r><w:r><w:t> / </w:t></w:r><w:r><w:t>46</w:t></w:r></w:p></w:ftr>'
         fixture(self.source, {'word/footer1.xml': footer.encode()})
@@ -244,6 +273,20 @@ class CompanyWordTests(unittest.TestCase):
         fixture(self.source, {'word/comments.xml': f'<w:comments xmlns:w="{W}">'+p('Old private approval')+'</w:comments>'})
         with self.assertRaisesRegex(ValueError, 'HIDDEN_SOURCE_TEXT'):
             self.capture()
+
+    def test_tracked_deletion_is_blocked_before_profile_capture(self):
+        document = cw.xml(self.parts['word/document.xml'])
+        deletion = document.createElementNS(W, 'w:del')
+        run = document.createElementNS(W, 'w:r')
+        value = document.createElementNS(W, 'w:delText')
+        value.appendChild(document.createTextNode('Old private approval'))
+        run.appendChild(value)
+        deletion.appendChild(run)
+        cw.descendants(document, 'p')[0].appendChild(deletion)
+        fixture(self.source, {'word/document.xml': document.toxml(encoding='utf-8')})
+        with self.assertRaisesRegex(ValueError, 'REVISION_MARKUP'):
+            self.capture()
+        self.assertFalse(self.profile.exists())
 
     def test_unmapped_unused_header_prose_is_blocked(self):
         fixture(self.source, {'word/header99.xml': (f'<w:hdr xmlns:w="{W}">'+p('Old private approval')+'</w:hdr>').encode()})

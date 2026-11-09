@@ -26,14 +26,14 @@ slot role is one of title/subject/subtitle/version/owner/summary.
 or footer prose is rejected. `clear_text_parts` explicitly names unused
 header/footer parts whose source text must be erased in derivatives, such as
 business-specific divider text. Do not clear parts needed by selected sections.
-Comments, real notes, custom properties or custom XML containing hidden prose
+Tracked revisions, comments, real notes, custom properties or custom XML containing hidden prose
 require a reviewed sanitized working copy; keep the original retained separately.
 
 ```text
 python <skill>/scripts/company_word.py capture --source <reference.docx> --selection <selection.json> --profile <new-private-directory>
 ```
 
-Capture refuses active content, unreviewed external relationships, unsafe ZIP
+Capture refuses active content, tracked revisions, unreviewed external relationships, unsafe ZIP
 paths, malformed XML and existing profiles. Never put the private directory
 inside a public source checkout. These checks do not replace reviewing the
 source document for confidential or unwanted content.

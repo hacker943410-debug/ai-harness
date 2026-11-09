@@ -170,6 +170,42 @@ def effective_section(sections, index):
     return selected
 
 
+def normalize_footer_fields(part):
+    """Normalize existing page totals without nesting a field in cached results."""
+    field_text_nodes = set()
+    changed = False
+    for field in descendants(part, 'fldSimple'):
+        instruction = field.getAttributeNS(W, 'instr')
+        replacement = re.sub(r'\bNUMPAGES\b', 'SECTIONPAGES', instruction, flags=re.I)
+        if replacement != instruction:
+            field.setAttributeNS(W, 'w:instr', replacement)
+            changed = True
+        field_text_nodes.update(id(t) for t in descendants(field, 't'))
+    stack = []
+    for node in part.getElementsByTagName('*'):
+        if node.namespaceURI != W:
+            continue
+        if node.localName == 'fldChar':
+            kind = node.getAttributeNS(W, 'fldCharType')
+            if kind == 'begin':
+                stack.append([])
+            elif kind == 'end' and stack:
+                codes = stack.pop()
+                instruction = ''.join(n.firstChild.data if n.firstChild else '' for n in codes)
+                replacement = re.sub(r'\bNUMPAGES\b', 'SECTIONPAGES', instruction, flags=re.I)
+                if replacement != instruction and codes:
+                    for i, code in enumerate(codes):
+                        for child in list(code.childNodes):
+                            code.removeChild(child)
+                        code.appendChild(part.createTextNode(replacement if i == 0 else ''))
+                    changed = True
+        elif node.localName == 'instrText' and stack:
+            stack[-1].append(node)
+        elif node.localName == 't' and stack:
+            field_text_nodes.add(id(node))
+    return field_text_nodes, changed
+
+
 def paragraph(prototype, value, *, list_item=False):
     p = prototype.cloneNode(True)
     doc = p.ownerDocument
@@ -245,6 +281,11 @@ def capture(source, destination, selection):
     if destination.exists():
         raise ValueError('PROFILE_EXISTS_PRESERVED')
     data = package(source)
+    for name, value in data.items():
+        if name.startswith('word/') and name.endswith('.xml'):
+            parsed = xml(value)
+            if any(descendants(parsed, kind) for kind in ('ins', 'del', 'delText', 'moveFrom', 'moveTo', 'pPrChange', 'rPrChange', 'sectPrChange', 'tblPrChange', 'tcPrChange', 'trPrChange')):
+                raise ValueError('REVISION_MARKUP_REQUIRES_CLEAN_REFERENCE: ' + name)
     document = xml(data['word/document.xml'])
     body = descendants(document, 'body')[0]
     nodes = children(body)
@@ -458,6 +499,7 @@ def build(directory, content, output):
     body.appendChild(body_section)
     data['word/document.xml'] = document.toxml(encoding='utf-8')
     running = content.get('running_title') or content['title']
+    expected_running = {}
     for name, value in list(data.items()):
         if re.fullmatch(r'word/(?:header|footer)\d+\.xml', name):
             part = xml(value)
@@ -468,13 +510,13 @@ def build(directory, content, output):
                         t.removeChild(child)
                 data[name] = part.toxml(encoding='utf-8')
                 continue
-            for p in descendants(part, 'p'):
-                if descendants(p, 'p'):
-                    continue
+            paragraphs = [p for p in descendants(part, 'p') if not descendants(p, 'p')]
+            for index, p in enumerate(paragraphs):
                 replacements = selection.get('running_text', {})
                 if text(p) in replacements:
                     replacement = replacements[text(p)].replace('{{running_title}}', running)
                     replace_text_in_place(p, replacement)
+                    expected_running.setdefault(name, []).append({'paragraph': index, 'text': replacement})
                     changed = True
             if changed:
                 data[name] = part.toxml(encoding='utf-8')
@@ -482,11 +524,15 @@ def build(directory, content, output):
     for name, value in list(data.items()):
         if re.fullmatch(r'word/footer\d+\.xml', name):
             part = xml(value)
-            changed = False
+            field_text_nodes, changed = normalize_footer_fields(part)
             previous_text = ''
             clearing_total_digits = False
             for t in descendants(part, 't'):
                 value_text = t.firstChild.data if t.firstChild else ''
+                if id(t) in field_text_nodes:
+                    if value_text.strip():
+                        previous_text = value_text
+                    continue
                 if clearing_total_digits and re.fullmatch(r'\d+', value_text.strip()):
                     t.firstChild.data = ''
                     continue
@@ -537,6 +583,7 @@ def build(directory, content, output):
     receipt = {'schema_version': 1, 'source_sha256': profile['source_sha256'],
                'output_sha256': digest(output.read_bytes()), 'content_sha256': digest(json_bytes(content)),
                'changed_parts': [name for name in data if data[name] != original[name]],
+               'expected_running_text': expected_running,
                'expected_sections': len(descendants(document, 'sectPr')),
                'section_sources': ([selection.get('cover_section', 0)] if content.get('include_cover', True) and selection.get('cover') else []) + [selection['body_section']],
                'expected_tables': sum(len(item.get('tables', [])) for item in content['sections']),
@@ -582,9 +629,11 @@ def verify(directory, output):
         if re.fullmatch(r'word/(?:header|footer)\d+\.xml', name):
             if name in profile['selection'].get('clear_text_parts', []) and text(xml(value)).strip():
                 raise ValueError('DISCARDED_RUNNING_PART_RETAINS_TEXT')
-            for original_text in profile['selection'].get('running_text', {}):
-                if original_text in text(xml(value)):
-                    raise ValueError('OLD_RUNNING_TITLE_REMAINS')
+            paragraphs = [p for p in descendants(xml(value), 'p') if not descendants(p, 'p')]
+            for expected in receipt.get('expected_running_text', {}).get(name, []):
+                index = expected['paragraph']
+                if not isinstance(index, int) or not 0 <= index < len(paragraphs) or text(paragraphs[index]) != expected['text']:
+                    raise ValueError('RUNNING_TITLE_REPLACEMENT_MISMATCH')
     return {'status': 'STRUCTURAL_PASS_VISUAL_REQUIRED', 'source_unchanged': True,
             'checks': ['reference hash', 'output hash', 'all XML parse', 'package part set', 'preserve-only bytes', 'page geometry', 'table widths', 'source running-title removal'],
             'word_open': 'NOT_INDEPENDENTLY_OBSERVED_BY_THIS_CHECK', 'visual_review': 'REQUIRED',
