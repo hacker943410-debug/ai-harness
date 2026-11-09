@@ -1,0 +1,26 @@
+name: AI Harness v8 Owner Control Contract (Design Only)
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [design/v8-supervisor-control-plane-20261029]
+permissions:
+  contents: read
+jobs:
+  static-contract:
+    name: Static ON/OFF-only and Owner Contract (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JSON control contract invariants (NOT OS ENFORCEMENT)
+        run: node --test scripts/test-supervisor-control-contract-v8.mjs
+      - name: Check repository Node syntax
+        run: node --check scripts/test-supervisor-control-contract-v8.mjs
