@@ -188,3 +188,4 @@ try {
     exit 1
 }
 # All isolated evidence, including failed attempts, remains available for review.
+exit 0
