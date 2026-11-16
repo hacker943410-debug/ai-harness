@@ -20,6 +20,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22.22.2'
+      - name: Provision pinned Codex for preserved profile regressions only
+        shell: bash
+        run: |
+          profile_cli="$RUNNER_TEMP/jh-profile-regression-cli"
+          npm install --prefix "$profile_cli" --no-save --package-lock=false @openai/codex@0.166.0
+          export PATH="$profile_cli/node_modules/.bin:$PATH"
+          test "$(codex --version)" = 'codex-cli 0.166.0'
+          echo "$profile_cli/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Portable runtime and preserved profile contracts
         run: node --test core/tests/portable.test.mjs core/tests/cli-distribution.test.mjs core/tests/core.test.mjs core/tests/environment.test.mjs core/tests/integrated-product.test.mjs
   windows-native:

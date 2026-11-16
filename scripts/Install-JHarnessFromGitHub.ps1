@@ -1,4 +1,4 @@
-# Default Windows product installer: v8 portable, without a global Codex profile.
+﻿# Default Windows product installer: v8 portable, without a global Codex profile.
 [CmdletBinding()]
 param(
   [ValidateSet('Plan','Install','Package')][string]$Action='Plan',
@@ -32,7 +32,7 @@ if($Mode -eq 'Profile'){
 if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or [Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString() -ne 'X64'){throw 'WINDOWS_X64_REQUIRED'}
 if(-not $ProjectPath){
   if(-not $env:LOCALAPPDATA){throw 'PROJECT_PATH_REQUIRED'}
-  $ProjectPath=Join-Path $env:LOCALAPPDATA 'JHarness-Portable\workspace'
+  $ProjectPath=[IO.Path]::Combine($env:LOCALAPPDATA,'JHarness-Portable','workspace')
 }
 $project=[IO.Path]::GetFullPath($ProjectPath)
 function Assert-Safe([string]$value){

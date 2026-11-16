@@ -37,7 +37,7 @@ function Tree([string]$root) {
 $sentinel=Inside 'global home unavailable'
 Write-Utf8 $sentinel 'SENTINEL: global home must never be opened as a directory or changed.'
 $sentinelHash=(Get-FileHash -LiteralPath $sentinel -Algorithm SHA256).Hash
-$native=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+$native=[IO.Path]::Combine([string[]]@($env:SystemRoot,'System32','WindowsPowerShell','v1.0','powershell.exe'))
 $processEnvironment=@{};foreach($name in @('PATH','HOME','USERPROFILE','CODEX_HOME')) { $processEnvironment[$name]=[Environment]::GetEnvironmentVariable($name,'Process') }
 $persistentEnvironment=@{};foreach($scope in @('User','Machine')){foreach($name in @('PATH','HOME','USERPROFILE','CODEX_HOME')){$persistentEnvironment[$scope+':'+$name]=[Environment]::GetEnvironmentVariable($name,$scope)}}
 $checks=New-Object 'System.Collections.Generic.List[string]'
@@ -88,7 +88,7 @@ try {
         $result=Run $command (Launcher $project $command) | ConvertFrom-Json
         Expect ($result.effective -eq 'READY_LOCAL' -and $result.version -eq '8.0.0-core-beta.1' -and $result.globalConnectionRequired -eq $false) ('COMMAND_FAILED: '+$command)
     }
-    $cmd=Join-Path $env:SystemRoot 'System32\cmd.exe'
+    $cmd=[IO.Path]::Combine($env:SystemRoot,'System32','cmd.exe')
     $cmdStatus=Run 'cmd-status' ('Set-Location -LiteralPath '+(Quote $project)+'; & '+(Quote $cmd)+' /d /c ".\JHarness.cmd status"; exit $LASTEXITCODE') | ConvertFrom-Json
     Expect ($cmdStatus.effective -eq 'READY_LOCAL') 'CMD_LAUNCHER_FAILED'
     $setup=Run 'setup-repeat' (Launcher $project 'setup') | ConvertFrom-Json
@@ -102,12 +102,13 @@ try {
     Expect ($begun.goal -ceq $goal) 'QUOTED_GOAL_CHANGED'
     $null=Run 'quoted-advance-plan' (Launcher $project ('advance plan --note '+(Quote 'Run literal quotes and backslashes through the bundled Windows launcher')))
     $null=Run 'quoted-advance-implement' (Launcher $project 'advance implement')
-    $bundledNode=Join-Path $project '.agents\j-harness\vendor\win-x64\node.exe'
+    $bundledNode=[IO.Path]::Combine([string[]]@($project,'.agents','j-harness','vendor','win-x64','node.exe'))
     $code='console.log("quoted 한국어"); console.log(JSON.stringify(process.argv.slice(1)));'
     $payload='argument "double quote" and spaces'
     $trailing='C:\fixture path\'
-    $verifyArguments=@('-e',$code,'--',$payload,$trailing,'')
-    $verifyCommand='verify -- '+(Quote $bundledNode)+' '+(($verifyArguments | ForEach-Object {Quote $_}) -join ' ')
+    $verifyArguments=@('-e',$code,$payload,$trailing,'')
+    # Quote the literal delimiter: native PowerShell consumes a bare -- for script calls.
+    $verifyCommand='verify '+(Quote '--')+' '+(Quote $bundledNode)+' '+(($verifyArguments | ForEach-Object {Quote $_}) -join ' ')
     $verified=Run 'quoted-argv-verify' (Launcher $project $verifyCommand) | ConvertFrom-Json
     Expect ($verified.result -eq 'PASS' -and $verified.exitCode -eq 0) 'QUOTED_ARGV_VERIFICATION_FAILED'
     Expect ($verified.arguments.Count -eq $verifyArguments.Count) 'QUOTED_ARGV_COUNT_CHANGED'
@@ -117,7 +118,7 @@ try {
     $stdout=[IO.File]::ReadAllText((Join-Path $verified.logDirectory ($verified.id+'.stdout.txt')))
     $lines=@($stdout.TrimEnd("`r","`n") -split '\r?\n')
     Expect ($lines[0] -ceq 'quoted 한국어') 'QUOTED_CODE_STDOUT_CHANGED'
-    $observedArgv=@($lines[1] | ConvertFrom-Json)
+    $observedArgv=ConvertFrom-Json -InputObject $lines[1]
     Expect ($observedArgv.Count -eq 3 -and $observedArgv[0] -ceq $payload -and $observedArgv[1] -ceq $trailing -and $observedArgv[2] -ceq '') 'EXECUTED_QUOTED_ARGV_CHANGED'
     $progress=Run 'quoted-argv-progress' (Launcher $project 'progress') | ConvertFrom-Json
     Expect ($progress.state.goal -ceq $goal -and $progress.state.verification.arguments[1] -ceq $code -and $progress.state.verification.result -eq 'PASS') 'PERSISTED_QUOTED_VERIFICATION_CHANGED'
@@ -127,11 +128,11 @@ try {
     $relocatedStatus=Run 'relocated-status' (Launcher $relocated 'status') | ConvertFrom-Json
     Expect ($relocatedStatus.effective -eq 'READY_LOCAL') 'RELOCATION_FAILED'
     $checks.Add('Copied installed project works at another Korean path')
-    $core=Join-Path $relocated '.agents\j-harness\runtime\core\cli.mjs'
+    $core=[IO.Path]::Combine([string[]]@($relocated,'.agents','j-harness','runtime','core','cli.mjs'))
     [IO.File]::AppendAllText($core,"`nthrow Error('DAMAGED_CORE_EXECUTED');",$utf8)
     $damaged=Run 'damaged-runtime' (Launcher $relocated 'status') 1
     Expect ($damaged -match 'HASH_DRIFT|HASH_MISMATCH' -and $damaged -notmatch 'DAMAGED_CORE_EXECUTED') 'DAMAGED_RUNTIME_EXECUTED_OR_ACCEPTED'
-    $node=Join-Path $relocated '.agents\j-harness\vendor\win-x64\node.exe'
+    $node=[IO.Path]::Combine([string[]]@($relocated,'.agents','j-harness','vendor','win-x64','node.exe'))
     Move-Item -LiteralPath $node -Destination ($node+'.missing')
     $missing=Run 'missing-bundled-node' (Launcher $relocated 'status') 1
     Expect ($missing -match 'BUNDLED_NODE_REQUIRED_NO_GLOBAL_FALLBACK') 'MISSING_NODE_FELL_BACK'
@@ -140,7 +141,7 @@ try {
     try{$firstByte=$binaryStream.ReadByte();$binaryStream.Position=0;$binaryStream.WriteByte([byte]($firstByte -bxor 255))}finally{$binaryStream.Dispose()}
     $corruptNode=Run 'corrupt-bundled-node' (Launcher $relocated 'status') 1
     Expect ($corruptNode -match 'BUNDLED_NODE_HASH_MISMATCH_NO_FALLBACK') 'CORRUPT_NODE_NOT_BLOCKED_BEFORE_EXECUTION'
-    $checks.Add('Corrupt runtime blocked before execution with no fallback')
+    $checks.Add('Corrupt Core, missing bundled Node and corrupt bundled Node blocked before execution with no fallback')
     $conflict=Inside '사용자 launcher conflict';[IO.Directory]::CreateDirectory($conflict)|Out-Null
     Write-Utf8 (Join-Path $conflict 'JHarness.cmd') 'USER LAUNCHER DO NOT CHANGE'
     $conflictBefore=Tree $conflict
@@ -148,7 +149,7 @@ try {
     Expect ($blocked -match 'EXISTING_USER_FILE_PRESERVED') 'LAUNCHER_CONFLICT_NOT_BLOCKED'
     Expect ((Tree $conflict) -ceq $conflictBefore) 'LAUNCHER_CONFLICT_CHANGED_PROJECT'
     $legacy=Inside '기존 v7 프로젝트';[IO.Directory]::CreateDirectory((Join-Path $legacy '.ai'))|Out-Null
-    Write-Utf8 (Join-Path $legacy '.ai\harness-project.json') '{"harness":{"version":"7.0.0","product":"AI Harness"},"custom":"preserve"}'
+    Write-Utf8 ([IO.Path]::Combine($legacy,'.ai','harness-project.json')) '{"harness":{"version":"7.0.0","product":"AI Harness"},"custom":"preserve"}'
     $legacyBefore=Tree $legacy
     $blocked=Run 'legacy-binding' (Installer $legacy 'Install') 1
     Expect ($blocked -match 'EXISTING_PROJECT_HARNESS_REQUIRES_EXPLICIT_MIGRATION') 'LEGACY_BINDING_NOT_BLOCKED'
@@ -167,11 +168,11 @@ try {
         Expect ($bootstrapInstall.result -eq 'V8_PROJECT_INSTALL_COMPLETE' -and $bootstrapInstall.effective -eq 'READY_LOCAL') 'BOOTSTRAP_INSTALL_FAILED'
         $wrongZip=Inside 'wrong-hash.zip';Write-Utf8 $wrongZip 'UNTRUSTED ZIP MUST NEVER BE EXTRACTED'
         $wrongProject=Inside 'wrong ZIP untouched project'
-        $wrongCommand='& '+(Quote $bootstrap)+' -ProjectPath '+(Quote $wrongProject)+' -PackagePath '+(Quote $wrongZip)+' -Action Install -ApproveInstall'
+        $wrongCommand='& '+(Quote $bootstrap)+' -ProjectPath '+(Quote $wrongProject)+' -PackagePath '+(Quote $wrongZip)+' -Action Install -ApproveInstall; exit $LASTEXITCODE'
         $wrongResult=Run 'bootstrap-wrong-zip' $wrongCommand 2
         Expect ($wrongResult -match 'V8_PACKAGE_SHA256_MISMATCH_NO_FALLBACK' -and -not(Test-Path -LiteralPath $wrongProject)) 'WRONG_ZIP_ACCEPTED_OR_CREATED_PROJECT'
         $bootstrapResult='PASS_PINNED_OFFLINE_DEFAULT_BOOTSTRAP_NETWORK_NOT_RUN'
-        $checks.Add('Default bootstrap SHA pin matches built ZIP and installs offline in fresh environment')
+        $checks.Add('Default bootstrap installs pinned ZIP offline and refuses wrong ZIP hash before creating project')
     }
     Expect ((Get-FileHash -LiteralPath $sentinel -Algorithm SHA256).Hash -ceq $sentinelHash) 'GLOBAL_HOME_SENTINEL_CHANGED'
     foreach($name in $processEnvironment.Keys){Expect ([Environment]::GetEnvironmentVariable($name,'Process') -ceq $processEnvironment[$name]) ('PROCESS_ENV_CHANGED: '+$name)}
