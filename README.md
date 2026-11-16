@@ -1,21 +1,28 @@
-# J Harness — Windows v8.0.0-alpha.2 / policy runtime v7.0.0
+# J Harness — Windows v8.0.0-alpha.3 / policy provenance v7.0.0
 
-**Windows 설치:** [v8.0.0-alpha.2 릴리스](https://github.com/hacker943410-debug/ai-harness/releases/tag/v8.0.0-alpha.2) · [설치·업데이트 안내](docs/releases/v8.0.0-alpha.2.md). 회사 Word 스킬과 동일한 native/builtin 스킬 탐색 수정을 포함한 Alpha입니다. 내부 Core 버전은 `8.0.0-core-beta.1`, 공통 정책 버전은 `7.0.0`입니다.
+**기본 설치는 [v8.0.0-alpha.3 Windows 이동형 배포](https://github.com/hacker943410-debug/ai-harness/releases/tag/v8.0.0-alpha.3)입니다.** [설치·전환·검증 안내](docs/releases/v8.0.0-alpha.3.md). GitHub Pre-release이며 실제 Core는 `8.0.0-core-beta.1`, 이동형 어댑터는 `1.0.0`, 26개 공통 정책의 출처 버전은 `7.0.0`입니다. 제품 버전의 정본은 `J_HARNESS_VERSION`; `HARNESS_VERSION`은 기존 정책 계약을 유지합니다.
 
-Windows x64 PowerShell에서 다음 명령을 실행합니다. 아래 `main` 주소는 현재 배포용 스크립트를 받으며, 스크립트가 설치하는 소스는 검증된 불변 커밋으로 고정됩니다. 설치 전 내용을 확인하고 `INSTALL`을 입력합니다. 별도 Node·Git 설치는 필요하지 않습니다.
+새 PC에는 Windows x64와 PowerShell 5.1+가 필요합니다. ZIP에 고정된 Node 22.22.2와 Core·정책·Skills가 들어 있어 시스템 Node·Git·Codex·글로벌 프로필 없이 설치하고 실행합니다. 다운로드 후 로컬 실행에는 네트워크가 필요하지 않습니다. 별도 모델 서비스·문서 도구 사용에는 해당 도구의 조건이 적용됩니다.
 
 ```powershell
 $u = 'https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/scripts/Install-JHarnessFromGitHub.ps1'
-Invoke-WebRequest -Uri $u -OutFile .\JHarness-Install-Alpha.ps1
-Get-Content .\JHarness-Install-Alpha.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\JHarness-Install-Alpha.ps1 -Action Plan
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\JHarness-Install-Alpha.ps1 -Action Install
+Invoke-WebRequest -Uri $u -OutFile .\JHarness-Install.ps1
+Get-Content .\JHarness-Install.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\JHarness-Install.ps1 -Action Plan -ProjectPath 'C:\Projects\MyProject'
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\JHarness-Install.ps1 -Action Install -ApproveInstall -ProjectPath 'C:\Projects\MyProject'
 ```
 
-**기존 Alpha 설치는 자동 덮어쓰지 않습니다.** 먼저 기존 제거 명령으로 관리 연결을 해제한 뒤 새 설치기를 실행하세요. 사용자 인증·관리 밖의 지침·개인 Word 프로필은 보존하며, 자세한 확인·복구 절차는 위 설치 안내에 있습니다. 서명·OS 보안 강제·실제 모델 세션까지 검증된 정식 제품은 아닙니다. 회사 원본 양식은 공개 배포하지 않으므로 다른 PC에서는 개인 프로필을 별도로 준비해야 합니다.
+인수를 생략하면 `Plan`으로만 확인합니다. 설치를 요청한 사용자의 승인은 `-ApproveInstall`로 전달할 수 있습니다. 설치기는 `v8.0.0-alpha.3`의 고정 ZIP과 SHA-256을 검증하며, `releases/latest`의 v7을 대신 선택하지 않습니다. 다운로드·무결성 오류는 중단 사유입니다.
 
-아래는 기존 공통 정책 런타임과 프로젝트 연결 안내입니다. `install.ps1` 한 줄 명령은 소스를 받는 별도 경로이며 Windows 제품 설치기를 실행하지 않습니다.
+프로젝트의 `.agents/j-harness`에 실행 파일을 두고 루트 `JHarness.cmd status`로 `READY_LOCAL`을 확인합니다. 기존 사용자 지침·인증·PATH와 프로젝트 기록을 보존합니다. 기존 관리 지침이나 바인딩이 충돌하면 강제 덮어쓰기 없이 검토해야 합니다. Alpha2의 프로필 설치가 명시적으로 필요한 경우에만 `-Mode Profile`을 사용하며 [기존 안내](docs/releases/v8.0.0-alpha.2.md)를 따릅니다. v7·Alpha2 태그와 첨부파일은 불변으로 보존합니다.
 
+`READY_LOCAL`은 로컬 런타임 준비 상태입니다. 발행자 서명·OS 보안 강제·실제 모델 행동·다른 물리 PC·운영 배포를 증명하지 않습니다. 실제 명령 결과와 배포 검증 기록은 릴리스 자료로 제공합니다. 회사 Word 스킬은 유지하지만 개인 원본·로고·프로필은 공개 배포하지 않습니다.
+
+---
+
+## 명시적으로 요청한 기존 정책 소스·운영 안내
+
+아래 v7 및 `install.ps1` 절차는 기존 정책 소스·머신 런타임·CLI 연결 계약의 참고 문서입니다. 일반적인 J Harness 설치·업데이트 요청에는 위 v8 제품 경로를 우선 적용합니다. 정책 소스 자체를 요청한 경우에만 이 경로를 선택하며, 아래 버전을 최신 제품 버전으로 해석하지 않습니다.
 
 A beginner-guided development harness with executable phase gates and safe, version-pinned project installation, adoption and updates.
 
@@ -79,13 +86,13 @@ Version: 7.0.0 (Canonical Source: `HARNESS_VERSION`; Manifest / POLICY_INDEX와 
 
 ---
 
-## 빠른 시작 — 이 한 줄
+## 기존 정책 소스 받기 — 명시적 선택
 
 ```powershell
 irm https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/install.ps1 | iex
 ```
 
-Windows PowerShell 에 붙여넣으면 된다. **업데이트도 같은 한 줄이다.**
+이 명령은 명시적으로 선택한 기존 정책 소스 경로입니다. v8 제품 설치·업데이트 명령은 문서 상단을 따릅니다.
 
 | | |
 |---|---|
@@ -108,14 +115,14 @@ irm https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/install
 받은 다음은 목적에 따라 갈린다. **입구가 두 개다.**
 
 ```
-새 PC 에 하네스를 놓는다          →  install.ps1  (Layer A 클론 + Layer B 도구 루트)
+기존 정책 소스·머신 계약을 선택한다 →  install.ps1  (Layer A 클론 + Layer B 도구 루트)
                                       PC 당 한 번. §15 · workflows/HARNESS_INSTALL.md
 
 프로젝트를 하네스에 연결한다      →  PROJECT_INIT.md  또는  /harness-init
                                       프로젝트마다 한 번. .ai/ 만 생긴다. §4
 ```
 
-**Layer A 를 프로젝트마다 두지 않는다.** 프로젝트마다 26개 정책을 복사하지 않는 것이 이 설계의 핵심이다.
+**이 기존 공유 소스 방식에서는 Layer A를 프로젝트마다 두지 않습니다.** v8 이동형 배포는 프로젝트별로 검증된 Core와 26개 정책을 함께 둡니다.
 
 무슨 도구를 쓸지 모르겠으면 설치 에스코트가 하나씩 설명하고 물어본다 (§22).
 

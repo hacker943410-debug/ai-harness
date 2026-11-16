@@ -1,7 +1,16 @@
 # AI Harness runtime entry
 
-Version source: `HARNESS_VERSION`; require agreement with `harness/manifest.yaml` and `POLICY_INDEX.yaml`.
+Product distribution version source: `J_HARNESS_VERSION` (v8.0.0-alpha.3). Policy provenance version source: `HARNESS_VERSION`; require its agreement with `harness/manifest.yaml` and `POLICY_INDEX.yaml`. The policy version7 is never the default product version.
 Read CORE.md, ROUTER.md and POLICY_INDEX.yaml first. Preserve Layer A (source), Layer B (PC shared runtime), Layer C (project bindings). Select only current Task/Phase/Risk/Boundary policies; never preload P01–P26 or all Skills. Jev remains disabled by default, advisory only, with existing-router fallback.
+
+
+## Default product installation routing
+
+Normal Harness install/use/update requests select the pinned Windows project-portable v8.0.0-alpha.3 product first: `scripts/Install-JHarnessFromGitHub.ps1` defaults to read-only `-Action Plan`; installation uses `-Action Install -ApproveInstall -ProjectPath <project>`. An explicit user request to install authorizes the install flag; do not require the same approval twice. Preserve active work, user-owned rules, project state and the existing migration/review boundaries before applying changes.
+
+The ZIP includes actual Core 8.0.0-core-beta.1, adapter 1.0.0, Node 22.22.2, all 26 policies and bundled Skills. Runtime is project `.agents/j-harness`; `JHarness.cmd status` must report observed `READY_LOCAL`. No global Codex/profile or system Node is required. After download, local runtime needs no network. Do not query `/releases/latest` to replace this prerelease with v7, and never fall back on download/hash/integrity failure. Preserve published v7/Alpha2 tags and assets. `-Mode Profile` is an explicit legacy Alpha2 route only. See `docs/releases/v8.0.0-alpha.3.md`.
+
+Use the existing source-policy routing below only for an explicitly requested policy-source installation or an existing policy migration. Keep all preservation, checkpoint, verification and independent review requirements. `READY_LOCAL` is local readiness, not evidence of OS enforcement, actual model behavior, another physical PC or deployment.
 
 Harness upgrade invariant: install/update/upgrade/version/latest-Harness requests route to `harness/runtime/harness-update-router.md` and `harness/update/UPDATE_PROTOCOL.md`. Detect current/target version, project mode, development state, custom rules/Skills/policies, checkpoint, compatibility/gap, transition manifest, migration, harness validation, regression, critical backfill, transition audit, resume and benchmark. Never directly replace rules inside an active implementation phase for a major update. Preserve existing behavior and unmanaged project instructions; no retroactive refactor without an explicit migration decision.
 

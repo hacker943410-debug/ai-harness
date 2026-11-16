@@ -1,114 +1,117 @@
-﻿# J Harness v8 alpha: Windows x64, PowerShell-only CLI installer.
-# Unsigned and advisory. Owner consent required; no OS-enforced AI security.
+﻿# Default Windows product installer: v8 portable, without a global Codex profile.
 [CmdletBinding()]
 param(
- [ValidateSet('Plan','Install','Package')][string]$Action='Plan',
- [switch]$ApproveInstall,
- [string]$CodexHome,
- [string]$ManagedRoot,
- [string]$Destination
+  [ValidateSet('Plan','Install','Package')][string]$Action='Plan',
+  [ValidateSet('Portable','Profile')][string]$Mode='Portable',
+  [switch]$ApproveInstall,
+  [string]$ProjectPath,
+  [string]$PackagePath,
+  [string]$Destination,
+  [string]$CodexHome,
+  [string]$ManagedRoot
 )
 $ErrorActionPreference='Stop'
 $ProgressPreference='SilentlyContinue'
-# Reviewed source includes bounded owned-runtime cleanup and verified service removal.
-$sourceSha='a882c02f46905237e8fd843a7ca66c0ea1322fe3'
-$nodeSha='ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3'
-$nodeUrl='https://nodejs.org/dist/v22.22.2/win-x64/node.exe'
-$archiveUrl='https://github.com/hacker943410-debug/ai-harness/archive/'+$sourceSha+'.zip'
-if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
- -not [Environment]::Is64BitOperatingSystem -or
- [Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString() -ne 'X64') {throw 'WINDOWS_X64_REQUIRED'}
-if ($PSVersionTable.PSVersion.Major -lt 5) {throw 'POWERSHELL_5_OR_LATER_REQUIRED'}
-if (-not $env:TEMP -or -not $env:LOCALAPPDATA) {throw 'WINDOWS_USER_PROFILE_REQUIRED'}
-if (-not $CodexHome) {$CodexHome=if($env:CODEX_HOME){$env:CODEX_HOME}else{Join-Path $HOME '.codex'}}
-if (-not $ManagedRoot) {$ManagedRoot=Join-Path $env:LOCALAPPDATA 'JHarness-Bootstrap'}
-$CodexHome=[IO.Path]::GetFullPath($CodexHome)
-$ManagedRoot=[IO.Path]::GetFullPath($ManagedRoot)
-function Assert-SafePath([string]$p) {
- if(-not $p -or $p.StartsWith('\\') -or $p.StartsWith('//')){throw 'UNSAFE_OR_NETWORK_PATH_REFUSED'}
- $full=[IO.Path]::GetFullPath($p)
- if($full -eq [IO.Path]::GetPathRoot($full)){throw 'DRIVE_ROOT_REFUSED'}
- for($item=$full;$item;){
-  if(Test-Path -LiteralPath $item){
-   $entry=Get-Item -LiteralPath $item -Force
-   if(($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'REPARSE_PATH_REFUSED'}
+# A pinned v8 product release is selected, never the legacy policy /releases/latest.
+$productVersion='8.0.0-alpha.3'
+$coreVersion='8.0.0-core-beta.1'
+$releaseTag='v8.0.0-alpha.3'
+$assetName='J_Harness_v8.0.0-alpha.3_Windows_x64.zip'
+$expectedZipSha='42c8f05c9f6e75123fe91908dcb181de99d5ef027703ed9ee53a90c7a06dda40'
+$assetUrl='https://github.com/hacker943410-debug/ai-harness/releases/download/'+$releaseTag+'/'+$assetName
+if(-not $PSBoundParameters.ContainsKey('Mode') -and ($PSBoundParameters.ContainsKey('CodexHome') -or $PSBoundParameters.ContainsKey('ManagedRoot'))){$Mode='Profile'}
+if($Mode -eq 'Profile'){
+  $legacy=Join-Path $PSScriptRoot 'Install-JHarnessProfileFromGitHub.ps1'
+  if(-not(Test-Path -LiteralPath $legacy -PathType Leaf)){throw 'EXPLICIT_PROFILE_MODE_REQUIRES_SOURCE_CHECKOUT'}
+  $forward=@{Action=$Action}
+  if($ApproveInstall){$forward.ApproveInstall=$true}
+  foreach($key in @('CodexHome','ManagedRoot','Destination')){if($PSBoundParameters.ContainsKey($key)){$forward[$key]=$PSBoundParameters[$key]}}
+  & $legacy @forward
+  return
+}
+if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or [Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString() -ne 'X64'){throw 'WINDOWS_X64_REQUIRED'}
+if(-not $ProjectPath){
+  if(-not $env:LOCALAPPDATA){throw 'PROJECT_PATH_REQUIRED'}
+  $ProjectPath=[IO.Path]::Combine($env:LOCALAPPDATA,'JHarness-Portable','workspace')
+}
+$project=[IO.Path]::GetFullPath($ProjectPath)
+function Assert-Safe([string]$value){
+  if(-not $value -or $value.StartsWith('\\') -or $value.StartsWith('//')){throw 'LOCAL_PATH_REQUIRED'}
+  $full=[IO.Path]::GetFullPath($value)
+  if($full -eq [IO.Path]::GetPathRoot($full)){throw 'DRIVE_ROOT_REFUSED'}
+  for($cursor=$full;$cursor;){
+    if((Test-Path -LiteralPath $cursor) -and ((Get-Item -LiteralPath $cursor -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'REPARSE_PATH_REFUSED'}
+    $parent=[IO.Path]::GetDirectoryName($cursor)
+    if(-not $parent -or $parent -eq $cursor){break};$cursor=$parent
   }
-  $parent=[IO.Path]::GetDirectoryName($item)
-  if(-not $parent -or $parent -eq $item){break}
-  $item=$parent
- }
 }
-Assert-SafePath $CodexHome
-Assert-SafePath $ManagedRoot
-$plan=[ordered]@{
- product='J Harness';channel='v8.0.0-alpha.2-pinned-cli-preview';action=$Action
- sourceRevision=$sourceSha;platform='Windows x64';client='codex'
- node='private pinned v22.22.2';codex='official pinned v0.166.0 if not installed'
- codexHome=$CodexHome;managedRoot=$ManagedRoot
- credentialsChanged=$false;systemPathChanged=$false;supervisorEnforced=$false
- modelCalls=0;result='PLAN_ONLY_NOT_INSTALLED'
-}
+Assert-Safe $project
+if($expectedZipSha -notmatch '^[a-f0-9]{64}$'){throw 'UNREVIEWED_V8_RELEASE_LOCK'}
+$plan=[ordered]@{product='J Harness';productVersion=$productVersion;coreVersion=$coreVersion;releaseTag=$releaseTag;mode='PROJECT_PORTABLE';action=$Action;project=$project;globalConnectionRequired=$false;codexRequired=$false;systemNodeRequired=$false;systemGitRequired=$false;systemPathChanged=$false;credentialsChanged=$false;supervisorEnforced=$false;fallback='NONE';assetUrl=$assetUrl;sha256=$expectedZipSha;result='PLAN_ONLY_NOT_INSTALLED'}
 if($Action -eq 'Plan'){$plan|ConvertTo-Json -Depth 6;return}
-if($Action -eq 'Package' -and [string]::IsNullOrWhiteSpace($Destination)){throw 'PACKAGE_DESTINATION_REQUIRED'}
+if($Action -eq 'Package' -and -not $Destination){throw 'PACKAGE_DESTINATION_REQUIRED'}
 if($Action -eq 'Install' -and -not $ApproveInstall){
- Write-Host 'ALPHA TEST CANDIDATE: this does NOT enforce OS-level AI isolation.'
- Write-Host 'Uses app-private Node and Codex, preserves existing Codex login and settings.'
- $typed=Read-Host 'Type INSTALL to approve download and installation'
- if($typed -cne 'INSTALL'){$plan.result='CANCELLED_NO_DOWNLOAD';$plan|ConvertTo-Json -Depth 6;return}
+  $typed=Read-Host ('Install J Harness v8 portable in '+$project+'? Type INSTALL')
+  if($typed -cne 'INSTALL'){$plan.result='CANCELLED_NO_DOWNLOAD';$plan|ConvertTo-Json -Depth 6;return}
 }
-$work=Join-Path ([IO.Path]::GetFullPath($env:TEMP)) ('JHAlphaCli_'+[Guid]::NewGuid().ToString('N'))
-$created=$false
+$tempRoot=[IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+$work=Join-Path $tempRoot ('JHarness-v8-download-'+[guid]::NewGuid().ToString('N'))
+Assert-Safe $work
+[IO.Directory]::CreateDirectory($work)|Out-Null
 try{
- Assert-SafePath $work
- [IO.Directory]::CreateDirectory($work)|Out-Null
- $created=$true
- [IO.File]::WriteAllText((Join-Path $work '.jh-alpha-temp'),'JH_ALPHA_ONLY',[Text.Encoding]::ASCII)
- $zip=Join-Path $work 'source.zip'
- $unpacked=Join-Path $work 'source'
- $node=Join-Path $work 'node.exe'
- $package=Join-Path $work 'package'
- [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
- Write-Host ('Downloading pinned GitHub source commit '+$sourceSha)
- Invoke-WebRequest -Uri $archiveUrl -OutFile $zip -UseBasicParsing -MaximumRedirection 8 -ErrorAction Stop
- if((Get-Item -LiteralPath $zip).Length -lt 10000 -or (Get-Item -LiteralPath $zip).Length -gt 50000000){throw 'SOURCE_ARCHIVE_SIZE_INVALID'}
- [IO.Directory]::CreateDirectory($unpacked)|Out-Null
- Expand-Archive -LiteralPath $zip -DestinationPath $unpacked -ErrorAction Stop
- $roots=@(Get-ChildItem -LiteralPath $unpacked -Force)
- if($roots.Count -ne 1 -or -not $roots[0].PSIsContainer -or
-    $roots[0].Name -notlike ('ai-harness-'+$sourceSha.Substring(0,7)+'*')){throw 'UNEXPECTED_SOURCE_ARCHIVE_LAYOUT'}
- $repo=$roots[0].FullName
- Assert-SafePath $repo
- foreach($required in @('core\build-integrated-product.mjs','core\product\Install-JHarnessProduct.ps1','core\environment\bootstrap-manifest.json','core\product\codex-lock.json')){
-  if(-not(Test-Path -LiteralPath (Join-Path $repo $required) -PathType Leaf)){throw ('PINNED_SOURCE_FILE_MISSING: '+$required)}
- }
- Write-Host 'Downloading official pinned portable Node v22.22.2'
- Invoke-WebRequest -Uri $nodeUrl -OutFile $node -UseBasicParsing -MaximumRedirection 8 -ErrorAction Stop
- if((Get-FileHash -LiteralPath $node -Algorithm SHA256).Hash.ToLowerInvariant() -ne $nodeSha){throw 'NODE_BINARY_SHA256_MISMATCH'}
- $nodeVersion=& $node --version
- if($LASTEXITCODE -ne 0 -or ($nodeVersion|Out-String).Trim() -ne 'v22.22.2'){throw 'PINNED_NODE_EXECUTION_FAILED'}
- & $node (Join-Path (Join-Path $repo 'core') 'build-integrated-product.mjs') --out $package --node-binary $node
- if($LASTEXITCODE -ne 0){throw 'INTEGRATED_PACKAGE_BUILD_FAILED'}
- if(-not(Test-Path -LiteralPath (Join-Path $package 'SHA256_MANIFEST.json') -PathType Leaf)){throw 'PACKAGE_MANIFEST_MISSING'}
- $installer=Join-Path (Join-Path (Join-Path $package 'core') 'product') 'Install-JHarnessProduct.ps1'
- if(-not(Test-Path -LiteralPath $installer -PathType Leaf)){throw 'INSTALLER_ENTRY_MISSING'}
- if($Action -eq 'Package'){
-  $dest=[IO.Path]::GetFullPath($Destination)
-  Assert-SafePath $dest
-  if(Test-Path -LiteralPath $dest){throw 'DESTINATION_ALREADY_EXISTS_PRESERVED'}
-  Copy-Item -LiteralPath $package -Destination $dest -Recurse -ErrorAction Stop
-  [ordered]@{result='UNSIGNED_PACKAGE_BUILT';path=$dest;run='J_Harness_Install.cmd';sourceRevision=$sourceSha;supervisorEnforced=$false}|ConvertTo-Json -Depth 6
- }else{
-  & $installer -Action Plan -CodexHome $CodexHome -ManagedRoot $ManagedRoot
-  if($LASTEXITCODE -ne 0){throw 'FINAL_PACKAGE_PREFLIGHT_FAILED'}
-  & $installer -Action Install -ApproveInstall -CodexHome $CodexHome -ManagedRoot $ManagedRoot
-  if($LASTEXITCODE -ne 0){throw 'INSTALL_FAILED_INSPECT_ROLLBACK_REPORT'}
-  [ordered]@{result='CLI_INSTALL_COMPLETE';start=(Join-Path $ManagedRoot 'J_Harness_Start.cmd');doctor=(Join-Path $ManagedRoot 'J_Harness_Doctor.cmd');remove=(Join-Path $ManagedRoot 'J_Harness_Remove.cmd');sourceRevision=$sourceSha;supervisorEnforced=$false;modelCalls=0}|ConvertTo-Json -Depth 6
- }
+  $archive=Join-Path $work $assetName
+  if($PackagePath){
+    $local=[IO.Path]::GetFullPath($PackagePath);Assert-Safe $local
+    Copy-Item -LiteralPath $local -Destination $archive -ErrorAction Stop
+  }else{
+    [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
+    Invoke-WebRequest -Uri $assetUrl -OutFile $archive -UseBasicParsing -MaximumRedirection 8 -ErrorAction Stop
+  }
+  if((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedZipSha){throw 'V8_PACKAGE_SHA256_MISMATCH_NO_FALLBACK'}
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $unpacked=Join-Path $work 'package';[IO.Directory]::CreateDirectory($unpacked)|Out-Null
+  $zip=[IO.Compression.ZipFile]::OpenRead($archive)
+  try{
+    $seen=New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+    foreach($entry in $zip.Entries){
+      $name=$entry.FullName.Replace('\','/')
+      if(-not $name -or $name.StartsWith('/') -or $name.Contains(':') -or @($name.TrimEnd('/') -split '/'|Where-Object {$_ -eq '' -or $_ -eq '.' -or $_ -eq '..'}).Count){throw 'UNSAFE_RELEASE_ARCHIVE_PATH'}
+      if(-not $seen.Add($name.TrimEnd('/'))){throw 'DUPLICATE_RELEASE_ARCHIVE_PATH'}
+      $unixMode=([int64]$entry.ExternalAttributes -shr 16) -band 61440
+      if($unixMode -eq 40960){throw 'RELEASE_ARCHIVE_LINK_REFUSED'}
+      $target=[IO.Path]::GetFullPath((Join-Path $unpacked $name))
+      if(-not $target.StartsWith($unpacked.TrimEnd('\')+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'RELEASE_ARCHIVE_ESCAPE'}
+      Assert-Safe $target
+      if($name.EndsWith('/')){[IO.Directory]::CreateDirectory($target)|Out-Null;continue}
+      [IO.Directory]::CreateDirectory((Split-Path -Parent $target))|Out-Null
+      $inputStream=$entry.Open();$outputStream=[IO.File]::Open($target,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+      try{$inputStream.CopyTo($outputStream)}finally{$outputStream.Dispose();$inputStream.Dispose()}
+    }
+  }finally{$zip.Dispose()}
+  $installer=Join-Path $unpacked 'Install-JHarnessLocal.ps1'
+  if(-not(Test-Path -LiteralPath $installer -PathType Leaf)){throw 'V8_LOCAL_INSTALLER_MISSING'}
+  if($Action -eq 'Package'){
+    $dest=[IO.Path]::GetFullPath($Destination);Assert-Safe $dest
+    if(Test-Path -LiteralPath $dest){throw 'EXISTING_PACKAGE_DESTINATION_PRESERVED'}
+    Copy-Item -LiteralPath $unpacked -Destination $dest -Recurse -ErrorAction Stop
+    [ordered]@{result='V8_PORTABLE_PACKAGE_READY';productVersion=$productVersion;coreVersion=$coreVersion;destination=$dest;install=(Join-Path $dest 'Install-JHarness.cmd');globalConnectionRequired=$false;fallback='NONE'}|ConvertTo-Json -Depth 6
+  }else{
+    $global:LASTEXITCODE=0
+    $observed=& $installer -Action Install -ApproveInstall -ProjectPath $project
+    $installExit=$LASTEXITCODE
+    if($installExit -ne 0){throw 'V8_LOCAL_INSTALLATION_FAILED_INSPECT_RECOVERY'}
+    $installed=($observed|Out-String)|ConvertFrom-Json
+    if($installed.result -ne 'V8_PROJECT_INSTALL_COMPLETE' -or $installed.coreVersion -ne $coreVersion -or $installed.productVersion -ne $productVersion -or $installed.effective -ne 'READY_LOCAL' -or $installed.globalConnectionRequired -ne $false){throw 'V8_INSTALLATION_RESULT_NOT_VERIFIED'}
+    $installed|ConvertTo-Json -Depth 6
+  }
+}catch{
+  [Console]::Error.WriteLine((@{result='BLOCKED';productVersion=$productVersion;error=$_.Exception.Message;fallback='NONE';work=$work}|ConvertTo-Json -Compress))
+  exit 2
 }finally{
- if($created -and (Split-Path -Parent $work) -eq [IO.Path]::GetFullPath($env:TEMP) -and
-    (Split-Path -Leaf $work) -like 'JHAlphaCli_*' -and
-    (Test-Path -LiteralPath (Join-Path $work '.jh-alpha-temp') -PathType Leaf) -and
-    [IO.File]::ReadAllText((Join-Path $work '.jh-alpha-temp')) -eq 'JH_ALPHA_ONLY'){
-  Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
- }
+  # Only this newly-created download tree may be recursively removed.
+  $resolved=[IO.Path]::GetFullPath($work)
+  if((Split-Path -Parent $resolved) -eq $tempRoot.TrimEnd('\') -and (Split-Path -Leaf $resolved) -like 'JHarness-v8-download-*'){
+    Assert-Safe $resolved
+    if(Test-Path -LiteralPath $resolved){Remove-Item -LiteralPath $resolved -Recurse -Force}
+  }
 }

@@ -1,10 +1,15 @@
+const portableApi=()=>globalThis[Symbol.for('j-harness.portable.v1')];
+export const portableContext=()=>portableApi()?.context??null;
+export const mutableRoot=()=>portableApi().mutableRoot();
+export const portableStatus=()=>portableApi().portableStatus();
+export const scopedFingerprint=project=>portableApi().scopedFingerprint(project);
 import fs from 'node:fs';import path from 'node:path';import os from 'node:os';import crypto from 'node:crypto';
 export const version='8.0.0-core-beta.1';
 export const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
 export const fileHash=file=>hash(fs.readFileSync(file));
 export const json=value=>JSON.stringify(value,null,2)+'\n';
-export const home=explicit=>path.resolve(explicit??process.env.CODEX_HOME??path.join(os.homedir(),'.codex'));
-export const rootFor=h=>path.join(h,'j-harness-core');
+export const home=explicit=>portableContext()?.project??path.resolve(explicit??process.env.CODEX_HOME??path.join(os.homedir(),'.codex'));
+export const rootFor=h=>portableContext()?.root??path.join(h,'j-harness-core');
 export function noLinks(target){let cursor=path.resolve(target);while(true){if(fs.existsSync(cursor)&&fs.lstatSync(cursor).isSymbolicLink())throw Error('LINK_PATH_REFUSED: '+cursor);const p=path.dirname(cursor);if(p===cursor)break;cursor=p;}}
 export function atomic(file,bytes){noLinks(file);fs.mkdirSync(path.dirname(file),{recursive:true});const tmp=file+'.tmp-'+crypto.randomUUID();try{fs.writeFileSync(tmp,bytes,{flag:'wx',mode:0o600});fs.renameSync(tmp,file);}finally{if(fs.existsSync(tmp))fs.unlinkSync(tmp);}}
 export function readJson(file,fallback=null){if(!fs.existsSync(file))return fallback;noLinks(file);return JSON.parse(fs.readFileSync(file,'utf8').replace(/^\uFEFF/,''));}

@@ -1,7 +1,7 @@
 # AI Harness ROUTER
 
 Document Version: 2.0
-Harness Version Source: `HARNESS_VERSION`; `harness/manifest.yaml`과 `POLICY_INDEX.yaml`은 일치해야 한다.
+Product Version Source: `J_HARNESS_VERSION` (v8.0.0-alpha.3). Policy Version Source: `HARNESS_VERSION`; `harness/manifest.yaml`과 `POLICY_INDEX.yaml`은 정책 출처 버전7로 일치해야 한다.
 Purpose: 26개 정책 원문을 매번 읽지 않고 현재 Task에 필요한 정책만 JIT로 선택한다.
 Canonical detail: 정책 03이 Router 자체의 상세 설계를 소유한다.
 
@@ -9,9 +9,17 @@ Canonical detail: 정책 03이 Router 자체의 상세 설계를 소유한다.
 
 ## 1. 절대 원칙
 
+### Product installation takes precedence
+
+For normal J Harness install/use/update intent, select the pinned `v8.0.0-alpha.3` Windows project-portable product using `scripts/Install-JHarnessFromGitHub.ps1`. Its default `-Action Plan` is read-only. Apply an authorized install with `-Action Install -ApproveInstall -ProjectPath <project>`; an existing user instruction to install is authorization. Diagnose active work and preserve user-owned rules, bindings, state and checkpoint/review boundaries before replacement.
+
+The package contains actual Core `8.0.0-core-beta.1`, portable adapter `1.0.0`, private Node `22.22.2`, 26 policies and Skills under project `.agents/j-harness`. Root `JHarness.cmd status` reports local readiness without system Node, Codex or a global profile. After download local execution requires no network. Keep integrity failures explicit and blocked: no v7 fallback and no `/releases/latest` selection for this prerelease. Use `-Mode Profile` only when the user explicitly requests the preserved Alpha2 profile installation. Published v7/Alpha2 tags and assets remain immutable. Read `docs/releases/v8.0.0-alpha.3.md` when needed.
+
+The legacy source-policy dispatcher below applies only to explicitly selected policy-source setup/migration; `HARNESS_VERSION=7.0.0` describes policy provenance and must not choose the default product version. Existing safety, phase gates and review semantics apply to both routes. Local `READY_LOCAL`, model behavior, OS enforcement and user/production verification remain separate evidence claims.
+
 ### v6 intent and state dispatch
 
-Before Task policy selection, classify Harness install/update/migration/repair or product intent using `node scripts/harness-v6.mjs inspect --project <path>` and `route --project <path> --request '<one line>'`. Harness intent JIT-loads `harness/runtime/harness-update-router.md`; product work JIT-loads `harness/runtime/orchestrator.md` as needed. Route mode → development state → change type → H1/H2/H3 → risk → safe timing → beginner preference → current workflow → JIT policies → model/reasoning → verify/review/evidence. None of these dispatches requires full runtime or policy preload.
+After product-install routing above, for explicitly selected policy-source work classify Harness install/update/migration/repair or product intent using `node scripts/harness-v6.mjs inspect --project <path>` and `route --project <path> --request '<one line>'`. Harness intent JIT-loads `harness/runtime/harness-update-router.md`; product work JIT-loads `harness/runtime/orchestrator.md` as needed. Route mode → development state → change type → H1/H2/H3 → risk → safe timing → beginner preference → current workflow → JIT policies → model/reasoning → verify/review/evidence. None of these dispatches requires full runtime or policy preload.
 
 Version mismatch is information requiring safe plan, not permission to replace. Active-phase major update, HOTFIX, live DB/data transformation or deployment uses checkpoint/defer/minimal HARNESS_BLOCKER rules. Completed phases carry forward; missing critical gates backfill before release. Existing local behavior and custom Skills remain protected.
 
