@@ -1,0 +1,56 @@
+name: J Harness v8 project portable
+on:
+  pull_request:
+    paths:
+      - 'core/**'
+      - 'scripts/*JHarness*'
+      - 'J_HARNESS_VERSION'
+      - '.github/workflows/v8-project-portable.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.2'
+      - name: Portable runtime and preserved profile contracts
+        run: node --test core/tests/portable.test.mjs core/tests/cli-distribution.test.mjs core/tests/core.test.mjs core/tests/environment.test.mjs core/tests/integrated-product.test.mjs
+  windows-native:
+    runs-on: windows-2022
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build pinned portable Node package without global installation
+        shell: powershell
+        run: |
+          & ./scripts/Build-JHarnessPortable.ps1 -Destination (Join-Path $env:RUNNER_TEMP 'jh-portable-build')
+          if($LASTEXITCODE -ne 0){throw 'PORTABLE_BUILD_FAILED'}
+      - name: Native PowerShell 5.1 fresh project matrix
+        shell: powershell
+        run: |
+          & ./scripts/Test-JHarnessPortable.ps1 -PackageRoot (Join-Path $env:RUNNER_TEMP 'jh-portable-build/package') -EvidenceRoot (Join-Path $env:RUNNER_TEMP 'jh-portable-evidence') -BootstrapScript ./scripts/Install-JHarnessFromGitHub.ps1 -PackageArchive (Join-Path $env:RUNNER_TEMP 'jh-portable-build/J_Harness_v8.0.0-alpha.3_Windows_x64.zip')
+          if($LASTEXITCODE -ne 0){throw 'PORTABLE_TEST_FAILED'}
+      - name: Preserve actual test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable-windows-native-evidence
+          path: ${{ runner.temp }}/jh-portable-evidence/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Preserve candidate checksums
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable-candidate-checksums
+          path: ${{ runner.temp }}/jh-portable-build/SHA256SUMS.txt
+          if-no-files-found: warn

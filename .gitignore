@@ -52,3 +52,9 @@ Desktop.ini
 .DS_Store
 .vscode/
 .idea/
+
+# J Harness generated workflow evidence and distribution artifacts
+.jh-artifacts/
+/artifacts/
+/dist/
+/build-candidate*/

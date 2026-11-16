@@ -1,9 +1,11 @@
+import {portableContext,mutableRoot,portableStatus,scopedFingerprint} from './io.mjs';
 import fs from 'node:fs';import path from 'node:path';import {fileURLToPath} from 'node:url';
 import {version,rootFor,stateFile,load,readJson,noLinks,copyTree,treeFiles,atomic,json,fileHash,hash} from './io.mjs';
 import {selectedGlobal,codexVersion} from './codex.mjs';
 export const sourceCore=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 export function bridge(cli){const literal=process.platform==='win32'?"'"+cli.replaceAll("'","''")+"'":"'"+cli.replaceAll("'","'\\''")+"'";return '\n\n<!-- J_HARNESS_CORE:BEGIN v1 -->\n# J Harness Core — collaborative development\nJ Harness is connected for this Codex home. For a development task, first run:\n`node '+literal+' status`\nIf configured OFF or broken, skip J Harness. Otherwise announce `[J Harness · 분석]`, then read the guided Skill with:\n`node '+literal+' skills read jh-guided-development`\nFollow its analyze → plan → implement → verify → handoff flow; show concise Korean progress and actual policy/Skill/check evidence. Ask only material questions; propose reversible defaults. No OS enforcement is promised. Do not load all policies or Skills. Existing project instructions and user intent still apply.\nFor a company Word request (회사용 Word 양식 or 회사 문서 양식), read the company Skill with:\n`node '+literal+' skills read jh-company-word`\nResolve the private profile before writing; structural checks alone do not establish rendered quality.\n<!-- J_HARNESS_CORE:END -->\n';}
 export function install(h,{source=sourceCore}={}){
+ if(portableContext())throw Error('INSTALL_UNAVAILABLE_IN_PROJECT_PORTABLE');
  noLinks(h);const destination=rootFor(h);if(fs.existsSync(destination))throw Error('INSTALLATION_ALREADY_EXISTS_USE_STATUS_OR_UNINSTALL');
  const observed=codexVersion({codexHome:h});if(!observed.installed)throw Error('EXISTING_CODEX_CLI_REQUIRED_NO_AUTO_INSTALL');
  const target=selectedGlobal(h);noLinks(target);const original=fs.existsSync(target)?fs.readFileSync(target):Buffer.alloc(0);
@@ -45,14 +47,15 @@ export function install(h,{source=sourceCore}={}){
 }
 export function integrity(h,s=load(h)){const base=path.join(rootFor(h),'runtime');const issues=[];for(const row of s.inventory){const file=path.join(base,row.path);try{noLinks(file);if(fileHash(file)!==row.sha256)issues.push(row.path);}catch{issues.push(row.path);}}return issues;}
 export function status(h,{checkRuntime=true}={}){
+ if(portableContext())return portableStatus();
  let s;try{s=load(h);}catch{return{product:'J Harness Core',home:h,configured:'NOT_INSTALLED',effective:'NOT_CONNECTED',modelApplication:'NOT_OBSERVED'};}
  const selected=selectedGlobal(h),bytes=fs.existsSync(s.target)?fs.readFileSync(s.target):Buffer.alloc(0),block=Buffer.from(s.bridge),first=bytes.indexOf(block),last=bytes.lastIndexOf(block);
  const linked=first>=0&&first===last&&selected===s.target,drift=checkRuntime?integrity(h,s):[];
  const backup=s.backupRelative?path.join(rootFor(h),s.backupRelative):null;let backupStatus='NOT_AVAILABLE_PREVIOUS_BUILD';if(backup){try{noLinks(backup);backupStatus=fileHash(backup)===s.originalSha256?'MATCH':'CHANGED';}catch{backupStatus='MISSING';}}
  return{product:s.product,version:s.version,home:h,configured:s.configured,effective:drift.length?'BROKEN_RUNTIME':s.configured==='OFF'?(first<0?'OFF_FOR_NEW_SESSIONS':'BROKEN_OFF_LINK'):linked?'CONNECTED_FOR_NEW_SESSIONS':'NOT_CONNECTED',instructionTarget:s.target,selectedGlobal:selected,bridgePresent:first>=0,runtimeDrift:drift,backupStatus,modelApplication:'NOT_OBSERVED_USE_REAL_CODEX_SESSION',existingSessions:'RESTART_REQUIRED_AFTER_TOGGLE',codexVersion:s.codexVersion,securityScope:'COOPERATIVE_INSTRUCTIONS_NOT_OS_ENFORCEMENT'};
 }
-export function requireOn(h){const observed=status(h);if(observed.configured!=='ON'||observed.effective!=='CONNECTED_FOR_NEW_SESSIONS')throw Error('HARNESS_NOT_CONNECTED: '+observed.effective);return load(h);}
-export function toggle(h,mode){if(!['ON','OFF'].includes(mode))throw Error('ON_OR_OFF_ONLY');const s=load(h);noLinks(s.target);const current=fs.existsSync(s.target)?fs.readFileSync(s.target):Buffer.alloc(0),block=Buffer.from(s.bridge),index=current.indexOf(block);
+export function requireOn(h){if(portableContext())return portableStatus();const observed=status(h);if(observed.configured!=='ON'||observed.effective!=='CONNECTED_FOR_NEW_SESSIONS')throw Error('HARNESS_NOT_CONNECTED: '+observed.effective);return load(h);}
+export function toggle(h,mode){if(portableContext())throw Error('TOGGLE_UNAVAILABLE_IN_PROJECT_PORTABLE');if(!['ON','OFF'].includes(mode))throw Error('ON_OR_OFF_ONLY');const s=load(h);noLinks(s.target);const current=fs.existsSync(s.target)?fs.readFileSync(s.target):Buffer.alloc(0),block=Buffer.from(s.bridge),index=current.indexOf(block);
  if(current.includes(Buffer.from('<!-- J_HARNESS_CORE:BEGIN'))&&index<0)throw Error('MANAGED_BLOCK_EDITED_PRESERVED_REVIEW_REQUIRED');
  if(index>=0&&current.indexOf(block,index+1)>=0)throw Error('DUPLICATE_BRIDGE_REFUSED');
  if(mode==='ON'){
@@ -61,4 +64,4 @@ export function toggle(h,mode){if(!['ON','OFF'].includes(mode))throw Error('ON_O
  }else if(index>=0){const remaining=Buffer.concat([current.subarray(0,index),current.subarray(index+block.length)]);if(!s.originalExisted&&remaining.length===0)fs.unlinkSync(s.target);else atomic(s.target,remaining);}
  s.configured=mode;atomic(stateFile(h),json(s));return status(h);
 }
-export function uninstall(h){const s=load(h);toggle(h,'OFF');const exactOriginalRestored=s.originalSha256?(!s.originalExisted?!fs.existsSync(s.target):fs.existsSync(s.target)&&fileHash(s.target)===s.originalSha256):null;const disabled=rootFor(h)+'.uninstalled-'+Date.now();fs.renameSync(rootFor(h),disabled);return{product:s.product,result:'UNLINKED',archive:disabled,exactOriginalRestored,backupRetained:s.backupRelative?path.join(disabled,s.backupRelative):null,existingCliConfigurationChanged:false,credentialsTouched:false,note:'Private runtime and original guidance backup retained. Later user edits outside our block are preserved, not overwritten with an old backup.'};}
+export function uninstall(h){if(portableContext())throw Error('UNINSTALL_UNAVAILABLE_IN_PROJECT_PORTABLE');const s=load(h);toggle(h,'OFF');const exactOriginalRestored=s.originalSha256?(!s.originalExisted?!fs.existsSync(s.target):fs.existsSync(s.target)&&fileHash(s.target)===s.originalSha256):null;const disabled=rootFor(h)+'.uninstalled-'+Date.now();fs.renameSync(rootFor(h),disabled);return{product:s.product,result:'UNLINKED',archive:disabled,exactOriginalRestored,backupRetained:s.backupRelative?path.join(disabled,s.backupRelative):null,existingCliConfigurationChanged:false,credentialsTouched:false,note:'Private runtime and original guidance backup retained. Later user edits outside our block are preserved, not overwritten with an old backup.'};}
