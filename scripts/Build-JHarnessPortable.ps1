@@ -23,7 +23,7 @@ function Assert-PlainPath([string]$Target) {
 }
 Assert-PlainPath $output
 $version = [IO.File]::ReadAllText((Join-Path $repo 'J_HARNESS_VERSION')).Trim()
-if ($version -ne '8.0.0-alpha.3') { throw 'EXPECTED_V8_ALPHA3_DISTRIBUTION' }
+if ($version -notmatch '^8\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') { throw 'EXPECTED_V8_PORTABLE_DISTRIBUTION' }
 $portableSource = Join-Path (Join-Path $repo 'core') 'portable'
 $launcherSource = Join-Path $portableSource 'launchers'
 $installer = Join-Path $portableSource 'install-project.ps1'
@@ -56,7 +56,10 @@ if ($LASTEXITCODE -ne 0) { throw 'MATERIALIZE_RUNTIME_FAILED' }
 foreach ($name in @('JHarness.cmd','JHarness.ps1','Install-JHarness.cmd','README.md')) {
     Copy-Item -LiteralPath (Join-Path $launcherSource $name) -Destination (Join-Path $package $name)
 }
-Copy-Item -LiteralPath $installer -Destination (Join-Path $package 'Install-JHarnessLocal.ps1')
+$installerTemplate = [IO.File]::ReadAllText($installer)
+if (-not $installerTemplate.Contains("'JH_PRODUCT_VERSION'")) { throw 'LOCAL_INSTALLER_VERSION_MARKER_MISSING' }
+$pinnedInstaller = $installerTemplate.Replace("'JH_PRODUCT_VERSION'", ("'"+$version+"'"))
+[IO.File]::WriteAllText((Join-Path $package 'Install-JHarnessLocal.ps1'), $pinnedInstaller, [Text.UTF8Encoding]::new($false))
 Copy-Item -LiteralPath (Join-Path $launcherSource 'README.md') -Destination (Join-Path $package 'JHarness-README.md')
 $zip = Join-Path $output ('J_Harness_v' + $version + '_Windows_x64.zip')
 Add-Type -AssemblyName System.IO.Compression

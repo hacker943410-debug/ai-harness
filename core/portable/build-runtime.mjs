@@ -30,7 +30,7 @@ export function materializeRuntime(out,{nodeBinary,nodeLicense}={}) {
   fs.copyFileSync(path.join(repository,'workflows/CAPABILITY_ACQUISITION.md'),path.join(out,'runtime/knowledge/CAPABILITY_ACQUISITION.md'));
   copyTree(path.join(repository,'skills/dashboard-builder'),path.join(out,'runtime/skills/dashboard-builder'));
   copyTree(path.join(portable,'lib'),path.join(out,'lib'));
-  for(const name of ['portable.mjs','setup.mjs','PORTABLE.md'])fs.copyFileSync(path.join(portable,name),path.join(out,name));
+  for(const name of ['portable.mjs','setup.mjs','upgrade.mjs','PORTABLE.md'])fs.copyFileSync(path.join(portable,name),path.join(out,name));
   fs.copyFileSync(path.join(repository,'LICENSE'),path.join(out,'LICENSE'));
   if(nodeBinary){
     fs.mkdirSync(path.join(out,'vendor/win-x64'),{recursive:true});

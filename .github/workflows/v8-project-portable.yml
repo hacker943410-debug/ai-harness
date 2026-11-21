@@ -30,35 +30,89 @@ jobs:
           echo "$profile_cli/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Portable runtime and preserved profile contracts
         run: node --test core/tests/portable.test.mjs core/tests/cli-distribution.test.mjs core/tests/core.test.mjs core/tests/environment.test.mjs core/tests/integrated-product.test.mjs
-  windows-native:
+  windows-package:
     runs-on: windows-2022
     timeout-minutes: 25
+    outputs:
+      sha256: ${{ steps.package.outputs.sha256 }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Build pinned portable Node package without global installation
+        id: package
         shell: powershell
         run: |
-          & ./scripts/Build-JHarnessPortable.ps1 -Destination (Join-Path $env:RUNNER_TEMP 'jh-portable-build')
-          if($LASTEXITCODE -ne 0){throw 'PORTABLE_BUILD_FAILED'}
-      - name: Native PowerShell 5.1 fresh project matrix
+          $ErrorActionPreference = 'Stop'
+          $build = Join-Path $env:RUNNER_TEMP 'jh-portable-build'
+          & ./scripts/Build-JHarnessPortable.ps1 -Destination $build
+          if ($LASTEXITCODE -ne 0) { throw 'PORTABLE_BUILD_FAILED' }
+          $version = (Get-Content -LiteralPath J_HARNESS_VERSION -Raw).Trim()
+          $name = 'J_Harness_v' + $version + '_Windows_x64.zip'
+          $digest = (Get-FileHash -LiteralPath (Join-Path $build $name) -Algorithm SHA256).Hash.ToLowerInvariant()
+          $checksum = (Get-Content -LiteralPath (Join-Path $build 'SHA256SUMS.txt') -Raw).Trim()
+          if ($checksum -cne "$digest  $name") { throw 'BUILT_CHECKSUM_MISMATCH' }
+          [IO.File]::AppendAllText($env:GITHUB_OUTPUT, "sha256=$digest`n", [Text.UTF8Encoding]::new($false))
+      - name: Upload the ZIP and matching checksum for the Windows tests
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable-windows-candidate
+          path: |
+            ${{ runner.temp }}/jh-portable-build/J_Harness_v*_Windows_x64.zip
+            ${{ runner.temp }}/jh-portable-build/SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+  windows-native:
+    needs: windows-package
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [windows-2022, windows-2025]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Download the built candidate in this job
+        uses: actions/download-artifact@v4
+        with:
+          name: portable-windows-candidate
+          path: ${{ runner.temp }}/jh-portable-artifact
+      - name: Verify and install the downloaded ZIP, then check Alpha 3 upgrade
         shell: powershell
+        env:
+          PACKAGE_SHA256: ${{ needs.windows-package.outputs.sha256 }}
         run: |
-          & ./scripts/Test-JHarnessPortable.ps1 -PackageRoot (Join-Path $env:RUNNER_TEMP 'jh-portable-build/package') -EvidenceRoot (Join-Path $env:RUNNER_TEMP 'jh-portable-evidence') -BootstrapScript ./scripts/Install-JHarnessFromGitHub.ps1 -PackageArchive (Join-Path $env:RUNNER_TEMP 'jh-portable-build/J_Harness_v8.0.0-alpha.3_Windows_x64.zip')
+          $ErrorActionPreference = 'Stop'
+          $artifact = Join-Path $env:RUNNER_TEMP 'jh-portable-artifact'
+          $version = (Get-Content -LiteralPath J_HARNESS_VERSION -Raw).Trim()
+          $name = 'J_Harness_v' + $version + '_Windows_x64.zip'
+          $candidateArchive = Join-Path $artifact $name
+          $digest = (Get-FileHash -LiteralPath $candidateArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+          $checksum = (Get-Content -LiteralPath (Join-Path $artifact 'SHA256SUMS.txt') -Raw).Trim()
+          if ($digest -cne $env:PACKAGE_SHA256 -or $checksum -cne "$digest  $name") { throw 'DOWNLOADED_CANDIDATE_HASH_MISMATCH' }
+
+          $archive = Join-Path $env:RUNNER_TEMP 'jh-alpha3.zip'
+          $alpha3 = Join-Path $env:RUNNER_TEMP 'jh-alpha3'
+          & curl.exe -fLsS 'https://github.com/hacker943410-debug/ai-harness/releases/download/v8.0.0-alpha.3/J_Harness_v8.0.0-alpha.3_Windows_x64.zip' -o $archive
+          if($LASTEXITCODE -ne 0){throw 'ALPHA3_DOWNLOAD_FAILED'}
+          if((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -cne '42c8f05c9f6e75123fe91908dcb181de99d5ef027703ed9ee53a90c7a06dda40'){throw 'ALPHA3_ARCHIVE_HASH_MISMATCH'}
+          $candidate = Join-Path $env:RUNNER_TEMP 'jh-portable-extracted'
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [IO.Compression.ZipFile]::ExtractToDirectory($candidateArchive,$candidate)
+          [IO.Compression.ZipFile]::ExtractToDirectory($archive,$alpha3)
+          # The published Alpha 3 installer uses long staging filenames under the test project.
+          & ./scripts/Test-JHarnessPortable.ps1 -PackageRoot $candidate -EvidenceRoot (Join-Path $env:RUNNER_TEMP 'jh-ev') -Alpha3PackageRoot $alpha3
           if($LASTEXITCODE -ne 0){throw 'PORTABLE_TEST_FAILED'}
       - name: Preserve actual test evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: portable-windows-native-evidence
-          path: ${{ runner.temp }}/jh-portable-evidence/
+          name: portable-native-evidence-${{ matrix.runner }}
+          path: |
+            ${{ runner.temp }}/jh-ev/*.json
+            ${{ runner.temp }}/jh-ev/*.txt
           retention-days: 14
-          if-no-files-found: warn
-      - name: Preserve candidate checksums
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: portable-candidate-checksums
-          path: ${{ runner.temp }}/jh-portable-build/SHA256SUMS.txt
           if-no-files-found: warn

@@ -2,12 +2,16 @@ const portableApi=()=>globalThis[Symbol.for('j-harness.portable.v1')];
 export const portableContext=()=>portableApi()?.context??null;
 export const mutableRoot=()=>portableApi().mutableRoot();
 export const portableStatus=()=>portableApi().portableStatus();
-export const scopedFingerprint=project=>portableApi().scopedFingerprint(project);
+export const scopedFingerprint=project=>portableApi().scopedFingerprint(project,credentialPathName);
 import fs from 'node:fs';import path from 'node:path';import os from 'node:os';import crypto from 'node:crypto';
-export const version='8.0.0-core-beta.1';
+export const version=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url),'utf8')).version;
 export const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
 export const fileHash=file=>hash(fs.readFileSync(file));
 export const json=value=>JSON.stringify(value,null,2)+'\n';
+export function credentialPathName(name){
+ return /^(?:\.env(?:\.|$)|\.npmrc$|\.netrc$|_netrc$|auth\.json$|tokens\.json$|credentials|client_secret|service-account|id_(?:rsa|dsa|ecdsa|ed25519)(?:\.|$))/i.test(name)
+  || /\.(?:pem|key|p12|pfx|credentials\.json)$/i.test(name);
+}
 export const home=explicit=>portableContext()?.project??path.resolve(explicit??process.env.CODEX_HOME??path.join(os.homedir(),'.codex'));
 export const rootFor=h=>portableContext()?.root??path.join(h,'j-harness-core');
 export function noLinks(target){let cursor=path.resolve(target);while(true){if(fs.existsSync(cursor)&&fs.lstatSync(cursor).isSymbolicLink())throw Error('LINK_PATH_REFUSED: '+cursor);const p=path.dirname(cursor);if(p===cursor)break;cursor=p;}}

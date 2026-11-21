@@ -33,14 +33,14 @@ test('Skill scalar descriptions preserve multiline content, singleline compatibi
  fs.writeFileSync(path.join(folder,'SKILL.md'),'---\nname: metadata-only\ndescription: *unknown-anchor\n---\n');
  const bad=hub.list(h,project,{includeUser:false}).find(x=>x.name==='metadata-only');assert.equal(bad.supported,false);assert.match(bad.status,/UNSUPPORTED|INVALID/);assert.equal(bad.file,path.join(folder,'SKILL.md'));
 });
-test('explicit workflow/Skill evidence is project-local, existing home untouched and artifact links refused',()=>{
+test('explicit workflow/Skill evidence is project-local, existing home untouched and artifact links refused',async()=>{
  const{root,h,project}=fixture(),before=snap(h);
  fs.writeFileSync(path.join(project,'README.md'),'# Local guide\nRun node check.mjs to verify this synthetic project. No external service or user credentials are needed.\n');
  fs.writeFileSync(path.join(project,'check.mjs'),'import assert from "node:assert/strict"; assert.equal(6*7,42);\n');
  flow.begin(h,project,'로컬 검증');flow.advance(h,project,'plan','기존 도구로 검증');flow.advance(h,project,'implement');
  hub.readSkill(h,project,'jh-web-quality',{includeUser:false});flow.policy(h,project,'P06');
  const record=hub.record(h,project,'jh-web-quality','APPLIED','검토한 웹 품질 체크 적용');assert.equal(record.kind,'skill_result');
- const verified=flow.verify(h,project,[process.execPath,'check.mjs']);assert.equal(verified.result,'PASS');
+ const verified=await flow.verify(h,project,[process.execPath,'check.mjs']);assert.equal(verified.result,'PASS');
  assert.ok(verified.logDirectory.startsWith(path.join(project,'.jh-artifacts')+path.sep));assert.equal(snap(h),before);assert.ok(fs.existsSync(path.join(project,'.jh-artifacts/j-harness-core/events.jsonl')));
  flow.advance(h,project,'handoff');assert.equal(flow.finish(h,project,'README.md').result,'COMPLETE_LOCAL_VERIFIED');
  const linked=path.join(root,'linked-project'),outside=path.join(root,'outside');fs.mkdirSync(linked);fs.mkdirSync(outside);
