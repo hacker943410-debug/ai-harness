@@ -1,6 +1,6 @@
 # AI Harness runtime entry
 
-Product distribution version source: `J_HARNESS_VERSION`. The local source builds the v8.1 release candidate. The public installer remains pinned to the published Alpha 3 package. Policy provenance version source: `HARNESS_VERSION`; require its agreement with `harness/manifest.yaml` and `POLICY_INDEX.yaml`.
+Product distribution version source: `J_HARNESS_VERSION`. The source builds v8.2.1. The public installer remains pinned to the published Alpha 3 package. Policy provenance version source: `HARNESS_VERSION`; require its agreement with `harness/manifest.yaml` and `POLICY_INDEX.yaml`.
 Read CORE.md, ROUTER.md and POLICY_INDEX.yaml first. Preserve Layer A (source), Layer B (PC shared runtime), Layer C (project bindings). Select only current Task/Phase/Risk/Boundary policies; never preload P01–P26 or all Skills. Jev remains disabled by default, advisory only, with existing-router fallback.
 
 
@@ -12,7 +12,7 @@ The ZIP includes actual Core 8.0.0-core-beta.1, adapter 1.0.0, Node 22.22.2, all
 
 Use the existing source-policy routing below only for an explicitly requested policy-source installation or an existing policy migration. Keep all preservation, checkpoint, verification and independent review requirements. `READY_LOCAL` is local readiness, not evidence of OS enforcement, actual model behavior, another physical PC or deployment.
 
-For 8.1 product work, prioritize standard-user portable installation, actionable setup for one coding CLI, guided development and real local verification, then project-preserving upgrade and recovery. The Windows Supervisor, credential-store isolation and protected audit storage are experimental and are outside ordinary portable installation and release acceptance. Review ordinary product evidence before release.
+For 8.2.1 product work, prioritize standard-user portable installation, actionable setup for one coding CLI, guided development and real local verification, then project-preserving upgrade and recovery. The Windows Supervisor, credential-store isolation and protected audit storage are experimental and are outside ordinary portable installation and release acceptance. Review ordinary product evidence before release.
 
 Harness upgrade invariant: install/update/upgrade/version/latest-Harness requests route to `harness/runtime/harness-update-router.md` and `harness/update/UPDATE_PROTOCOL.md`. Detect current/target version, project mode, development state, custom rules/Skills/policies, checkpoint, compatibility/gap, transition manifest, migration, harness validation, regression, critical backfill, transition audit, resume and benchmark. Never directly replace rules inside an active implementation phase for a major update. Preserve existing behavior and unmanaged project instructions; no retroactive refactor without an explicit migration decision.
 
