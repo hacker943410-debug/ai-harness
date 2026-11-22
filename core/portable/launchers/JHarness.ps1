@@ -6,7 +6,7 @@ if (-not (Test-Path -LiteralPath $node -PathType Leaf)) { throw 'BUNDLED_NODE_RE
 $stream=[IO.File]::OpenRead($node);$hasher=[Security.Cryptography.SHA256]::Create()
 try { $nodeSha=[BitConverter]::ToString($hasher.ComputeHash($stream)).Replace('-','').ToLowerInvariant() }
 finally { $hasher.Dispose();$stream.Dispose() }
-if ($nodeSha -ne 'ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3') { throw 'BUNDLED_NODE_HASH_MISMATCH_NO_FALLBACK' }
+if ($nodeSha -ne '247e9693d316da9857e44990e5e11709f596f18112251b8026ec6eed80bdf38a') { throw 'BUNDLED_NODE_HASH_MISMATCH_NO_FALLBACK' }
 if ($args.Count -gt 0 -and $args[0] -eq 'setup') {
     if ($args.Count -ne 1) { throw 'SETUP_TAKES_NO_ADDITIONAL_ARGUMENTS' }
     $entry=Join-Path $runtime 'setup.mjs';$arguments=@('--project',$PSScriptRoot)
@@ -20,6 +20,8 @@ $quoted=foreach($argument in @($entry)+$arguments){
 $info=New-Object Diagnostics.ProcessStartInfo
 $info.FileName=$node;$info.Arguments=($quoted -join ' ')
 $info.UseShellExecute=$false;$info.CreateNoWindow=$true
+$info.EnvironmentVariables.Remove('NODE_OPTIONS')
+$info.EnvironmentVariables.Remove('NODE_PATH')
 $info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true
 $info.StandardOutputEncoding=[Text.UTF8Encoding]::new($false)
 $info.StandardErrorEncoding=[Text.UTF8Encoding]::new($false)

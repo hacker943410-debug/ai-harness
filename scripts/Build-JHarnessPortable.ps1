@@ -35,19 +35,19 @@ New-Item -ItemType Directory -Path $downloads | Out-Null
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 if (-not $NodeBinary) {
     $NodeBinary = Join-Path $downloads 'node.exe'
-    Invoke-WebRequest -UseBasicParsing -Uri 'https://nodejs.org/dist/v22.22.2/win-x64/node.exe' -OutFile $NodeBinary
+    Invoke-WebRequest -UseBasicParsing -Uri 'https://nodejs.org/dist/v22.23.5/win-x64/node.exe' -OutFile $NodeBinary
 }
 if (-not $NodeLicense) {
     $NodeLicense = Join-Path $downloads 'LICENSE'
-    Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/nodejs/node/v22.22.2/LICENSE' -OutFile $NodeLicense
+    Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/nodejs/node/v22.23.5/LICENSE' -OutFile $NodeLicense
 }
 $NodeBinary = [IO.Path]::GetFullPath($NodeBinary)
 $NodeLicense = [IO.Path]::GetFullPath($NodeLicense)
 Assert-PlainPath $NodeBinary; Assert-PlainPath $NodeLicense
-if ((Get-FileHash -LiteralPath $NodeBinary -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3') { throw 'NODE_SHA256_MISMATCH' }
+if ((Get-FileHash -LiteralPath $NodeBinary -Algorithm SHA256).Hash.ToLowerInvariant() -ne '247e9693d316da9857e44990e5e11709f596f18112251b8026ec6eed80bdf38a') { throw 'NODE_SHA256_MISMATCH' }
 if ((Get-FileHash -LiteralPath $NodeLicense -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'c738ae413cf561f174e34f6961f8ca458aae2369a73640dda6234c629b98bcc4') { throw 'NODE_LICENSE_SHA256_MISMATCH' }
 $actualVersion = & $NodeBinary --version
-if ($LASTEXITCODE -ne 0 -or $actualVersion -ne 'v22.22.2') { throw 'NODE_VERSION_MISMATCH' }
+if ($LASTEXITCODE -ne 0 -or $actualVersion -ne 'v22.23.5') { throw 'NODE_VERSION_MISMATCH' }
 $package = Join-Path $output 'package'
 New-Item -ItemType Directory -Path $package | Out-Null
 $runtime = Join-Path (Join-Path $package '.agents') 'j-harness'

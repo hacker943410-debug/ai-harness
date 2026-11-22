@@ -8,7 +8,7 @@ param(
 )
 $ErrorActionPreference='Stop'
 $ProgressPreference='SilentlyContinue'
-$expectedNode='ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3'
+$expectedNode='247e9693d316da9857e44990e5e11709f596f18112251b8026ec6eed80bdf38a'
 $expectedProduct='JH_PRODUCT_VERSION'
 $packageRoot=[IO.Path]::GetFullPath($PSScriptRoot)
 $sourceRuntime=Join-Path $packageRoot '.agents\j-harness'
@@ -43,7 +43,7 @@ function Runtime-Files([string]$root){
     foreach($entry in Get-ChildItem -LiteralPath $dir -Force){
       if(($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'LINK_IN_RUNTIME_REFUSED'}
       $rel=$entry.FullName.Substring($root.TrimEnd('\').Length+1).Replace('\','/')
-      if($rel -eq 'tests' -or $rel -eq 'manifest.json' -or $rel -eq 'PORTABLE.md'){continue}
+      if($rel -eq 'tests' -or $rel -eq 'manifest.json'){continue}
       if($entry.PSIsContainer){$queue.Enqueue($entry.FullName)}else{$rel}
     }
   }
@@ -60,6 +60,7 @@ function Check-Runtime([string]$root,[string]$manifestSha){
     if(-not $seen.Add(([string]$row.path).Replace('\','/'))){throw 'DUPLICATE_MANIFEST_PATH'}
     if($row.sha256 -notmatch '^[a-f0-9]{64}$' -or -not(Test-Path -LiteralPath $full -PathType Leaf) -or (Digest $full) -ne $row.sha256){throw ('RUNTIME_HASH_MISMATCH: '+$row.path)}
   }
+  if(-not $seen.Contains('PORTABLE.md')){throw 'INCOMPLETE_RUNTIME_MANIFEST'}
   $files=@(Runtime-Files $root)
   if($files.Count -ne $seen.Count){throw 'INCOMPLETE_RUNTIME_MANIFEST'}
   foreach($rel in $files){if(-not $seen.Contains($rel)){throw 'UNLISTED_RUNTIME_FILE'}}

@@ -19,7 +19,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: '22.22.2'
+          node-version: '22.23.5'
       - name: Provision pinned Codex for preserved profile regressions only
         shell: bash
         run: |
@@ -29,7 +29,7 @@ jobs:
           test "$(codex --version)" = 'codex-cli 0.166.0'
           echo "$profile_cli/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Portable runtime and preserved profile contracts
-        run: node --test core/tests/portable.test.mjs core/tests/cli-distribution.test.mjs core/tests/core.test.mjs core/tests/environment.test.mjs core/tests/integrated-product.test.mjs
+        run: node --test core/tests/portable.test.mjs core/tests/cli-distribution.test.mjs core/tests/core.test.mjs core/tests/environment.test.mjs core/tests/integrated-product.test.mjs core/tests/stability.test.mjs
   windows-package:
     runs-on: windows-2022
     timeout-minutes: 25

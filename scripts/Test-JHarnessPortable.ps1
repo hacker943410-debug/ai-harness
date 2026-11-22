@@ -96,6 +96,10 @@ try {
     $cmd=[IO.Path]::Combine($env:SystemRoot,'System32','cmd.exe')
     $cmdStatus=Run 'cmd-status' ('Set-Location -LiteralPath '+(Quote $project)+'; & '+(Quote $cmd)+' /d /c ".\JHarness.cmd status"; exit $LASTEXITCODE') | ConvertFrom-Json
     Expect ($cmdStatus.effective -eq 'READY_LOCAL') 'CMD_LAUNCHER_FAILED'
+    $isolated=Run 'launcher-ignores-ambient-node-options' ('$env:NODE_OPTIONS='+ (Quote '--jh-invalid-test-option') +'; '+(Launcher $project 'doctor')) | ConvertFrom-Json
+    Expect ($isolated.runtimeIntegrity -eq 'VERIFIED' -and $isolated.clientGuidance.agents -eq 'MANAGED_BLOCK_PRESENT' -and
+        $isolated.clientGuidance.modelApplication -eq 'NOT_OBSERVED') 'LAUNCHER_INHERITED_AMBIENT_NODE_OPTIONS_OR_MISREPORTED_GUIDANCE'
+    $checks.Add('Pinned launcher ignores invalid ambient Node options and verifies the canonical project guidance')
     $setup=Run 'setup-repeat' (Launcher $project 'setup') | ConvertFrom-Json
     Expect ($setup.changed -eq $false) 'SETUP_NOT_IDEMPOTENT'
     $repeat=Run 'install-repeat' (Installer $project 'Install') | ConvertFrom-Json

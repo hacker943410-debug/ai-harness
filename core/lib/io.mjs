@@ -4,12 +4,13 @@ export const mutableRoot=()=>portableApi().mutableRoot();
 export const portableStatus=()=>portableApi().portableStatus();
 export const scopedFingerprint=project=>portableApi().scopedFingerprint(project,credentialPathName);
 import fs from 'node:fs';import path from 'node:path';import os from 'node:os';import crypto from 'node:crypto';
+import {redactSecrets} from './secrets.mjs';
 export const version=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url),'utf8')).version;
 export const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
 export const fileHash=file=>hash(fs.readFileSync(file));
 export const json=value=>JSON.stringify(value,null,2)+'\n';
 export function credentialPathName(name){
- return /^(?:\.env(?:\.|$)|\.npmrc$|\.netrc$|_netrc$|auth\.json$|tokens\.json$|credentials|client_secret|service-account|id_(?:rsa|dsa|ecdsa|ed25519)(?:\.|$))/i.test(name)
+ return /^(?:\.env(?:\.|$)|\.npmrc$|\.netrc$|_netrc$|auth\.json$|tokens\.json$|oauth_(?:creds|tokens)\.json$|credentials|client_secret|service-account|id_(?:rsa|dsa|ecdsa|ed25519)(?:\.|$))/i.test(name)
   || /\.(?:pem|key|p12|pfx|credentials\.json)$/i.test(name);
 }
 export const home=explicit=>portableContext()?.project??path.resolve(explicit??process.env.CODEX_HOME??path.join(os.homedir(),'.codex'));
@@ -17,7 +18,7 @@ export const rootFor=h=>portableContext()?.root??path.join(h,'j-harness-core');
 export function noLinks(target){let cursor=path.resolve(target);while(true){if(fs.existsSync(cursor)&&fs.lstatSync(cursor).isSymbolicLink())throw Error('LINK_PATH_REFUSED: '+cursor);const p=path.dirname(cursor);if(p===cursor)break;cursor=p;}}
 export function atomic(file,bytes){noLinks(file);fs.mkdirSync(path.dirname(file),{recursive:true});const tmp=file+'.tmp-'+crypto.randomUUID();try{fs.writeFileSync(tmp,bytes,{flag:'wx',mode:0o600});fs.renameSync(tmp,file);}finally{if(fs.existsSync(tmp))fs.unlinkSync(tmp);}}
 export function readJson(file,fallback=null){if(!fs.existsSync(file))return fallback;noLinks(file);return JSON.parse(fs.readFileSync(file,'utf8').replace(/^\uFEFF/,''));}
-export function safeText(text){if(typeof text!=='string'||!text.trim()||text.length>12000)throw Error('BOUNDED_TEXT_REQUIRED');if(/-----BEGIN .*PRIVATE KEY|\b(?:sk-|gh[pousr]_)[A-Za-z0-9_-]{20,}|(?:api_key|access_token|refresh_token|password)\s*[=:]\s*\S+/i.test(text))throw Error('SECRET_LIKE_TEXT_REFUSED');return text;}
+export function safeText(text){if(typeof text!=='string'||!text.trim()||text.length>12000)throw Error('BOUNDED_TEXT_REQUIRED');if(redactSecrets(text)!==text)throw Error('SECRET_LIKE_TEXT_REFUSED');return text;}
 export function copyTree(source,dest){noLinks(source);noLinks(dest);if(!fs.statSync(source).isDirectory())throw Error('DIRECTORY_REQUIRED');fs.mkdirSync(dest,{recursive:true});for(const item of fs.readdirSync(source,{withFileTypes:true})){if(item.name==='__pycache__'||/\.py[co]$/.test(item.name))continue;const a=path.join(source,item.name),b=path.join(dest,item.name);if(item.isSymbolicLink())throw Error('SKILL_OR_RUNTIME_LINK_REFUSED');if(item.isDirectory())copyTree(a,b);else if(item.isFile())fs.copyFileSync(a,b);}}
 export function treeFiles(root,exclude=new Set()){const rows=[];function walk(dir){for(const item of fs.readdirSync(dir,{withFileTypes:true})){if(exclude.has(item.name))continue;const file=path.join(dir,item.name);if(item.isSymbolicLink())throw Error('LINK_IN_RUNTIME');if(item.isDirectory())walk(file);else if(item.isFile())rows.push({path:path.relative(root,file).replaceAll('\\','/'),sha256:fileHash(file)});}}walk(root);return rows.sort((a,b)=>a.path.localeCompare(b.path,'en'));}
 export const stateFile=h=>path.join(rootFor(h),'install.json');

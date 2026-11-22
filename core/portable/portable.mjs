@@ -11,7 +11,7 @@ try{
  const context=configurePortable(root,path.resolve(project));
  const command=head[0];
  if(command==='--version'){console.log(context.version);}
- else if(command==='--help'||command==='completion'){console.log('J Harness Core '+context.version+' · PROJECT_PORTABLE\nStart with: .\\JHarness.cmd quickstart\nOther commands: status, doctor, environment, route, begin, advance, verify, finish, policy, skills, progress, learn, lessons');}
+ else if(command==='--help'||command==='completion'){console.log('J Harness Core '+context.version+' · PROJECT_PORTABLE\nStart with: .\\JHarness.cmd quickstart\nOther commands: status, doctor, connect claude, environment, route, begin, advance, verify, finish, policy, skills, progress, learn, lessons');}
  else if(!command){console.log(JSON.stringify(portableStatus(),null,2));}
- else{if(!['status','doctor','environment','quickstart','supervisor','route','begin','advance','verify','finish','policy','skills','progress','learn','lessons'].includes(command))throw Error('COMMAND_UNAVAILABLE_IN_PROJECT_PORTABLE: '+command);process.argv=[process.execPath,path.join(root,'runtime/core/cli.mjs'),'--project',context.project,...head,...(separator<0?[]:['--',...args.slice(separator+1)])];await import('./runtime/core/cli.mjs');}
+ else{if(!['status','doctor','environment','quickstart','connect','supervisor','route','begin','advance','verify','finish','policy','skills','progress','learn','lessons'].includes(command))throw Error('COMMAND_UNAVAILABLE_IN_PROJECT_PORTABLE: '+command);process.argv=[process.execPath,path.join(root,'runtime/core/cli.mjs'),'--project',context.project,...head,...(separator<0?[]:['--',...args.slice(separator+1)])];await import('./runtime/core/cli.mjs');}
 }catch(error){console.error(JSON.stringify({product:'J Harness Core',mode:'PROJECT_PORTABLE',result:'BLOCKED',reason:error.message}));process.exitCode=1;}

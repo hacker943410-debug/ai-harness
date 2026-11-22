@@ -7,6 +7,7 @@ import {event,runEvents,projectState,saveProject} from './events.mjs';
 import {routeTask} from './harness-engine.mjs';
 import {requireLocalExecution,verificationEnvironment} from './execution-boundary.mjs';
 import {runVerification} from './verification-process.mjs';
+import {redactSecrets} from './secrets.mjs';
 export const stages=['analysis','plan','implement','verify','handoff'];
 const defaultExclusions=['.git','node_modules','data','.jh-artifacts'];
 export function fingerprint(project){
@@ -106,11 +107,6 @@ export function advance(h,project,stage,note){
  }
  state.stage=stage;saveProject(h,project,state);event(h,project,'stage',{stage,note:note??null});return state;
 }
-const redact=text=>text
- .replace(/-----BEGIN [^-]*PRIVATE KEY-----[\s\S]*?-----END [^-]*PRIVATE KEY-----/g,'[REDACTED PRIVATE KEY]')
- .replace(/\b(?:sk-|gh[pousr]_)[A-Za-z0-9_-]{20,}/g,'[REDACTED TOKEN]')
- .replace(/(\bauthorization["']?\s*[:=]\s*["']?(?:Bearer|Basic)\s+)[^\s"',}]+/gi,'$1[REDACTED]')
- .replace(/((?:access_token|refresh_token|api_key|password)["']?\s*[:=]\s*["']?)[^\s"',}]+/gi,'$1[REDACTED]');
 export async function verify(h,project,argv,{requireSupervisor=false}={}){
  requireOn(h);
  const boundary=requireLocalExecution(project,requireSupervisor);
@@ -124,8 +120,8 @@ export async function verify(h,project,argv,{requireSupervisor=false}={}){
  const logs=path.join(projectSlot(h,project),'logs');
  const result=await runVerification(executable,args,{project,env:verificationEnvironment(),logs});
  const after=fingerprint(project);
- const stdout=redact((result.stdout??Buffer.alloc(0)).toString('utf8'));
- const stderr=redact((result.stderr??Buffer.alloc(0)).toString('utf8'));
+ const stdout=redactSecrets((result.stdout??Buffer.alloc(0)).toString('utf8'));
+ const stderr=redactSecrets((result.stderr??Buffer.alloc(0)).toString('utf8'));
  atomic(path.join(logs,id+'.stdout.txt'),stdout);
  atomic(path.join(logs,id+'.stderr.txt'),stderr);
  const sourceChanged=before.sha256!==after.sha256;
@@ -139,7 +135,7 @@ export async function verify(h,project,argv,{requireSupervisor=false}={}){
   tokenUsage:{actual:null,estimate:null,reason:'This local command has no provider token telemetry.'}};
  state.stage='verify';state.verification=record;saveProject(h,project,state);event(h,project,'verification',record);
  // Preserve immediate argv feedback for existing callers. Durable evidence omits raw arguments.
- return {...record,arguments:args.map(redact),stdoutTail:stdout.slice(-2000),stderrTail:stderr.slice(-2000)};
+ return {...record,arguments:args.map(redactSecrets),stdoutTail:stdout.slice(-2000),stderrTail:stderr.slice(-2000)};
 }
 export function policy(h,project,id,{full=false}={}){requireOn(h);if(!/^P\d{2}$/.test(id))throw Error('POLICY_ID_REQUIRED');const root=path.join(rootFor(h),'runtime'),name=fs.readdirSync(path.join(root,'policies')).find(n=>n.startsWith(id.slice(1)+'_'));if(!name)throw Error('POLICY_NOT_FOUND');const file=path.join(root,'policies',name),notes=readJson(path.join(root,'core/knowledge/policy-notes.json'));const content=full?fs.readFileSync(file,'utf8'):notes[id];if(!content)throw Error('NO_CURATED_NOTE_USE_EXPLICIT_FULL_SOURCE');return{id,queryOnly:true,source:file,sourceSha256:fileHash(file),kind:full?'ORIGINAL_V7_SOURCE':'CURATED_GUIDANCE_WITH_ORIGINAL_REFERENCE',content,tokenEstimate:{kind:'ESTIMATE_NOT_PROVIDER_USAGE',formula:'UTF-8 bytes / 4 (rough; Korean/code varies)',value:Math.ceil(Buffer.byteLength(content)/4)}};}
 export function finish(h,project,guide){

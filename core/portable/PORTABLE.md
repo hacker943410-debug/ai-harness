@@ -1,13 +1,14 @@
-# J Harness 8.1 Windows 이동형 시작 안내
+# J Harness 8.2 Windows 이동형 시작 안내
 
 ## 설치하고 첫 작업 시작하기
 
 1. Windows x64에서 패키지 압축을 풉니다. Node는 패키지에 들어 있습니다. 내 문서처럼 쓸 수 있는 폴더에 설치합니다.
 2. 패키지 폴더에서 `.\Install-JHarness.cmd -ProjectPath "C:\Projects\MyProject" -ApproveInstall`을 실행합니다. 예시 경로를 작업할 폴더 경로로 바꾸세요. 패키지를 푼 폴더 자체에서 작업하려면 `.\JHarness.cmd setup`을 실행합니다.
 3. 프로젝트 폴더에서 `.\JHarness.cmd quickstart`를 실행합니다. 설치된 코딩 CLI를 찾아 다음 행동을 안내합니다. CLI를 직접 고르려면 `--client codex`, `--client claude`, `--client agy` 중 하나를 붙입니다. 선택한 CLI가 없으면 공식 설치 안내를 보여줍니다.
-4. 같은 프로젝트 폴더에서 선택한 CLI를 시작하고, `quickstart`에 나온 첫 요청 예시를 실제 만들고 싶은 프로그램으로 바꿔 입력합니다. 하네스가 프로젝트 지침을 읽고 필요한 도구, 첫 기능, 테스트와 실행법을 안내하도록 요청합니다.
+4. Claude Code를 선택했고 연결 안내가 나오면 `.\JHarness.cmd connect claude`를 실행합니다. 기존 `CLAUDE.md` 내용은 보존하고 `AGENTS.md`를 읽는 줄을 추가합니다. Codex와 AGY는 프로젝트의 `AGENTS.md`를 사용합니다.
+5. 같은 프로젝트 폴더에서 선택한 CLI를 시작하고, `quickstart`에 나온 첫 요청 예시를 실제 만들고 싶은 프로그램으로 바꿔 입력합니다. 하네스가 프로젝트 지침을 읽고 필요한 도구, 첫 기능, 테스트와 실행법을 안내하도록 요청합니다.
 
-`.\JHarness.cmd doctor`로 하네스 설치와 프로젝트 연결을 확인합니다. `READY_LOCAL`과 `BOUND_VERIFIED`가 나오면 로컬 하네스를 쓸 준비가 된 것입니다. 로그인 화면이 뜨면 선택한 CLI에서 진행합니다. `environment plan --client codex`는 해당 CLI의 상세 환경 점검 결과를 JSON으로 보여줍니다.
+`.\JHarness.cmd doctor`에서 하네스 설치와 프로젝트 연결, `clientGuidance`의 지침 파일 상태를 확인합니다. Codex에서 `AGENTS.override.md`를 쓰는 프로젝트는 해당 파일의 지침이 우선합니다. 기존 지침은 그대로 보존되므로 하네스 연결도 필요한 경우 파일을 검토하세요. `modelApplication`은 실제 CLI 세션에서 따로 확인합니다. 로그인 화면이 뜨면 선택한 CLI에서 진행합니다. `environment plan --client codex`는 해당 CLI의 상세 환경 점검 결과를 JSON으로 보여줍니다.
 
 ## 작업 중 확인할 명령
 
@@ -27,24 +28,24 @@ Ordinary local verification runs with the current user's OS permissions. Local e
 
 The canonical `project_mode` in `.ai/harness-state.json` and `.ai/harness-project.json` takes precedence over stack heuristics. Conflicting or invalid modes block workflow creation. An explicit `verification_scope` in the project binding selects included relative inputs and exclusions; unsafe paths, links, missing or empty inputs block verification. A changed source fingerprint invalidates previous PASS evidence before handoff and finish.
 
-## Upgrade a published Alpha 3 project
+## Alpha 3 또는 8.1.0 프로젝트 업데이트
 
-Close the project's CLI sessions and finish the active workflow. Extract the 8.1 package into a separate folder and run these commands from that folder. Adjust the path to the Alpha 3 project.
+프로젝트의 CLI 세션을 닫고 진행 중인 작업을 마칩니다. 8.2 패키지를 별도 폴더에 푼 다음, 패키지 폴더에서 아래 명령을 실행합니다. 예시 경로를 업데이트할 프로젝트 폴더로 바꾸세요.
 
 ```powershell
 .\Install-JHarnessLocal.ps1 -Action Plan -Upgrade -ProjectPath 'C:\Projects\MyProject'
 .\Install-JHarnessLocal.ps1 -Action Install -Upgrade -ApproveInstall -ProjectPath 'C:\Projects\MyProject'
 ```
 
-The plan checks the published Alpha 3 manifest and lists the managed changes. Conflicts in the managed block, launcher or prior runtime stop the upgrade. The installer backs up the previous runtime and managed file bytes under `.jh-artifacts/j-harness-core/upgrades`, then runs the new `doctor`. A failed doctor triggers restore and verification of Alpha 3.
+설치기는 지원하는 Alpha 3와 8.1.0의 배포 해시를 확인합니다. 첫 명령은 변경 계획을 보여줍니다. 관리 지침, 실행 파일 또는 이전 런타임에 충돌이 있으면 업데이트를 중단합니다. 설치기는 이전 런타임과 관리 파일을 `.jh-artifacts/j-harness-core/upgrades`에 백업한 뒤 새 `doctor`를 실행합니다. 실패하면 이전 버전으로 복구하고 검증합니다.
 
-If an interruption leaves `upgrade.lock`, keep the lock, journal and backups. Run recovery using the same 8.1 package and project directory.
+중단으로 `upgrade.lock`이 남으면 잠금 파일, 작업 기록과 백업을 보관하세요. 업데이트에 사용한 8.2 패키지와 같은 프로젝트 경로로 복구를 실행합니다.
 
 ```powershell
 .\Install-JHarnessLocal.ps1 -Action Recover -Upgrade -ApproveInstall -ProjectPath 'C:\Projects\MyProject'
 ```
 
-Recovery checks that the old process has stopped and that the affected files match a known state in the journal. It verifies any completed upgrade or restores the previous Alpha 3 runtime and managed files. If recovery reports a conflict, keep the transaction files for review.
+복구는 기존 프로세스가 종료됐는지, 파일이 작업 기록과 일치하는지 확인합니다. 완료된 업데이트는 그대로 검증하고, 중단된 업데이트는 이전 런타임과 관리 파일을 복구합니다. 충돌이 나오면 복구 기록을 보관해 검토하세요.
 
 Run `JHarness.cmd doctor` and `JHarness.cmd progress` from the upgraded project. Project settings and historical workflow records remain available. An old verification appears as `STALE` when it was recorded against a different runtime, even when the product sources are byte-identical. Open a new coding session and rerun the project's verification before relying on fresh results.
 

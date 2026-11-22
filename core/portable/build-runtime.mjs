@@ -6,7 +6,7 @@ import {buildManifest} from './lib/portable-context.mjs';
 
 const portable=path.dirname(fileURLToPath(import.meta.url));
 const core=path.dirname(portable), repository=path.dirname(core);
-const nodeHash='ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3';
+const nodeHash='247e9693d316da9857e44990e5e11709f596f18112251b8026ec6eed80bdf38a';
 const licenseHash='c738ae413cf561f174e34f6961f8ca458aae2369a73640dda6234c629b98bcc4';
 
 // Only create a new directory. A failed build is retained for diagnosis.

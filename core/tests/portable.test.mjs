@@ -70,8 +70,42 @@ test('portable Core operates without global installation and refuses damaged evi
   assert.match(available,/claude --version/);
   assert.match(available,/AGENTS\.md/);
   assert.doesNotMatch(available,/codex --version|Supervisor/i);
+  assert.match(available,/connect claude/);
+  const doctor=()=>JSON.parse(run(['doctor'],0,selected,installed)).clientGuidance;
+  const connect=(expected=0)=>run(['connect','claude'],expected,selected,installed);
+  const claude=path.join(selected,'CLAUDE.md');
+  assert.equal(doctor().agents,'MANAGED_BLOCK_PRESENT');
+  assert.equal(doctor().claude.state,'CONNECT_AVAILABLE');
+  assert.equal(fs.existsSync(claude),false);
+  assert.equal(JSON.parse(connect()).changed,true);
+  assert.equal(JSON.parse(connect()).changed,false);
+  assert.equal(doctor().claude.state,'IMPORT_PRESENT');
+  assert.equal(doctor().modelApplication,'NOT_OBSERVED');
+  const claudeRules=Buffer.from('\uFEFFUser guidance.\r\n~~~md\r\n@AGENTS.md\r\n~~~\r\n');
+  fs.writeFileSync(claude,claudeRules);
+  assert.equal(doctor().claude.state,'CONNECT_AVAILABLE');
+  assert.equal(JSON.parse(connect()).changed,true);
+  assert.deepEqual(fs.readFileSync(claude).subarray(0,claudeRules.length),claudeRules);
+  assert.equal(JSON.parse(connect()).changed,false);
+  const damaged=Buffer.from('<!-- J-HARNESS-CLAUDE:START -->\n@other.md\n<!-- J-HARNESS-CLAUDE:END -->\n');
+  fs.writeFileSync(claude,damaged);
+  assert.equal(doctor().claude.state,'REVIEW_REQUIRED');
+  assert.match(connect(1),/CLAUDE_GUIDANCE_REQUIRES_REVIEW/);
+  assert.deepEqual(fs.readFileSync(claude),damaged);
+  fs.writeFileSync(claude,'~~~md\nAn unfinished fenced block.\n');
+  assert.match(connect(1),/CLAUDE_GUIDANCE_REQUIRES_REVIEW/);
+  assert.equal(fs.readFileSync(claude,'utf8'),'~~~md\nAn unfinished fenced block.\n');
+  fs.writeFileSync(path.join(selected,'AGENTS.override.md'),'Existing override.\n');
+  fs.writeFileSync(path.join(selected,'GEMINI.md'),'Existing AGY instructions.\n');
+  assert.equal(doctor().codex.override,'OVERRIDE_PRESENT');
+  assert.equal(doctor().agy.additionalGeminiGuidance,'PRESENT');
+  fs.unlinkSync(agents);
+  assert.equal(doctor().agents,'MISSING');
+  assert.match(connect(1),/PROJECT_AGENTS_GUIDANCE_REQUIRES_REVIEW/);
+  fs.writeFileSync(agents,after);
   fs.appendFileSync(agents,'\nUser-owned addition after setup.\n');
   fs.writeFileSync(agents,fs.readFileSync(agents,'utf8').replace('Never fall back to v7.','Allow an unreviewed fallback.'));
+  assert.equal(doctor().agents,'REVIEW_REQUIRED');
   const edited=fs.readFileSync(agents),blocked=setup();assert.equal(blocked.status,1,blocked.stdout+blocked.stderr);assert.equal(JSON.parse(blocked.stderr).status,'BLOCKED');assert.match(blocked.stderr,/MANAGED_PROJECT_BRIDGE_REQUIRES_REVIEW/);assert.deepEqual(fs.readFileSync(agents),edited);assert.deepEqual(fs.readFileSync(bindingFile),bindingBefore);
  });
  await t.test('unbound normal and reversed portable markers require review and preserve guidance',()=>{
@@ -144,11 +178,17 @@ fs.writeFileSync=function(file,...args){
   fs.writeFileSync(config,JSON.stringify({verification_scope:fixtureScope,supervisor:{required:true}}));
   fs.mkdirSync(path.join(dir,'src'));
   fs.writeFileSync(path.join(dir,'src','.env'),'synthetic unused fixture');
+  fs.writeFileSync(path.join(dir,'src','oauth_creds.json'),'synthetic unused OAuth fixture');
+  const quoted='synthetic multi-word credential';
+  const google='AIza'+'0'.repeat(35);
+  const github='github_pat_'+'0'.repeat(24);
   fs.writeFileSync(path.join(dir,'src','check.cjs'),[
    "if(process.env.JH_FIXTURE_PRIVATE!==undefined||process.env.CODEX_HOME!==undefined)process.exit(9);",
    "if(process.argv[2]!=='arbitrary-argument-sentinel')process.exit(8);",
    "console.log('Authorization: Bearer synthetic-placeholder');",
+   'console.error('+JSON.stringify(JSON.stringify({ANTHROPIC_AUTH_TOKEN:quoted})+'\n'+google+' '+github)+');',
   ].join('\n'));
+  assert.match(run(['begin','ANTHROPIC_AUTH_TOKEN="'+quoted+'"'],1,dir),/SECRET_LIKE_TEXT_REFUSED/);
   const id=JSON.parse(run(['begin','Verify boundary fixture'],0,dir)).runId;
   run(['advance','plan','--note','Run the isolated check'],0,dir);
   run(['advance','implement'],0,dir);
@@ -165,6 +205,9 @@ fs.writeFileSync=function(file,...args){
   assert.equal(verified.runId,id);
   assert.equal(verified.sourceScope.files,1);
   assert.equal(verified.stdoutTail.trim(),'Authorization: Bearer [REDACTED]');
+  assert.deepEqual(verified.stderrTail.trim().split('\n'),['{"ANTHROPIC_AUTH_TOKEN":"[REDACTED]"}','[REDACTED TOKEN] [REDACTED TOKEN]']);
+  const durable=fs.readFileSync(path.join(verified.logDirectory,verified.id+'.stderr.txt'),'utf8');
+  assert.equal(durable,verified.stderrTail);
   const persisted=run(['progress'],0,dir);
   assert.doesNotMatch(persisted,/arbitrary-argument-sentinel|synthetic-placeholder/);
   assert.ok(JSON.parse(persisted).events.every(row=>row.runId===id&&row.eventId));
@@ -251,6 +294,14 @@ fs.writeFileSync=function(file,...args){
   }
   const unrelated=path.join(temp,'unrelated-runtime');copy(runtime,unrelated);fs.writeFileSync(bindingFile,JSON.stringify({binding:{harness:{...harness,root:unrelated}}}));assert.match(run(['status'],1,dir),/BOUND_RUNTIME_MISMATCH/);
   const linked=path.join(temp,'bound-runtime-junction');fs.symlinkSync(runtime,linked,process.platform==='win32'?'junction':'dir');fs.writeFileSync(bindingFile,JSON.stringify({binding:{harness:{...harness,root:linked}}}));assert.match(run(['status'],1,dir),/LINK_PATH_REFUSED/);fs.unlinkSync(linked);
+ });
+ await t.test('the portable guide participates in runtime validation',()=>{
+  const guide=path.join(runtime,'PORTABLE.md'),bytes=fs.readFileSync(guide);
+  try{
+   fs.appendFileSync(guide,'\nTest fixture: altered guidance.\n');
+   assert.match(run(['doctor'],1),/RUNTIME_HASH_DRIFT: PORTABLE\.md/);
+  }finally{fs.writeFileSync(guide,bytes);}
+  assert.equal(json(['doctor']).runtimeIntegrity,'VERIFIED');
  });
  await t.test('manifest traversal duplicate hash drift missing files and binding pins',()=>{const file=path.join(runtime,'manifest.json'),clean=fs.readFileSync(file);function bad(change,pattern){const m=JSON.parse(clean);change(m);fs.writeFileSync(file,JSON.stringify(m));assert.match(run(['status'],1),pattern);fs.writeFileSync(file,clean);}bad(m=>m.files.push({path:'../escape',sha256:'0'.repeat(64)}),/INVALID_RELATIVE/);bad(m=>m.files.push(m.files[0]),/DUPLICATE/);bad(m=>m.files[0].sha256='0'.repeat(64),/HASH_DRIFT/);bad(m=>m.files.pop(),/INCOMPLETE/);bad(m=>m.version='wrong',/VERSION/);const core=path.join(runtime,'runtime/core/cli.mjs'),bytes=fs.readFileSync(core);fs.writeFileSync(core,"throw Error('DAMAGED_CORE_EXECUTED');");const output=run(['status'],1);assert.match(output,/HASH_DRIFT/);assert.doesNotMatch(output,/DAMAGED_CORE_EXECUTED/);fs.writeFileSync(core,bytes);fs.renameSync(core,core+'.missing');assert.match(run(['status'],1),/ENOENT/);fs.renameSync(core+'.missing',core);const harness={product:'J Harness Core',root:runtime,version,manifest_sha256:sha256(clean)};binding({binding:{harness}});assert.equal(json(['status']).projectBinding,'BOUND_VERIFIED');for(const field of ['root','version','manifest_sha256']){binding({binding:{harness:{...harness,[field]:'wrong'}}});assert.match(run(['status'],1),/BOUND_/);}binding({});});
  await t.test('symlink containment, missing manifest, and duplicate project options',()=>{const link=path.join(project,'linked-input');fs.symlinkSync(runtime,link,process.platform==='win32'?'junction':'dir');binding({verification_scope:{include:['linked-input'],exclude:[]}});assert.match(run(['progress'],1),/LINK/);fs.unlinkSync(link);binding({});const linkedRuntime=path.join(runtime,'linked-runtime');fs.symlinkSync(project,linkedRuntime,process.platform==='win32'?'junction':'dir');assert.match(run(['status'],1),/LINK/);fs.unlinkSync(linkedRuntime);const manifest=path.join(runtime,'manifest.json');fs.renameSync(manifest,manifest+'.held');assert.match(run(['status'],1),/ENOENT/);fs.renameSync(manifest+'.held',manifest);assert.match(run(['status','--project',project],1),/DUPLICATE_PROJECT/);});

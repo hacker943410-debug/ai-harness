@@ -12,17 +12,30 @@ const packageRoot = path.resolve(source, '../..');
 const runtimeName = '.agents/j-harness';
 const bindingName = '.ai/harness-project.json';
 const upgradeRootName = '.jh-artifacts/j-harness-core/upgrades';
+const launcherHashes = {
+  'JHarness.cmd': 'ff81d970a1affc962829ea1710e02f9efec1893170262ab3e0d29bd9383087b4',
+  'JHarness.ps1': 'f3aa61fb3d5bef96955d1cfa07c6f4d9001437c5ff8f147835fff3d11c3a0907',
+};
 const alpha = {
   distribution: '8.0.0-alpha.3',
   core: '8.0.0-core-beta.1',
   manifest: '8b3f4dc932d92525322cf8b733a518bc16679bec8efe161ac9e3e7e0e4a71224',
   portableGuide: '8d256875a31f8d0a6811b72d8c3d4dad7d165e6fe1829667ec0118ada4792e47',
   launcherHashes: {
-    'JHarness.cmd': 'ff81d970a1affc962829ea1710e02f9efec1893170262ab3e0d29bd9383087b4',
-    'JHarness.ps1': 'f3aa61fb3d5bef96955d1cfa07c6f4d9001437c5ff8f147835fff3d11c3a0907',
+    ...launcherHashes,
     'JHarness-README.md': '62d2b978f1ab57a369c28f2192db85a52da6a0ca621bd987cfedee69e9911aae',
   },
+  recoveryLabel: 'ALPHA3',
 };
+const v81 = {
+  distribution: '8.1.0',
+  core: '8.1.0',
+  manifest: 'dca504705cb5658ba5a1d113c2dc4f41957bec12d94287f488c0747be9e6970c',
+  portableGuide: '5cbdd1d3f2461b14fd7016f05861d09365d45884f8a23cb9efbe767a83a11461',
+  launcherHashes: {...launcherHashes,'JHarness-README.md':'04c21b6710468ab0339c53a266aefb5d8756ac4639d224ab9af28d65b5d37655'},
+  recoveryLabel: 'V8_1_0',
+};
+const previousBuild = pin => [alpha,v81].find(build => build.manifest === pin);
 const manifestHash = runtime => sha256(fs.readFileSync(contained(runtime, 'manifest.json')));
 const decode = bytes => new TextDecoder('utf-8', {fatal:true,ignoreBOM:true}).decode(bytes);
 const read = file => JSON.parse(decode(fs.readFileSync(file)).replace(/^\uFEFF/, ''));
@@ -44,15 +57,15 @@ function assertIdle(project) {
 
 // The installed schema has a top-level harness object. Replace only its three
 // owned string tokens so other fields retain their exact formatting and values.
-function patchBinding(bytes, targetVersion, targetHash) {
+function patchBinding(bytes, targetVersion, targetHash, priorBuild) {
   const text = decode(bytes);
   const binding = JSON.parse(text.replace(/^\uFEFF/, ''));
   const managed = binding?.harness;
   if (binding?.schema_version !== 4 || binding.binding?.harness ||
       managed?.product !== 'J Harness Core' || managed.mode !== 'PROJECT_PORTABLE' ||
-      managed.root !== runtimeName || managed.version !== alpha.core ||
-      managed.manifest_sha256 !== alpha.manifest || managed.source_hash !== alpha.manifest) {
-    throw Error('UNSUPPORTED_ALPHA3_BINDING');
+      managed.root !== runtimeName || managed.version !== priorBuild.core ||
+      managed.manifest_sha256 !== priorBuild.manifest || managed.source_hash !== priorBuild.manifest) {
+    throw Error('UNSUPPORTED_'+priorBuild.recoveryLabel+'_BINDING');
   }
   if (managed.manifestSha256 !== undefined) throw Error('AMBIGUOUS_MANIFEST_PIN_REQUIRES_REVIEW');
   const tokens = [...text.matchAll(/"(?:[^"\\]|\\[\s\S])*"|[{}\[\]:,]|[^\s{}\[\]:,"]+/g)];
@@ -80,21 +93,21 @@ function patchBinding(bytes, targetVersion, targetHash) {
     content.slice(0,token.index)+JSON.stringify(value)+content.slice(token.index+token[0].length),text));
 }
 
-function patchGuidance(bytes, version) {
+function patchGuidance(bytes, version, priorBuild) {
   const text = decode(bytes);
   const start = text.indexOf(bridgeStart), end = text.indexOf(bridgeEnd);
   const after = end+bridgeEnd.length;
   if (start < 0 || end < start || text.lastIndexOf(bridgeStart) !== start || text.lastIndexOf(bridgeEnd) !== end ||
-      text.slice(start,after) !== projectBridge(runtimeName,alpha.core,true)) {
+      text.slice(start,after) !== projectBridge(runtimeName,priorBuild.core,true)) {
     throw Error('MANAGED_PROJECT_BRIDGE_REQUIRES_REVIEW');
   }
   return Buffer.from(text.slice(0,start)+projectBridge(runtimeName,version,true)+text.slice(after));
 }
 
-function replacement(name,bytes,target,targetPin) {
-  if (name === bindingName) return patchBinding(bytes,target.version,targetPin);
-  if (name === 'AGENTS.md') return patchGuidance(bytes,target.version);
-  if (sha256(bytes) !== alpha.launcherHashes[name]) throw Error('CUSTOM_LAUNCHER_REQUIRES_REVIEW: '+name);
+function replacement(name,bytes,target,targetPin,priorBuild) {
+  if (name === bindingName) return patchBinding(bytes,target.version,targetPin,priorBuild);
+  if (name === 'AGENTS.md') return patchGuidance(bytes,target.version,priorBuild);
+  if (sha256(bytes) !== priorBuild.launcherHashes[name]) throw Error('CUSTOM_LAUNCHER_REQUIRES_REVIEW: '+name);
   return fs.readFileSync(contained(packageRoot,name));
 }
 
@@ -106,22 +119,23 @@ function inspectUpgrade(project, target, targetPin) {
     if (validateRuntime(runtime,project).projectBinding !== 'BOUND_VERIFIED') throw Error('BOUND_TARGET_REQUIRED');
     return {result:{...result,result:'ALREADY_CURRENT',effective:'READY_LOCAL'},edits:[]};
   }
-  if (priorPin !== alpha.manifest) throw Error('ONLY_PINNED_ALPHA3_PORTABLE_UPGRADE_SUPPORTED');
+  const priorBuild = previousBuild(priorPin);
+  if (!priorBuild) throw Error('ONLY_PINNED_ALPHA3_OR_8_1_0_PORTABLE_UPGRADE_SUPPORTED');
   const prior = validateRuntime(runtime,project);
-  if (prior.version !== alpha.core || prior.distributionVersion !== alpha.distribution || prior.projectBinding !== 'BOUND_VERIFIED') {
-    throw Error('BOUND_ALPHA3_REQUIRED');
+  if (prior.version !== priorBuild.core || prior.distributionVersion !== priorBuild.distribution || prior.projectBinding !== 'BOUND_VERIFIED') {
+    throw Error('BOUND_'+priorBuild.recoveryLabel+'_REQUIRED');
   }
-  if (sha256(fs.readFileSync(contained(runtime,'PORTABLE.md'))) !== alpha.portableGuide ||
-      fs.existsSync(contained(runtime,'tests'))) throw Error('CUSTOM_ALPHA3_RUNTIME_REQUIRES_REVIEW');
+  if (sha256(fs.readFileSync(contained(runtime,'PORTABLE.md'))) !== priorBuild.portableGuide ||
+      fs.existsSync(contained(runtime,'tests'))) throw Error('CUSTOM_'+priorBuild.recoveryLabel+'_RUNTIME_REQUIRES_REVIEW');
   assertIdle(project);
 
-  const edits = [bindingName,'AGENTS.md',...Object.keys(alpha.launcherHashes)].map(name => {
+  const edits = [bindingName,'AGENTS.md',...Object.keys(priorBuild.launcherHashes)].map(name => {
     const before = fs.readFileSync(contained(project,name));
-    return {name,before,after:replacement(name,before,target,targetPin)};
+    return {name,before,after:replacement(name,before,target,targetPin,priorBuild)};
   }).filter(({before,after}) => !before.equals(after));
   return {result:{...result,result:'PLAN_ONLY_NOT_UPGRADED',previousProductVersion:prior.distributionVersion,
     previousCoreVersion:prior.version,previousManifestSha256:priorPin,managedChanges:[runtimeName,...edits.map(x=>x.name)],
-    previousVerification:'REVERIFY_AFTER_UPGRADE'},edits};
+    previousVerification:'REVERIFY_AFTER_UPGRADE'},edits,priorBuild};
 }
 
 function writeNew(file,content) {
@@ -143,7 +157,7 @@ function stageRuntime(destination,manifest) {
   // Windows Node 22 can crash in cpSync on a path containing Korean text.
   // Copy the validated inventory explicitly and verify it again before activation.
   fs.mkdirSync(destination);
-  for (const rel of ['manifest.json','PORTABLE.md',...manifest.files.map(file=>file.path)]) {
+  for (const rel of ['manifest.json',...manifest.files.map(file=>file.path)]) {
     const output = contained(destination,rel);
     fs.mkdirSync(path.dirname(output),{recursive:true});
     fs.copyFileSync(contained(source,rel),output,fs.constants.COPYFILE_EXCL);
@@ -195,24 +209,26 @@ function recoverUpgrade(project,target,targetPin,lockFile,recoveryLock) {
       doctor(runtime,project,target.version,target.distributionVersion);
       outcome = 'COMPLETED_UPGRADE_VERIFIED';
     } else if (!fs.existsSync(journal)) {
-      if (newPin !== alpha.manifest || inspectUpgrade(project,target,targetPin).result.result !== 'PLAN_ONLY_NOT_UPGRADED') {
+      const priorBuild = previousBuild(newPin);
+      if (!priorBuild || inspectUpgrade(project,target,targetPin).result.result !== 'PLAN_ONLY_NOT_UPGRADED') {
         throw Error('UNJOURNALED_UPGRADE_REQUIRES_REVIEW');
       }
-      doctor(runtime,project,alpha.core);
-      outcome = 'ALPHA3_PREPARATION_INTERRUPTED_ORIGINAL_VERIFIED';
+      doctor(runtime,project,priorBuild.core);
+      outcome = priorBuild.recoveryLabel+'_PREPARATION_INTERRUPTED_ORIGINAL_VERIFIED';
     } else {
       const plan = read(journal);
+      const priorBuild = previousBuild(plan.previousManifestSha256);
       if (plan.result !== 'PREPARED' || plan.project !== project || plan.manifestSha256 !== targetPin ||
-          plan.previousManifestSha256 !== alpha.manifest || !Array.isArray(plan.files)) {
+          !priorBuild || !Array.isArray(plan.files)) {
         throw Error('UPGRADE_JOURNAL_DOES_NOT_MATCH_PACKAGE');
       }
       assertIdle(project);
-      const allowed = new Set([bindingName,'AGENTS.md',...Object.keys(alpha.launcherHashes)]);
+      const allowed = new Set([bindingName,'AGENTS.md',...Object.keys(priorBuild.launcherHashes)]);
       const edits = plan.files.map((row,index) => {
         if (!allowed.delete(row.name) || row.backup !== index+'.before') throw Error('INVALID_UPGRADE_RECOVERY_ENTRY');
         const file = contained(project,row.name);
         const before = fs.readFileSync(contained(directory,row.backup));
-        const after = replacement(row.name,before,target,targetPin);
+        const after = replacement(row.name,before,target,targetPin,priorBuild);
         if (sha256(before) !== row.beforeSha256 || sha256(after) !== row.afterSha256) throw Error('UPGRADE_BACKUP_DIGEST_MISMATCH');
         const current = fs.readFileSync(file);
         if (!current.equals(before) && !current.equals(after)) throw Error('PROJECT_FILE_CHANGED_PRESERVED: '+row.name);
@@ -220,25 +236,25 @@ function recoverUpgrade(project,target,targetPin,lockFile,recoveryLock) {
       });
       if (allowed.has(bindingName) || allowed.has('AGENTS.md')) throw Error('INCOMPLETE_UPGRADE_CONTROL_BACKUP');
       const previous = contained(directory,'previous-runtime');
-      if (newPin !== null && newPin !== alpha.manifest && newPin !== targetPin) throw Error('PROJECT_RUNTIME_CHANGED_PRESERVED');
-      const original = newPin === alpha.manifest ? runtime : previous;
-      if (manifestHash(original) !== alpha.manifest ||
-          sha256(fs.readFileSync(contained(original,'PORTABLE.md'))) !== alpha.portableGuide ||
+      if (newPin !== null && newPin !== priorBuild.manifest && newPin !== targetPin) throw Error('PROJECT_RUNTIME_CHANGED_PRESERVED');
+      const original = newPin === priorBuild.manifest ? runtime : previous;
+      if (manifestHash(original) !== priorBuild.manifest ||
+          sha256(fs.readFileSync(contained(original,'PORTABLE.md'))) !== priorBuild.portableGuide ||
           fs.existsSync(contained(original,'tests'))) throw Error('PREVIOUS_RUNTIME_CHANGED_PRESERVED');
       validateRuntime(original,directory);
       if (newPin === targetPin) {
         validateRuntime(runtime,directory);
         move(runtime,contained(directory,'rejected-runtime'));
       }
-      if (newPin !== alpha.manifest) move(previous,runtime);
+      if (newPin !== priorBuild.manifest) move(previous,runtime);
       for (const edit of edits.reverse().filter(row => row.changed)) {
         expectBytes(edit.file,edit.after);
         const staged = contained(directory,'restore-'+randomUUID());
         writeNew(staged,edit.before);
         fs.renameSync(staged,edit.file);
       }
-      doctor(runtime,project,alpha.core);
-      outcome = 'ALPHA3_RESTORED_VERIFIED';
+      doctor(runtime,project,priorBuild.core);
+      outcome = priorBuild.recoveryLabel+'_RESTORED_VERIFIED';
     }
     fs.mkdirSync(directory,{recursive:true});
     const report = {result:outcome,project,transaction:upgradeRootName+'/'+run,recoveredUtc:new Date().toISOString()};
@@ -261,7 +277,7 @@ function applyUpgrade(project,target,targetPin,lockFile) {
   try {
     fs.writeFileSync(lock,JSON.stringify({run,pid:process.pid})+'\n');
     fs.fsyncSync(lock);
-    const {result,edits} = inspectUpgrade(project,target,targetPin);
+    const {result,edits,priorBuild} = inspectUpgrade(project,target,targetPin);
     if (result.result === 'ALREADY_CURRENT') return result;
     fs.mkdirSync(transaction);
     const runtime = contained(project,runtimeName);
@@ -314,7 +330,7 @@ function applyUpgrade(project,target,targetPin,lockFile) {
           move(runtime,rejected);
         }
         if (priorMoved) {
-          if (manifestHash(previous) !== alpha.manifest) throw Error('PREVIOUS_RUNTIME_CHANGED_PRESERVED');
+          if (manifestHash(previous) !== priorBuild.manifest) throw Error('PREVIOUS_RUNTIME_CHANGED_PRESERVED');
           validateRuntime(previous,transaction);
           move(previous,runtime);
         }
@@ -325,8 +341,8 @@ function applyUpgrade(project,target,targetPin,lockFile) {
           fs.renameSync(file.restore,file.file);
         }
         if (priorMoved) {
-          doctor(runtime,project,alpha.core);
-          recovery = 'ALPHA3_RESTORED_VERIFIED';
+          doctor(runtime,project,priorBuild.core);
+          recovery = priorBuild.recoveryLabel+'_RESTORED_VERIFIED';
         }
       } catch (restoreError) {
         preserveLock = true;
@@ -348,7 +364,9 @@ try {
   const project = fs.realpathSync.native(path.resolve(projectPath));
   if (!fs.statSync(project).isDirectory() || project === path.parse(project).root) throw Error('PROJECT_DIRECTORY_REQUIRED');
   const target = validateRuntime(source,packageRoot);
-  if (!/^8\.1\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(target.distributionVersion)) throw Error('EXPECTED_V81_PORTABLE_PACKAGE');
+  if (target.version !== target.distributionVersion || !/^8\.2\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(target.distributionVersion)) {
+    throw Error('EXPECTED_V82_PORTABLE_PACKAGE');
+  }
   const targetPin = manifestHash(source);
   const lock = contained(project,upgradeRootName+'/upgrade.lock');
   const recoveryLock = contained(project,upgradeRootName+'/recover.lock');

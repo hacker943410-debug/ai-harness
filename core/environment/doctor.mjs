@@ -72,14 +72,24 @@ export function planEnvironment(inspect){
   requiredNext:beginnerSteps[0]};
 }
 
-export function quickStart({projectBinding,client}){
+export function quickStart({projectBinding,client,guidance}){
  const selected=client??clients.find(name=>findExecutable(name))??'codex';
  const plan=planEnvironment(inspectEnvironment({client:selected}));
  if(projectBinding==='DIFFERENT_HARNESS')return '이 프로젝트에 다른 하네스 설정이 있습니다. 기존 설정을 확인한 뒤 이동형 설치기의 전환 안내를 따르세요.';
  if(projectBinding!=='BOUND_VERIFIED')return '이 폴더를 프로젝트로 쓰려면 .\\JHarness.cmd setup을 실행하세요. 다른 폴더에 설치하려면 패키지의 README.md를 여세요.';
  if(plan.state==='SETUP_REQUIRED')return [...plan.beginnerSteps,
   '설치 후 .\\JHarness.cmd quickstart --client '+selected+'를 다시 실행하세요.'].join('\n');
+ if(guidance && guidance.agents!=='MANAGED_BLOCK_PRESENT')return '프로젝트의 AGENTS.md 지침을 확인하세요. .\\JHarness.cmd doctor에서 누락 여부를 확인할 수 있습니다.';
+ if(selected==='codex' && guidance && guidance.codex.override!=='NONE')return 'Codex는 AGENTS.override.md를 먼저 확인합니다. 프로젝트의 기존 지침에 J Harness 연결이 포함되어 있는지 확인하세요. .\\JHarness.cmd doctor';
+ if(selected==='claude' && guidance?.claude.state==='CONNECT_AVAILABLE')return [
+  selected+' --version으로 실행을 확인하세요.',
+  '이 프로젝트에서 Claude Code가 AGENTS.md를 읽도록 .\\JHarness.cmd connect claude를 실행하세요.',
+  '이후 .\\JHarness.cmd quickstart --client claude를 다시 실행하세요.',
+ ].join('\n');
+ if(selected==='claude' && guidance?.claude.state==='REVIEW_REQUIRED')return '기존 CLAUDE.md를 확인하세요. .\\JHarness.cmd doctor로 지침 파일 상태를 확인할 수 있습니다.';
  return [plan.requiredNext,
+  ...(selected==='codex' && guidance?.codex.exceedsDefaultGuidanceBudget?['AGENTS.md가 Codex 기본 지침 길이 한도(32 KiB)를 넘습니다. 세션에서 J Harness 안내가 로드됐는지 확인하세요.']:[]),
+  ...(selected==='agy' && guidance?.agy.additionalGeminiGuidance==='PRESENT'?['이 프로젝트에 GEMINI.md도 있습니다. AGY 세션에서 AGENTS.md의 J Harness 안내가 로드됐는지 확인하세요.']:[]),
   '로그인이 필요하면 '+selected+'가 보여주는 안내를 따르세요.',
   '첫 요청 예시',
   '“이 폴더의 AGENTS.md와 J Harness 지침을 읽어줘. 간단한 할 일 목록 앱을 만들고 싶어. 필요한 환경부터 확인하고, 첫 기능을 만든 다음 테스트하고 실행법을 알려줘.”',

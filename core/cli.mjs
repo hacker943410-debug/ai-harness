@@ -4,6 +4,7 @@ import {home,version,portableContext} from './lib/io.mjs';import {install,status
 import * as hub from './lib/skills.mjs';import * as flow from './lib/workflow.mjs';import {events,projectState} from './lib/events.mjs';
 import {inspectEnvironment,planEnvironment,quickStart} from './environment/doctor.mjs';
 import {executionBoundary,requireLocalExecution} from './lib/execution-boundary.mjs';
+import {connectClaude,projectGuidance} from './lib/client-guidance.mjs';
 const argv=process.argv.slice(2),tail=argv.indexOf('--'),commandArgs=tail<0?[]:argv.splice(tail+1);if(tail>=0)argv.pop();
 function option(name,fallback){const i=argv.indexOf('--'+name);if(i<0)return fallback;const value=argv[i+1];if(value===undefined||value.startsWith('--'))throw Error('OPTION_VALUE_REQUIRED_'+name);argv.splice(i,2);return value;}
 function flag(name){const i=argv.indexOf('--'+name);if(i<0)return false;argv.splice(i,1);return true;}
@@ -22,6 +23,7 @@ try{
  else if(cmd==='doctor'&&portableContext()){
   const boundary=executionBoundary(project);
   print({...status(h),runtimeIntegrity:'VERIFIED',cli:{required:false},globalHomeRequired:false,
+   clientGuidance:projectGuidance(project,portableContext()),
    next:'.\\JHarness.cmd quickstart',...(boundary.mode==='SUPERVISOR_REQUIRED'?{supervisor:boundary}:{})});
  }
  else if(cmd==='doctor'){const observed=status(h);const located=resolveCodex();print({...observed,cli:{installed:!!located,version:observed.codexVersion??null,versionSource:'CACHED_AT_INSTALL_NOT_LIVE_EXECUTION',execution:located},environmentHome:home(),profileMismatch:home()!==h,projectHasAgents:fs.existsSync(path.join(project,'AGENTS.md')),projectHasOverride:fs.existsSync(path.join(project,'AGENTS.override.md')),notes:['Global instructions apply to new Codex sessions. Project guidance can override them.','No config.toml, authentication, MCP registration, service, or OS account changes are needed.','A linked file alone is not proof of model behavior.']});}
@@ -35,7 +37,12 @@ try{
  else if(cmd==='quickstart'&&portableContext()){
   const client=option('client');
   if(argv.length||commandArgs.length)throw Error('USAGE: quickstart [--client codex|claude|agy]');
-  print(quickStart({projectBinding:portableContext().projectBinding,client}));
+  const context=portableContext();
+  print(quickStart({projectBinding:context.projectBinding,client,guidance:projectGuidance(project,context)}));
+ }
+ else if(cmd==='connect'&&portableContext()){
+  if(argv.length!==1||argv[0]!=='claude'||commandArgs.length)throw Error('USAGE: connect claude');
+  print(connectClaude(project,portableContext()));
  }
  else if(cmd==='supervisor'){
   const required=flag('required');

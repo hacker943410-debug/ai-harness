@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import {projectBridge} from './project-bridge.mjs';
 
 let context=null;
 export const portableContext=()=>context;
@@ -9,7 +10,20 @@ export function noLinks(target){let cursor=path.resolve(target);for(;;){if(fs.ls
 function canonicalPath(target){noLinks(target);return fs.realpathSync.native(target);}
 function sameDirectory(left,right){const a=canonicalPath(left),b=canonicalPath(right);if(a===b)return true;if(process.platform!=='win32')return false;const x=fs.statSync(a,{bigint:true}),y=fs.statSync(b,{bigint:true});return x.isDirectory()&&y.isDirectory()&&x.dev===y.dev&&x.ino===y.ino;}
 export function contained(root,relative){if(typeof relative!=='string'||!relative||path.isAbsolute(relative)||/^[A-Za-z]:/.test(relative)||relative.split(/[\\/]/).some(p=>!p||p==='.'||p==='..'))throw Error('INVALID_RELATIVE_PATH: '+relative);const full=path.resolve(root,relative);if(!full.startsWith(path.resolve(root)+path.sep))throw Error('PATH_ESCAPE');noLinks(full);return full;}
-export function manifestFiles(root){const rows=[];function walk(dir){for(const item of fs.readdirSync(dir,{withFileTypes:true})){const full=path.join(dir,item.name),relative=path.relative(root,full).replaceAll('\\','/');if(relative==='tests'||relative==='PORTABLE.md'||relative==='manifest.json')continue;noLinks(full);if(item.isDirectory())walk(full);else if(item.isFile())rows.push({path:relative,sha256:sha256(fs.readFileSync(full))});}}walk(root);return rows.sort((a,b)=>a.path.localeCompare(b.path,'en'));}
+export function manifestFiles(root,{legacyGuide=false}={}) {
+ const rows=[];
+ function walk(dir) {
+  for (const item of fs.readdirSync(dir,{withFileTypes:true})) {
+   const full=path.join(dir,item.name),relative=path.relative(root,full).replaceAll('\\','/');
+   if (relative==='tests'||relative==='manifest.json'||(legacyGuide&&relative==='PORTABLE.md')) continue;
+   noLinks(full);
+   if (item.isDirectory()) walk(full);
+   else if (item.isFile()) rows.push({path:relative,sha256:sha256(fs.readFileSync(full))});
+  }
+ }
+ walk(root);
+ return rows.sort((a,b)=>a.path.localeCompare(b.path,'en'));
+}
 export function buildManifest(root){const pkg=JSON.parse(fs.readFileSync(path.join(root,'runtime/core/package.json'),'utf8'));return{schema:1,product:'J Harness Core',version:pkg.version,mode:'PROJECT_PORTABLE',adapterVersion:'1.0.0',files:manifestFiles(root)};}
 export function validateRuntime(root,project){
  noLinks(root);noLinks(project);
@@ -25,7 +39,10 @@ export function validateRuntime(root,project){
   seen.add(key(full));
   if(!/^[a-f0-9]{64}$/.test(row.sha256)||!fs.statSync(full).isFile()||sha256(fs.readFileSync(full))!==row.sha256)throw Error('RUNTIME_HASH_DRIFT: '+row.path);
  }
- const actual=manifestFiles(root);
+ // Upgrade and recovery still read the published Alpha 3 and 8.1 manifests.
+ const legacyGuide=['8.0.0-core-beta.1','8.1.0'].includes(manifest.version);
+ if (!legacyGuide && !seen.has(key(path.join(root,'PORTABLE.md')))) throw Error('INCOMPLETE_RUNTIME_MANIFEST');
+ const actual=manifestFiles(root,{legacyGuide});
  if(actual.length!==manifest.files.length||actual.some(row=>!seen.has(key(path.resolve(root,row.path)))))throw Error('INCOMPLETE_RUNTIME_MANIFEST');
  const pkg=JSON.parse(fs.readFileSync(path.join(root,'runtime/core/package.json'),'utf8'));
  if(pkg.version!==manifest.version)throw Error('RUNTIME_VERSION_MISMATCH');
@@ -47,7 +64,10 @@ export function configurePortable(root,project){
  const manifest=validateRuntime(root,project);
  context=Object.freeze({root:canonicalPath(root),project:canonicalPath(project),version:manifest.version,
   distributionVersion:manifest.distributionVersion??null,manifestSha256:manifest.manifestSha256,
-  projectBinding:manifest.projectBinding,mode:'PROJECT_PORTABLE'});
+  projectBinding:manifest.projectBinding,
+  expectedProjectBridge:projectBridge(path.relative(project,root).replaceAll('\\','/'),manifest.version,
+   fs.existsSync(path.join(root,'vendor/win-x64/node.exe'))),
+  mode:'PROJECT_PORTABLE'});
  globalThis[Symbol.for('j-harness.portable.v1')]={context,portableStatus,mutableRoot,scopedFingerprint};
  return context;
 }
