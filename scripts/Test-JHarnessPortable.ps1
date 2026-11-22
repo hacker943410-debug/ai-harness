@@ -9,9 +9,10 @@ param(
 )
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot '_Harness.Common.ps1')
 if ($PSVersionTable.PSEdition -ne 'Desktop' -or $PSVersionTable.PSVersion.Major -ne 5) { throw 'NATIVE_WINDOWS_POWERSHELL_5_REQUIRED' }
 $package=[IO.Path]::GetFullPath($PackageRoot).TrimEnd('\')
-$packageManifest=[IO.File]::ReadAllText((Join-Path $package '.agents/j-harness/manifest.json')) | ConvertFrom-Json
+$packageManifest=[IO.File]::ReadAllText((Join-HarnessPath $package '.agents/j-harness/manifest.json')) | ConvertFrom-Json
 if (-not $EvidenceRoot) { $EvidenceRoot=Join-Path ([IO.Path]::GetTempPath()) ('jh-portable-test-'+[guid]::NewGuid().ToString('N')) }
 $lab=[IO.Path]::GetFullPath($EvidenceRoot).TrimEnd('\')
 if ($lab -eq [IO.Path]::GetPathRoot($lab) -or (Test-Path -LiteralPath $lab)) { throw 'NEW_EVIDENCE_DIRECTORY_REQUIRED' }
@@ -155,9 +156,9 @@ try {
     $null=Run 'first-project-implement' (Launcher $firstProject 'advance implement')
     $app=Join-Path $firstProject 'total.cjs'
     Write-Utf8 $app "module.exports = values => values.reduce((sum, value) => sum + value, 1);"
-    Write-Utf8 (Join-Path $firstProject 'test.cjs') "require('node:assert/strict').equal(require('./total.cjs')([2, 3]), 5); console.log('TOTAL=5');"
-    Write-Utf8 (Join-Path $firstProject 'README.md') 'This sample sums a list of numbers. Run test.cjs using the bundled Node from .agents/j-harness/vendor/win-x64/node.exe and expect TOTAL=5.'
-    $firstNode=Join-Path $firstProject '.agents/j-harness/vendor/win-x64/node.exe'
+    Write-Utf8 (Join-HarnessPath $firstProject 'test.cjs') "require('node:assert/strict').equal(require('./total.cjs')([2, 3]), 5); console.log('TOTAL=5');"
+    Write-Utf8 (Join-HarnessPath $firstProject 'README.md') 'This sample sums a list of numbers. Run test.cjs using the bundled Node from .agents/j-harness/vendor/win-x64/node.exe and expect TOTAL=5.'
+    $firstNode=Join-HarnessPath $firstProject '.agents/j-harness/vendor/win-x64/node.exe'
     $firstVerify='verify '+(Quote '--')+' '+(Quote $firstNode)+' test.cjs'
     $failed=Run 'first-project-failed-test' (Launcher $firstProject $firstVerify) 1 | ConvertFrom-Json
     Expect ($failed.result -eq 'FAIL' -and $failed.exitCode -eq 1) 'FIRST_PROJECT_TEST_FAILURE_NOT_OBSERVED'
@@ -206,14 +207,14 @@ try {
     $upgradeResult='NOT_RUN_NO_ALPHA3_PACKAGE'
     if($Alpha3PackageRoot){
         $alpha3=[IO.Path]::GetFullPath($Alpha3PackageRoot)
-        $alphaManifest=Join-Path $alpha3 '.agents/j-harness/manifest.json'
+        $alphaManifest=Join-HarnessPath $alpha3 '.agents/j-harness/manifest.json'
         Expect ((Get-FileHash -LiteralPath $alphaManifest -Algorithm SHA256).Hash.ToLowerInvariant() -ceq '8b3f4dc932d92525322cf8b733a518bc16679bec8efe161ac9e3e7e0e4a71224') 'ALPHA3_TEST_MANIFEST_PIN_MISMATCH'
         $old=Inside '알파3'
         [IO.Directory]::CreateDirectory($old)|Out-Null
         $oldGuide=Join-Path $old 'AGENTS.md'
-        $oldBinding=Join-Path $old '.ai/harness-project.json'
-        $oldRuntime=Join-Path $old '.agents/j-harness'
-        $artifactDir=Join-Path $old '.jh-artifacts/j-harness-core'
+        $oldBinding=Join-HarnessPath $old '.ai/harness-project.json'
+        $oldRuntime=Join-HarnessPath $old '.agents/j-harness'
+        $artifactDir=Join-HarnessPath $old '.jh-artifacts/j-harness-core'
         $newline=[Environment]::NewLine
         $userPrefix='사용자 규칙: Keep exact CRLF bytes.'+$newline
         $userSuffix=$newline+'추가 규칙: Keep the suffix.'+$newline
@@ -233,7 +234,7 @@ try {
         Expect ($active -match 'ACTIVE_WORKFLOW_BLOCKS_UPGRADE' -and (Tree $old) -ceq $activeBefore) 'ACTIVE_UPGRADE_NOT_BLOCKED'
         $null=Run 'alpha3-plan' (Launcher $old ('advance plan --note '+(Quote 'Run the local fixture')))
         $null=Run 'alpha3-implement' (Launcher $old 'advance implement')
-        $oldNode=Join-Path $oldRuntime 'vendor/win-x64/node.exe'
+        $oldNode=Join-HarnessPath $oldRuntime 'vendor/win-x64/node.exe'
         $null=Run 'alpha3-verify' (Launcher $old ('verify '+(Quote '--')+' '+(Quote $oldNode)+' check.cjs'))
         $null=Run 'alpha3-handoff' (Launcher $old 'advance handoff')
         $oldState=Run 'alpha3-finish' (Launcher $old 'finish') | ConvertFrom-Json
@@ -271,7 +272,7 @@ try {
         $receipt=Run 'upgrade-apply' (Upgrade $old 'Install') | ConvertFrom-Json
         Expect ($receipt.result -eq 'V8_PROJECT_UPGRADE_COMPLETE' -and $receipt.effective -eq 'READY_LOCAL') 'UPGRADE_APPLY_FAILED'
         $backup=[IO.Path]::GetFullPath((Join-Path $old $receipt.transaction))
-        Expect ($backup.StartsWith($old+'\',[StringComparison]::OrdinalIgnoreCase) -and (Tree (Join-Path $backup 'previous-runtime')) -ceq $oldPayload) 'UPGRADE_PREVIOUS_RUNTIME_NOT_PRESERVED'
+        Expect ($backup.StartsWith($old+'\',[StringComparison]::OrdinalIgnoreCase) -and (Tree (Join-HarnessPath $backup 'previous-runtime')) -ceq $oldPayload) 'UPGRADE_PREVIOUS_RUNTIME_NOT_PRESERVED'
         $expectedBinding=$customBinding.Replace('"version": "8.0.0-core-beta.1",'+[char]10,'"version": "'+$receipt.coreVersion+'",'+[char]10)
         $expectedBinding=$expectedBinding.Replace($receipt.previousManifestSha256,$receipt.manifestSha256)
         Expect ([IO.File]::ReadAllText($oldBinding) -ceq $expectedBinding) 'UPGRADE_UNMANAGED_BINDING_BYTES_CHANGED'
