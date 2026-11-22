@@ -1,14 +1,14 @@
 # AI Harness runtime entry
 
-Product distribution version source: `J_HARNESS_VERSION`. The source builds v8.2.1. The public installer remains pinned to the published Alpha 3 package. Policy provenance version source: `HARNESS_VERSION`; require its agreement with `harness/manifest.yaml` and `POLICY_INDEX.yaml`.
+Product distribution version source: `J_HARNESS_VERSION`. The source builds v8.2.1 and the public installer pins the v8.2.1 package. Policy provenance version source: `HARNESS_VERSION` must agree with `harness/manifest.yaml` and `POLICY_INDEX.yaml`.
 Read CORE.md, ROUTER.md and POLICY_INDEX.yaml first. Preserve Layer A (source), Layer B (PC shared runtime), Layer C (project bindings). Select only current Task/Phase/Risk/Boundary policies; never preload P01–P26 or all Skills. Jev remains disabled by default, advisory only, with existing-router fallback.
 
 
 ## Default product installation routing
 
-Normal Harness install/use/update requests select the pinned Windows project-portable v8.0.0-alpha.3 product first: `scripts/Install-JHarnessFromGitHub.ps1` defaults to read-only `-Action Plan`; installation uses `-Action Install -ApproveInstall -ProjectPath <project>`. An explicit user request to install authorizes the install flag; do not require the same approval twice. Preserve active work, user-owned rules, project state and the existing migration/review boundaries before applying changes.
+For ordinary installation, use the pinned Windows project-portable v8.2.1 package via `scripts/Install-JHarnessFromGitHub.ps1`. The default `-Action Plan` is read-only. An explicit installation request authorizes `-Action Install -ApproveInstall -ProjectPath <project>`. For an existing portable project, use the package's upgrade plan and preserve active work, user-owned rules, project state and migration/review boundaries.
 
-The ZIP includes actual Core 8.0.0-core-beta.1, adapter 1.0.0, Node 22.22.2, all 26 policies and bundled Skills. Runtime is project `.agents/j-harness`; `JHarness.cmd status` must report observed `READY_LOCAL`. No global Codex/profile or system Node is required. After download, local runtime needs no network. Do not query `/releases/latest` to replace this prerelease with v7, and never fall back on download/hash/integrity failure. Preserve published v7/Alpha2 tags and assets. `-Mode Profile` is an explicit legacy Alpha2 route only. See `docs/releases/v8.0.0-alpha.3.md`.
+The ZIP includes Core 8.2.1, adapter 1.0.0, Node 22.23.5, all 26 policies and bundled Skills. Verify `.agents/j-harness` with the project `JHarness.cmd status` and observe `READY_LOCAL`. The portable runtime uses a bundled Node and runs locally after download. Preserve the pinned version, fail closed on download or integrity errors, and preserve earlier tags and assets. `-Mode Profile` is reserved for explicit legacy Alpha2 profile use. See `docs/releases/v8.2.1.md`.
 
 Use the existing source-policy routing below only for an explicitly requested policy-source installation or an existing policy migration. Keep all preservation, checkpoint, verification and independent review requirements. `READY_LOCAL` is local readiness, not evidence of OS enforcement, actual model behavior, another physical PC or deployment.
 

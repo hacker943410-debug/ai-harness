@@ -1,8 +1,8 @@
-# J Harness — Windows v8.0.0-alpha.3 / policy provenance v7.0.0
+# J Harness — Windows v8.2.1 / policy provenance v7.0.0
 
-**기본 설치는 [v8.0.0-alpha.3 Windows 이동형 배포](https://github.com/hacker943410-debug/ai-harness/releases/tag/v8.0.0-alpha.3)입니다.** [설치·전환·검증 안내](docs/releases/v8.0.0-alpha.3.md). GitHub Pre-release이며 실제 Core는 `8.0.0-core-beta.1`, 이동형 어댑터는 `1.0.0`, 26개 공통 정책의 출처 버전은 `7.0.0`입니다. 제품 버전의 정본은 `J_HARNESS_VERSION`; `HARNESS_VERSION`은 기존 정책 계약을 유지합니다.
+**기본 설치는 [v8.2.1 Windows 이동형 배포](https://github.com/hacker943410-debug/ai-harness/releases/tag/v8.2.1)입니다.** [설치·전환·검증 안내](docs/releases/v8.2.1.md). 실제 Core는 `8.2.1`, 이동형 어댑터는 `1.0.0`입니다. 제품 버전은 `J_HARNESS_VERSION`에서 확인하고, `HARNESS_VERSION`은 26개 공통 정책의 출처 버전 `7.0.0`을 유지합니다.
 
-새 PC에는 Windows x64와 PowerShell 5.1+가 필요합니다. ZIP에 고정된 Node 22.22.2와 Core·정책·Skills가 들어 있어 시스템 Node·Git·Codex·글로벌 프로필 없이 설치하고 실행합니다. 다운로드 후 로컬 실행에는 네트워크가 필요하지 않습니다. 별도 모델 서비스·문서 도구 사용에는 해당 도구의 조건이 적용됩니다.
+새 PC에는 Windows x64와 PowerShell 5.1 이상이 필요합니다. ZIP에 Node 22.23.5와 Core·정책·Skills가 들어 있어 시스템 Node·Git·글로벌 프로필 없이 설치할 수 있습니다. 다운로드 후 하네스의 로컬 실행에는 네트워크가 필요하지 않습니다. 모델 서비스·문서 도구에는 각 도구의 이용 조건이 적용됩니다.
 
 ```powershell
 $u = 'https://raw.githubusercontent.com/hacker943410-debug/ai-harness/main/scripts/Install-JHarnessFromGitHub.ps1'
@@ -12,7 +12,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\JHarness-Install.ps1 -
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\JHarness-Install.ps1 -Action Install -ApproveInstall -ProjectPath 'C:\Projects\MyProject'
 ```
 
-인수를 생략하면 `Plan`으로만 확인합니다. 설치를 요청한 사용자의 승인은 `-ApproveInstall`로 전달할 수 있습니다. 설치기는 `v8.0.0-alpha.3`의 고정 ZIP과 SHA-256을 검증하며, `releases/latest`의 v7을 대신 선택하지 않습니다. 다운로드·무결성 오류는 중단 사유입니다.
+인수를 생략하면 `Plan`으로 확인합니다. 설치 승인은 `-ApproveInstall`로 전달합니다. 설치기는 `v8.2.1` ZIP과 고정 SHA-256을 사용하며 다운로드·무결성 오류가 발생하면 중단합니다. 기존 프로젝트를 업데이트할 때는 [ZIP 업데이트 안내](docs/releases/v8.2.1.md#설치하고-첫-작업-시작하기)를 따르세요.
 
 프로젝트의 `.agents/j-harness`에 실행 파일을 두고 루트 `JHarness.cmd status`로 `READY_LOCAL`을 확인합니다. 기존 사용자 지침·인증·PATH와 프로젝트 기록을 보존합니다. 기존 관리 지침이나 바인딩이 충돌하면 강제 덮어쓰기 없이 검토해야 합니다. Alpha2의 프로필 설치가 명시적으로 필요한 경우에만 `-Mode Profile`을 사용하며 [기존 안내](docs/releases/v8.0.0-alpha.2.md)를 따릅니다. v7·Alpha2 태그와 첨부파일은 불변으로 보존합니다.
 

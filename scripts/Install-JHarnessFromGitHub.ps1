@@ -13,11 +13,11 @@ param(
 $ErrorActionPreference='Stop'
 $ProgressPreference='SilentlyContinue'
 # A pinned v8 product release is selected, never the legacy policy /releases/latest.
-$productVersion='8.0.0-alpha.3'
-$coreVersion='8.0.0-core-beta.1'
-$releaseTag='v8.0.0-alpha.3'
-$assetName='J_Harness_v8.0.0-alpha.3_Windows_x64.zip'
-$expectedZipSha='42c8f05c9f6e75123fe91908dcb181de99d5ef027703ed9ee53a90c7a06dda40'
+$productVersion='8.2.1'
+$coreVersion='8.2.1'
+$releaseTag='v8.2.1'
+$assetName='J_Harness_v8.2.1_Windows_x64.zip'
+$expectedZipSha='7f52d3340bac888ce1606aa25c5ffc6383267ca85af2861c5fb86b7c73abbeaa'
 $assetUrl='https://github.com/hacker943410-debug/ai-harness/releases/download/'+$releaseTag+'/'+$assetName
 if(-not $PSBoundParameters.ContainsKey('Mode') -and ($PSBoundParameters.ContainsKey('CodexHome') -or $PSBoundParameters.ContainsKey('ManagedRoot'))){$Mode='Profile'}
 if($Mode -eq 'Profile'){
