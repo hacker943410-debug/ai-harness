@@ -211,6 +211,7 @@ try{
   $observed=Invoke-Core $targetRuntime @('doctor')
   if($observed.version -ne $manifest.version -or $observed.effective -ne 'READY_LOCAL' -or $observed.globalConnectionRequired -ne $false){throw 'V8_POST_INSTALL_VERIFICATION_FAILED'}
   $receipt=[ordered]@{result='V8_PROJECT_INSTALL_COMPLETE';productVersion=$expectedProduct;coreVersion=$observed.version;mode=$observed.mode;effective=$observed.effective;project=$project;globalConnectionRequired=$false;fallback='NONE';alreadyPresent=[bool]$already;guidanceChanged=[bool]$setupResult.changed;manifestSha256=$manifestSha;systemPathChanged=$false;credentialsChanged=$false;installedAtUtc=[DateTime]::UtcNow.ToString('o');launcher=(Join-Path $project 'JHarness.cmd')}
+  $receipt['next']='.\JHarness.cmd quickstart'
   [IO.File]::WriteAllText((Join-Path $recordRoot 'receipt.json'),($receipt|ConvertTo-Json -Depth 6),[Text.UTF8Encoding]::new($false))
   $receipt|ConvertTo-Json -Depth 6
 }catch{

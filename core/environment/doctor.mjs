@@ -9,6 +9,8 @@ const clientGuides={
  agy:'https://antigravity.google/docs/getting-started?tab=cli',
 };
 const clients=Object.keys(clientGuides);
+const clientNames={codex:'Codex',claude:'Claude Code',agy:'Google Antigravity'};
+export const supportedClient=client=>clients.includes(client);
 const optionalProfiles={general:[],roblox:['rojo','stylua','selene']};
 export const sha256=b=>crypto.createHash('sha256').update(b).digest('hex');
 
@@ -32,7 +34,7 @@ export function findExecutable(name,{envPath=process.env.PATH||'',platform=proce
 
 export function inspectEnvironment({client='codex',profile='general',platform=process.platform,
  nodeVersion=process.versions.node,envPath=process.env.PATH||'',separator=path.delimiter}={}){
- if(!clients.includes(client))throw Error('UNKNOWN_CLIENT: use codex, claude or agy');
+ if(!supportedClient(client))throw Error('UNKNOWN_CLIENT: use codex, claude or agy');
  if(!Object.hasOwn(optionalProfiles,profile))throw Error('UNKNOWN_PROFILE: use general or roblox');
  const nodeOk=Number(String(nodeVersion).replace(/^v/,'').split('.')[0])>=22;
  const paths={};
@@ -72,19 +74,30 @@ export function planEnvironment(inspect){
   requiredNext:beginnerSteps[0]};
 }
 
-export function quickStart({projectBinding,client,guidance}){
- const selected=client??clients.find(name=>findExecutable(name))??'codex';
- const plan=planEnvironment(inspectEnvironment({client:selected}));
+export function quickStart({projectBinding,client,selection,guidance}){
+ if(client!==undefined&&!supportedClient(client))throw Error('UNKNOWN_CLIENT: use codex, claude or agy');
  if(projectBinding==='DIFFERENT_HARNESS')return '이 프로젝트에 다른 하네스 설정이 있습니다. 기존 설정을 확인한 뒤 이동형 설치기의 전환 안내를 따르세요.';
  if(projectBinding!=='BOUND_VERIFIED')return '이 폴더를 프로젝트로 쓰려면 .\\JHarness.cmd setup을 실행하세요. 다른 폴더에 설치하려면 패키지의 README.md를 여세요.';
+ const selected=client??selection?.client;
+ if(!selected){
+  const choices=clients.map(name=>({name,detected:!!findExecutable(name)}))
+   .sort((first,second)=>Number(second.detected)-Number(first.detected));
+  return [
+   selection?.state==='REVIEW_REQUIRED'?'저장된 선택을 확인할 수 없습니다. 사용할 AI CLI를 다시 선택하세요.':'1단계. 이 프로젝트에서 사용할 AI CLI를 선택하세요.',
+   ...choices.map(({name,detected})=>clientNames[name]+' ('+(detected?'실행 파일 발견':'설치 안내 제공')+')  .\\JHarness.cmd select '+name),
+   '위 명령 중 하나를 실행하면 프로젝트에 선택이 저장됩니다. 로그인은 선택한 CLI에서 확인합니다.',
+  ].join('\n');
+ }
+ const plan=planEnvironment(inspectEnvironment({client:selected}));
+ const nextQuickStart='.\\JHarness.cmd quickstart'+(client?' --client '+client:'');
  if(plan.state==='SETUP_REQUIRED')return [...plan.beginnerSteps,
-  '설치 후 .\\JHarness.cmd quickstart --client '+selected+'를 다시 실행하세요.'].join('\n');
+  '설치 후 '+nextQuickStart+'를 다시 실행하세요.'].join('\n');
  if(guidance && guidance.agents!=='MANAGED_BLOCK_PRESENT')return '프로젝트의 AGENTS.md 지침을 확인하세요. .\\JHarness.cmd doctor에서 누락 여부를 확인할 수 있습니다.';
  if(selected==='codex' && guidance && guidance.codex.override!=='NONE')return 'Codex는 AGENTS.override.md를 먼저 확인합니다. 프로젝트의 기존 지침에 J Harness 연결이 포함되어 있는지 확인하세요. .\\JHarness.cmd doctor';
  if(selected==='claude' && guidance?.claude.state==='CONNECT_AVAILABLE')return [
   selected+' --version으로 실행을 확인하세요.',
   '이 프로젝트에서 Claude Code가 AGENTS.md를 읽도록 .\\JHarness.cmd connect claude를 실행하세요.',
-  '이후 .\\JHarness.cmd quickstart --client claude를 다시 실행하세요.',
+  '이후 '+nextQuickStart+'를 다시 실행하세요.',
  ].join('\n');
  if(selected==='claude' && guidance?.claude.state==='REVIEW_REQUIRED')return '기존 CLAUDE.md를 확인하세요. .\\JHarness.cmd doctor로 지침 파일 상태를 확인할 수 있습니다.';
  return [plan.requiredNext,

@@ -35,7 +35,19 @@ const v81 = {
   launcherHashes: {...launcherHashes,'JHarness-README.md':'04c21b6710468ab0339c53a266aefb5d8756ac4639d224ab9af28d65b5d37655'},
   recoveryLabel: 'V8_1_0',
 };
-const previousBuild = pin => [alpha,v81].find(build => build.manifest === pin);
+const v82 = {
+  distribution: '8.2.0',
+  core: '8.2.0',
+  manifest: '322d3a842e35d4ee204a6f24896707a1dcba870950182c1e7b03ba5fe857ac8e',
+  portableGuide: '7574085e91d554fe46404b0531f62a0d33566c559ae4f9ec081c29bc47c96196',
+  launcherHashes: {
+    ...launcherHashes,
+    'JHarness.ps1': '2e1444a2975d407c7f47e37faa487415cbd085955003be4248385de1c7709f17',
+    'JHarness-README.md': 'affd3fb538fb2fba450f1723a9c8f98fd666cfd67c36917f0c8f665fa02379c2',
+  },
+  recoveryLabel: 'V8_2_0',
+};
+const previousBuild = pin => [alpha,v81,v82].find(build => build.manifest === pin);
 const manifestHash = runtime => sha256(fs.readFileSync(contained(runtime, 'manifest.json')));
 const decode = bytes => new TextDecoder('utf-8', {fatal:true,ignoreBOM:true}).decode(bytes);
 const read = file => JSON.parse(decode(fs.readFileSync(file)).replace(/^\uFEFF/, ''));
@@ -120,7 +132,7 @@ function inspectUpgrade(project, target, targetPin) {
     return {result:{...result,result:'ALREADY_CURRENT',effective:'READY_LOCAL'},edits:[]};
   }
   const priorBuild = previousBuild(priorPin);
-  if (!priorBuild) throw Error('ONLY_PINNED_ALPHA3_OR_8_1_0_PORTABLE_UPGRADE_SUPPORTED');
+  if (!priorBuild) throw Error('ONLY_PINNED_ALPHA3_8_1_0_OR_8_2_0_PORTABLE_UPGRADE_SUPPORTED');
   const prior = validateRuntime(runtime,project);
   if (prior.version !== priorBuild.core || prior.distributionVersion !== priorBuild.distribution || prior.projectBinding !== 'BOUND_VERIFIED') {
     throw Error('BOUND_'+priorBuild.recoveryLabel+'_REQUIRED');

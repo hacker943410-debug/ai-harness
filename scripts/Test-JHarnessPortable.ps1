@@ -138,11 +138,17 @@ try {
     $firstProject=Inside '첫 프로젝트'
     $installCommand='& '+(Quote (Join-Path $package 'Install-JHarness.cmd'))+' -ProjectPath '+(Quote $firstProject)+' -ApproveInstall; exit $LASTEXITCODE'
     $firstInstall=Run 'first-project-install-cmd' $installCommand | ConvertFrom-Json
-    Expect ($firstInstall.result -eq 'V8_PROJECT_INSTALL_COMPLETE') 'FIRST_PROJECT_INSTALL_FAILED'
+    Expect ($firstInstall.result -eq 'V8_PROJECT_INSTALL_COMPLETE' -and $firstInstall.next -eq '.\JHarness.cmd quickstart') 'FIRST_PROJECT_INSTALL_FAILED'
     $firstBefore=Tree $firstProject
     $firstQuickstart=Run 'first-project-quickstart' (Launcher $firstProject 'quickstart')
-    Expect ($firstQuickstart.Contains('https://learn.chatgpt.com/docs/codex/cli') -and
-        $firstQuickstart.Contains('quickstart --client codex') -and (Tree $firstProject) -ceq $firstBefore) 'FIRST_PROJECT_SETUP_GUIDANCE_FAILED'
+    Expect ($firstQuickstart.Contains('select codex') -and $firstQuickstart.Contains('select claude') -and
+        $firstQuickstart.Contains('select agy') -and (Tree $firstProject) -ceq $firstBefore) 'FIRST_PROJECT_SELECTION_MENU_FAILED'
+    $firstSelection=Run 'first-project-select' (Launcher $firstProject 'select claude')
+    $firstResume=Run 'first-project-quickstart-resume' (Launcher $firstProject 'quickstart')
+    $firstDoctor=Run 'first-project-selection-doctor' (Launcher $firstProject 'doctor') | ConvertFrom-Json
+    Expect ($firstSelection.Contains('https://code.claude.com/docs/en/quickstart') -and
+        $firstResume.Contains('https://code.claude.com/docs/en/quickstart') -and
+        $firstDoctor.clientSelection.state -eq 'SELECTED' -and $firstDoctor.clientSelection.client -eq 'claude') 'FIRST_PROJECT_SELECTED_CLI_NOT_RESTORED'
 
     $null=Run 'first-project-begin' (Launcher $firstProject ('begin '+(Quote '숫자 합계 프로그램을 만들고 실행하는 법을 알려줘')))
     $null=Run 'first-project-plan' (Launcher $firstProject ('advance plan --note '+(Quote '2와 3을 넣으면 5가 나오는지 실제로 테스트한다')))
