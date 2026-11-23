@@ -4,12 +4,15 @@ param(
     [Parameter(Mandatory=$true)][string]$PackageRoot,
     [string]$EvidenceRoot,
     [string]$BootstrapScript,
-    [string]$PackageArchive
+    [string]$PackageArchive,
+    [string]$Alpha3PackageRoot
 )
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot '_Harness.Common.ps1')
 if ($PSVersionTable.PSEdition -ne 'Desktop' -or $PSVersionTable.PSVersion.Major -ne 5) { throw 'NATIVE_WINDOWS_POWERSHELL_5_REQUIRED' }
 $package=[IO.Path]::GetFullPath($PackageRoot).TrimEnd('\')
+$packageManifest=[IO.File]::ReadAllText((Join-HarnessPath $package '.agents/j-harness/manifest.json')) | ConvertFrom-Json
 if (-not $EvidenceRoot) { $EvidenceRoot=Join-Path ([IO.Path]::GetTempPath()) ('jh-portable-test-'+[guid]::NewGuid().ToString('N')) }
 $lab=[IO.Path]::GetFullPath($EvidenceRoot).TrimEnd('\')
 if ($lab -eq [IO.Path]::GetPathRoot($lab) -or (Test-Path -LiteralPath $lab)) { throw 'NEW_EVIDENCE_DIRECTORY_REQUIRED' }
@@ -65,12 +68,15 @@ function Run([string]$label,[string]$command,[int]$exitCode=0) {
 function Installer([string]$project,[string]$action='Plan',[string]$selectedPackage=$package) {
     return '& '+(Quote (Join-Path $selectedPackage 'Install-JHarnessLocal.ps1'))+' -ProjectPath '+(Quote $project)+' -Action '+$action+$(if($action -eq 'Install'){' -ApproveInstall'})
 }
+function Upgrade([string]$project,[string]$action='Plan') {
+    return (Installer $project $action)+' -Upgrade'
+}
 function Launcher([string]$project,[string]$arguments) { return '& '+(Quote (Join-Path $project 'JHarness.ps1'))+' '+$arguments }
 try {
     $project=Inside '한글 프로젝트 with spaces'
     $beforePackage=Tree $package
     $plan=Run 'plan-new' (Installer $project) | ConvertFrom-Json
-    Expect ($plan.result -eq 'PLAN_ONLY_NOT_INSTALLED' -and $plan.coreVersion -eq '8.0.0-core-beta.1') 'PLAN_VERSION_OR_RESULT'
+    Expect ($plan.result -eq 'PLAN_ONLY_NOT_INSTALLED' -and $plan.coreVersion -eq $packageManifest.version -and $plan.productVersion -eq $packageManifest.distributionVersion) 'PLAN_VERSION_OR_RESULT'
     Expect (-not(Test-Path -LiteralPath $project)) 'PLAN_CREATED_PROJECT'
     Expect ((Tree $package) -ceq $beforePackage) 'PLAN_CHANGED_PACKAGE'
     $checks.Add('Plan is read only for absent project and package')
@@ -81,16 +87,20 @@ try {
     $null=Run 'plan-existing' (Installer $project)
     Expect ((Tree $project) -ceq $beforeProject) 'PLAN_CHANGED_EXISTING_PROJECT'
     $receipt=Run 'install' (Installer $project 'Install') | ConvertFrom-Json
-    Expect ($receipt.result -eq 'V8_PROJECT_INSTALL_COMPLETE' -and $receipt.coreVersion -eq '8.0.0-core-beta.1' -and $receipt.globalConnectionRequired -eq $false) 'INSTALL_RECEIPT'
+    Expect ($receipt.result -eq 'V8_PROJECT_INSTALL_COMPLETE' -and $receipt.coreVersion -eq $packageManifest.version -and $receipt.productVersion -eq $packageManifest.distributionVersion -and $receipt.globalConnectionRequired -eq $false) 'INSTALL_RECEIPT'
     Expect ([IO.File]::ReadAllText($guidance).StartsWith($prefix,[StringComparison]::Ordinal)) 'USER_GUIDANCE_PREFIX_CHANGED'
     $guidanceHash=(Get-FileHash -LiteralPath $guidance -Algorithm SHA256).Hash
     foreach($command in @('status','doctor')){
         $result=Run $command (Launcher $project $command) | ConvertFrom-Json
-        Expect ($result.effective -eq 'READY_LOCAL' -and $result.version -eq '8.0.0-core-beta.1' -and $result.globalConnectionRequired -eq $false) ('COMMAND_FAILED: '+$command)
+        Expect ($result.effective -eq 'READY_LOCAL' -and $result.version -eq $packageManifest.version -and $result.projectBinding -eq 'BOUND_VERIFIED' -and $result.globalConnectionRequired -eq $false) ('COMMAND_FAILED: '+$command)
     }
     $cmd=[IO.Path]::Combine($env:SystemRoot,'System32','cmd.exe')
     $cmdStatus=Run 'cmd-status' ('Set-Location -LiteralPath '+(Quote $project)+'; & '+(Quote $cmd)+' /d /c ".\JHarness.cmd status"; exit $LASTEXITCODE') | ConvertFrom-Json
     Expect ($cmdStatus.effective -eq 'READY_LOCAL') 'CMD_LAUNCHER_FAILED'
+    $isolated=Run 'launcher-ignores-ambient-node-options' ('$env:NODE_OPTIONS='+ (Quote '--jh-invalid-test-option') +'; '+(Launcher $project 'doctor')) | ConvertFrom-Json
+    Expect ($isolated.runtimeIntegrity -eq 'VERIFIED' -and $isolated.clientGuidance.agents -eq 'MANAGED_BLOCK_PRESENT' -and
+        $isolated.clientGuidance.modelApplication -eq 'NOT_OBSERVED') 'LAUNCHER_INHERITED_AMBIENT_NODE_OPTIONS_OR_MISREPORTED_GUIDANCE'
+    $checks.Add('Pinned launcher ignores invalid ambient Node options and verifies the canonical project guidance')
     $setup=Run 'setup-repeat' (Launcher $project 'setup') | ConvertFrom-Json
     Expect ($setup.changed -eq $false) 'SETUP_NOT_IDEMPOTENT'
     $repeat=Run 'install-repeat' (Installer $project 'Install') | ConvertFrom-Json
@@ -121,8 +131,47 @@ try {
     $observedArgv=ConvertFrom-Json -InputObject $lines[1]
     Expect ($observedArgv.Count -eq 3 -and $observedArgv[0] -ceq $payload -and $observedArgv[1] -ceq $trailing -and $observedArgv[2] -ceq '') 'EXECUTED_QUOTED_ARGV_CHANGED'
     $progress=Run 'quoted-argv-progress' (Launcher $project 'progress') | ConvertFrom-Json
-    Expect ($progress.state.goal -ceq $goal -and $progress.state.verification.arguments[1] -ceq $code -and $progress.state.verification.result -eq 'PASS') 'PERSISTED_QUOTED_VERIFICATION_CHANGED'
+    Expect ($progress.state.goal -ceq $goal -and $progress.state.verification.argumentCount -eq $verifyArguments.Count -and $progress.state.verification.result -eq 'PASS') 'PERSISTED_QUOTED_VERIFICATION_CHANGED'
+    Expect ($null -eq $progress.state.verification.PSObject.Properties['arguments']) 'RAW_ARGV_PERSISTED'
+    Expect ($progress.state.verification.runId -eq $begun.runId -and @($progress.events | Where-Object {$_.runId -ne $begun.runId}).Count -eq 0) 'WORKFLOW_CORRELATION_MISSING'
     $checks.Add('Actual workflow preserves quoted goal, UTF8 JavaScript, double quotes, spaces, trailing slash and empty argv bytes')
+
+    $firstProject=Inside '첫 프로젝트'
+    $installCommand='& '+(Quote (Join-Path $package 'Install-JHarness.cmd'))+' -ProjectPath '+(Quote $firstProject)+' -ApproveInstall; exit $LASTEXITCODE'
+    $firstInstall=Run 'first-project-install-cmd' $installCommand | ConvertFrom-Json
+    Expect ($firstInstall.result -eq 'V8_PROJECT_INSTALL_COMPLETE' -and $firstInstall.next -eq '.\JHarness.cmd quickstart') 'FIRST_PROJECT_INSTALL_FAILED'
+    $firstBefore=Tree $firstProject
+    $firstQuickstart=Run 'first-project-quickstart' (Launcher $firstProject 'quickstart')
+    Expect ($firstQuickstart.Contains('select codex') -and $firstQuickstart.Contains('select claude') -and
+        $firstQuickstart.Contains('select agy') -and (Tree $firstProject) -ceq $firstBefore) 'FIRST_PROJECT_SELECTION_MENU_FAILED'
+    $firstSelection=Run 'first-project-select' (Launcher $firstProject 'select claude')
+    $firstResume=Run 'first-project-quickstart-resume' (Launcher $firstProject 'quickstart')
+    $firstDoctor=Run 'first-project-selection-doctor' (Launcher $firstProject 'doctor') | ConvertFrom-Json
+    Expect ($firstSelection.Contains('https://code.claude.com/docs/en/quickstart') -and
+        $firstResume.Contains('https://code.claude.com/docs/en/quickstart') -and
+        $firstDoctor.clientSelection.state -eq 'SELECTED' -and $firstDoctor.clientSelection.client -eq 'claude') 'FIRST_PROJECT_SELECTED_CLI_NOT_RESTORED'
+
+    $null=Run 'first-project-begin' (Launcher $firstProject ('begin '+(Quote '숫자 합계 프로그램을 만들고 실행하는 법을 알려줘')))
+    $null=Run 'first-project-plan' (Launcher $firstProject ('advance plan --note '+(Quote '2와 3을 넣으면 5가 나오는지 실제로 테스트한다')))
+    $null=Run 'first-project-implement' (Launcher $firstProject 'advance implement')
+    $app=Join-Path $firstProject 'total.cjs'
+    Write-Utf8 $app "module.exports = values => values.reduce((sum, value) => sum + value, 1);"
+    Write-Utf8 (Join-HarnessPath $firstProject 'test.cjs') "require('node:assert/strict').equal(require('./total.cjs')([2, 3]), 5); console.log('TOTAL=5');"
+    Write-Utf8 (Join-HarnessPath $firstProject 'README.md') 'This sample sums a list of numbers. Run test.cjs using the bundled Node from .agents/j-harness/vendor/win-x64/node.exe and expect TOTAL=5.'
+    $firstNode=Join-HarnessPath $firstProject '.agents/j-harness/vendor/win-x64/node.exe'
+    $firstVerify='verify '+(Quote '--')+' '+(Quote $firstNode)+' test.cjs'
+    $failed=Run 'first-project-failed-test' (Launcher $firstProject $firstVerify) 1 | ConvertFrom-Json
+    Expect ($failed.result -eq 'FAIL' -and $failed.exitCode -eq 1) 'FIRST_PROJECT_TEST_FAILURE_NOT_OBSERVED'
+    $null=Run 'first-project-failed-handoff' (Launcher $firstProject 'advance handoff') 1
+    $null=Run 'first-project-fix-stage' (Launcher $firstProject 'advance implement')
+    Write-Utf8 $app "module.exports = values => values.reduce((sum, value) => sum + value, 0);"
+    $passed=Run 'first-project-passing-test' (Launcher $firstProject $firstVerify) | ConvertFrom-Json
+    Expect ($passed.result -eq 'PASS' -and $passed.exitCode -eq 0 -and $passed.stdoutTail.Trim() -ceq 'TOTAL=5') 'FIRST_PROJECT_RESULT_WRONG'
+    $null=Run 'first-project-handoff' (Launcher $firstProject 'advance handoff')
+    $finished=Run 'first-project-finish' (Launcher $firstProject 'finish --guide README.md') | ConvertFrom-Json
+    Expect ($finished.result -eq 'COMPLETE_LOCAL_VERIFIED' -and $finished.guide -eq 'README.md') 'FIRST_PROJECT_HANDOFF_FAILED'
+    $checks.Add('First project uses the documented install command and read-only guidance, then fails, fixes, runs and hands off a local app')
+
     $relocated=Inside '복사 이동 project'
     Copy-Item -LiteralPath $project -Destination $relocated -Recurse
     $relocatedStatus=Run 'relocated-status' (Launcher $relocated 'status') | ConvertFrom-Json
@@ -155,6 +204,112 @@ try {
     Expect ($blocked -match 'EXISTING_PROJECT_HARNESS_REQUIRES_EXPLICIT_MIGRATION') 'LEGACY_BINDING_NOT_BLOCKED'
     Expect ((Tree $legacy) -ceq $legacyBefore) 'LEGACY_BINDING_CHANGED'
     $checks.Add('User launcher and legacy binding preserved byte for byte')
+    $upgradeResult='NOT_RUN_NO_ALPHA3_PACKAGE'
+    if($Alpha3PackageRoot){
+        $alpha3=[IO.Path]::GetFullPath($Alpha3PackageRoot)
+        $alphaManifest=Join-HarnessPath $alpha3 '.agents/j-harness/manifest.json'
+        Expect ((Get-FileHash -LiteralPath $alphaManifest -Algorithm SHA256).Hash.ToLowerInvariant() -ceq '8b3f4dc932d92525322cf8b733a518bc16679bec8efe161ac9e3e7e0e4a71224') 'ALPHA3_TEST_MANIFEST_PIN_MISMATCH'
+        $old=Inside '알파3'
+        [IO.Directory]::CreateDirectory($old)|Out-Null
+        $oldGuide=Join-Path $old 'AGENTS.md'
+        $oldBinding=Join-HarnessPath $old '.ai/harness-project.json'
+        $oldRuntime=Join-HarnessPath $old '.agents/j-harness'
+        $artifactDir=Join-HarnessPath $old '.jh-artifacts/j-harness-core'
+        $newline=[Environment]::NewLine
+        $userPrefix='사용자 규칙: Keep exact CRLF bytes.'+$newline
+        $userSuffix=$newline+'추가 규칙: Keep the suffix.'+$newline
+        [IO.File]::WriteAllText($oldGuide,$userPrefix,[Text.UTF8Encoding]::new($true))
+        $null=Run 'alpha3-install' (Installer $old 'Install' $alpha3)
+        [IO.File]::AppendAllText($oldGuide,$userSuffix,$utf8)
+        $guideBytes=[IO.File]::ReadAllBytes($oldGuide)
+        $originalBinding=[IO.File]::ReadAllText($oldBinding)
+        $customBinding=$originalBinding.Replace('"beginner_mode": true','"beginner_mode": false').Replace(
+            '"schema_version": 4,','"schema_version": 4, "custom": {"version": "8.0.0-core-beta.1", "large": 9007199254740993, "keep": ["한국어", {"tail": true}]}, "verification_scope": {"include": ["check.cjs"]},')
+        Write-Utf8 $oldBinding $customBinding
+        Write-Utf8 (Join-Path $old 'check.cjs') "console.log('alpha3 evidence');"
+        Write-Utf8 (Join-Path $old 'README.md') 'Run the bundled Node executable with check.cjs and read the local verification result before completing this test.'
+        $null=Run 'alpha3-begin' (Launcher $old ('begin '+(Quote 'upgrade preservation test')))
+        $activeBefore=Tree $old
+        $active=Run 'upgrade-blocks-active-workflow' ((Upgrade $old)+'; exit $LASTEXITCODE') 1
+        Expect ($active -match 'ACTIVE_WORKFLOW_BLOCKS_UPGRADE' -and (Tree $old) -ceq $activeBefore) 'ACTIVE_UPGRADE_NOT_BLOCKED'
+        $null=Run 'alpha3-plan' (Launcher $old ('advance plan --note '+(Quote 'Run the local fixture')))
+        $null=Run 'alpha3-implement' (Launcher $old 'advance implement')
+        $oldNode=Join-HarnessPath $oldRuntime 'vendor/win-x64/node.exe'
+        $null=Run 'alpha3-verify' (Launcher $old ('verify '+(Quote '--')+' '+(Quote $oldNode)+' check.cjs'))
+        $null=Run 'alpha3-handoff' (Launcher $old 'advance handoff')
+        $oldState=Run 'alpha3-finish' (Launcher $old 'finish') | ConvertFrom-Json
+        $stateHash=(Get-FileHash -LiteralPath (Join-Path $artifactDir 'workflow.json')).Hash
+        $eventsHash=(Get-FileHash -LiteralPath (Join-Path $artifactDir 'events.jsonl')).Hash
+        $oldLogs=Tree (Join-Path $artifactDir 'logs')
+        $productBefore=(Get-FileHash -LiteralPath (Join-Path $old 'check.cjs')).Hash
+        Write-Utf8 (Join-Path $artifactDir 'lessons.json') '[{"cause":"keep this historical note"}]'
+        $lessonHash=(Get-FileHash -LiteralPath (Join-Path $artifactDir 'lessons.json')).Hash
+
+        $oldTree=Tree $old
+        $plan=Run 'upgrade-plan-readonly' (Upgrade $old) | ConvertFrom-Json
+        Expect ($plan.result -eq 'PLAN_ONLY_NOT_UPGRADED' -and $plan.previousProductVersion -eq '8.0.0-alpha.3' -and
+            $plan.productVersion -eq $packageManifest.distributionVersion -and (Tree $old) -ceq $oldTree) 'UPGRADE_PLAN_MUTATED_OR_WRONG'
+        $oldReadme=Join-Path $old 'JHarness-README.md'
+        $readmeBytes=[IO.File]::ReadAllBytes($oldReadme)
+        [IO.File]::AppendAllText($oldReadme,$newline+'User-managed text',$utf8)
+        $customReadme=(Get-FileHash -LiteralPath $oldReadme).Hash
+        $conflict=Run 'upgrade-blocks-user-launcher-conflict' ((Upgrade $old)+'; exit $LASTEXITCODE') 1
+        Expect ($conflict -match 'CUSTOM_LAUNCHER_REQUIRES_REVIEW' -and (Get-FileHash -LiteralPath $oldReadme).Hash -ceq $customReadme) 'UPGRADE_LAUNCHER_CONFLICT_DISCARDED'
+        [IO.File]::WriteAllBytes($oldReadme,$readmeBytes)
+
+        # The old runtime ignores this malformed future setting. The new doctor
+        # rejects it after activation, which exercises a real rollback.
+        $badBinding=$customBinding.Replace('"schema_version": 4,','"schema_version": 4, "supervisor": {"required": "invalid"},')
+        Write-Utf8 $oldBinding $badBinding
+        $oldPayload=Tree $oldRuntime
+        $rollback=Run 'upgrade-fails-post-activation-and-restores' ((Upgrade $old 'Install')+'; exit $LASTEXITCODE') 1
+        Expect ($rollback -match 'SUPERVISOR_REQUIRED_MUST_BE_BOOLEAN' -and $rollback -match 'ALPHA3_RESTORED_VERIFIED') 'UPGRADE_ROLLBACK_NOT_VERIFIED'
+        Expect ((Tree $oldRuntime) -ceq $oldPayload -and [IO.File]::ReadAllText($oldBinding) -ceq $badBinding -and
+            [Convert]::ToBase64String([IO.File]::ReadAllBytes($oldGuide)) -ceq [Convert]::ToBase64String($guideBytes) -and
+            [Convert]::ToBase64String([IO.File]::ReadAllBytes($oldReadme)) -ceq [Convert]::ToBase64String($readmeBytes)) 'UPGRADE_ROLLBACK_RESTORED_WRONG_BYTES'
+        Write-Utf8 $oldBinding $customBinding
+
+        $receipt=Run 'upgrade-apply' (Upgrade $old 'Install') | ConvertFrom-Json
+        Expect ($receipt.result -eq 'V8_PROJECT_UPGRADE_COMPLETE' -and $receipt.effective -eq 'READY_LOCAL') 'UPGRADE_APPLY_FAILED'
+        $backup=[IO.Path]::GetFullPath((Join-Path $old $receipt.transaction))
+        Expect ($backup.StartsWith($old+'\',[StringComparison]::OrdinalIgnoreCase) -and (Tree (Join-HarnessPath $backup 'previous-runtime')) -ceq $oldPayload) 'UPGRADE_PREVIOUS_RUNTIME_NOT_PRESERVED'
+        $expectedBinding=$customBinding.Replace('"version": "8.0.0-core-beta.1",'+[char]10,'"version": "'+$receipt.coreVersion+'",'+[char]10)
+        $expectedBinding=$expectedBinding.Replace($receipt.previousManifestSha256,$receipt.manifestSha256)
+        Expect ([IO.File]::ReadAllText($oldBinding) -ceq $expectedBinding) 'UPGRADE_UNMANAGED_BINDING_BYTES_CHANGED'
+        $newGuide=[IO.File]::ReadAllBytes($oldGuide)
+        $expectedGuide=[Text.Encoding]::UTF8.GetString($guideBytes).Replace('## J Harness Core 8.0.0-core-beta.1',('## J Harness Core '+$receipt.coreVersion))
+        Expect ([Text.Encoding]::UTF8.GetString($newGuide) -ceq $expectedGuide) 'UPGRADE_UNMANAGED_GUIDANCE_BYTES_CHANGED'
+        Expect ((Get-FileHash -LiteralPath (Join-Path $artifactDir 'workflow.json')).Hash -ceq $stateHash -and
+            (Get-FileHash -LiteralPath (Join-Path $artifactDir 'events.jsonl')).Hash -ceq $eventsHash -and
+            (Get-FileHash -LiteralPath (Join-Path $artifactDir 'lessons.json')).Hash -ceq $lessonHash -and
+            (Tree (Join-Path $artifactDir 'logs')) -ceq $oldLogs -and
+            (Get-FileHash -LiteralPath (Join-Path $old 'check.cjs')).Hash -ceq $productBefore) 'UPGRADE_WORKFLOW_OR_PRODUCT_CHANGED'
+        $progress=Run 'upgrade-preserved-progress' (Launcher $old 'progress') | ConvertFrom-Json
+        Expect ($progress.state.runId -eq $oldState.runId -and $progress.currentVerificationResult -eq 'STALE' -and
+            $progress.staleVerificationReason -eq 'RUNTIME_CHANGED_PREVIOUS_PASS_INVALID') 'PREVIOUS_VERIFICATION_NOT_STALE_AFTER_UPGRADE'
+        $upgraded=Tree $old
+        $repeat=Run 'upgrade-repeat' (Upgrade $old 'Install') | ConvertFrom-Json
+        Expect ($repeat.result -eq 'ALREADY_CURRENT' -and (Tree $old) -ceq $upgraded) 'UPGRADE_REPEAT_CHANGED_FILES'
+
+        # Model a process interrupted after swapping files and before recording
+        # success. Use the real prepared journal and exact activated bytes.
+        Move-Item -LiteralPath (Join-Path $backup 'receipt.json') -Destination (Join-Path $backup 'test-completed-receipt.json')
+        $upgradeLock=Join-Path (Split-Path -Parent $backup) 'upgrade.lock'
+        $lockRun=Split-Path -Leaf $backup
+        Write-Utf8 $upgradeLock (@{run=$lockRun;pid=$PID}|ConvertTo-Json -Compress)
+        $recoverCommand=(Upgrade $old 'Recover')+' -ApproveInstall'
+        $live=Run 'upgrade-recovery-blocks-live-process' ($recoverCommand+'; exit $LASTEXITCODE') 1
+        Expect ($live -match 'UPGRADE_PROCESS_STILL_RUNNING') 'LIVE_UPGRADE_RECOVERY_NOT_BLOCKED'
+        Write-Utf8 $upgradeLock (@{run=$lockRun;pid=2147483647}|ConvertTo-Json -Compress)
+        $recovery=Run 'upgrade-recovers-interrupted-activation' $recoverCommand | ConvertFrom-Json
+        Expect ($recovery.result -eq 'ALPHA3_RESTORED_VERIFIED' -and -not(Test-Path -LiteralPath $upgradeLock) -and
+            (Tree $oldRuntime) -ceq $oldPayload -and [IO.File]::ReadAllText($oldBinding) -ceq $customBinding -and
+            [Convert]::ToBase64String([IO.File]::ReadAllBytes($oldGuide)) -ceq [Convert]::ToBase64String($guideBytes) -and
+            [Convert]::ToBase64String([IO.File]::ReadAllBytes($oldReadme)) -ceq [Convert]::ToBase64String($readmeBytes)) 'INTERRUPTED_UPGRADE_RECOVERY_FAILED'
+        $upgradeResult='PASS_ALPHA3_UPGRADE_ROLLBACK_AND_INTERRUPTED_ACTIVATION_RECOVERY'
+        $checks.Add('Pinned Alpha 3 upgrade preserves user bytes and work records, blocks active work and drift, and is idempotent')
+        $checks.Add('Doctor failure automatically restores Alpha 3; journal recovery refuses a live process and restores a simulated interrupted activation')
+    }
     $bootstrapResult='NOT_RUN_LOCAL_PACKAGE_TEST'
     if($BootstrapScript -or $PackageArchive){
         Expect ([bool]$BootstrapScript -and [bool]$PackageArchive) 'BOOTSTRAP_SCRIPT_AND_ARCHIVE_REQUIRED_TOGETHER'
@@ -179,7 +334,7 @@ try {
     foreach($scope in @('User','Machine')){foreach($name in @('PATH','HOME','USERPROFILE','CODEX_HOME')){Expect ([Environment]::GetEnvironmentVariable($name,$scope) -ceq $persistentEnvironment[$scope+':'+$name]) ('PERSISTENT_ENV_CHANGED: '+$scope+':'+$name)}}
     Expect ((Tree $package) -ceq $beforePackage) 'PACKAGE_CHANGED_DURING_INSTALL'
     $checks.Add('No package, global home, process or persistent environment changes')
-    $summary=[ordered]@{result='PASS';powershell=$PSVersionTable.PSVersion.ToString();checks=@($checks.ToArray());evidence=$lab;rollbackAfterSetup='NOT_RUN';networkBootstrap=$bootstrapResult}
+    $summary=[ordered]@{result='PASS';powershell=$PSVersionTable.PSVersion.ToString();checks=@($checks.ToArray());evidence=$lab;rollbackAfterSetup='NOT_RUN';networkBootstrap=$bootstrapResult;upgrade=$upgradeResult}
     Write-Utf8 (Inside 'summary.json') ($summary|ConvertTo-Json -Depth 6)
     $summary|ConvertTo-Json -Depth 6
 } catch {

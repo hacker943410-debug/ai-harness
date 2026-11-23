@@ -33,9 +33,16 @@ export function install(h,{source=sourceCore}={}){
   const backupRelative='backup/global-guidance.before.bin';atomic(path.join(stage,backupRelative),original);
   const state={schema:1,product:'J Harness Core',version,home:h,configured:'ON',target,originalExisted:fs.existsSync(target),originalSha256:hash(original),originalBytes:original.length,backupRelative,bridge:block,inventory,installedUtc:new Date().toISOString(),codexVersion:observed.version,verificationScope:'INSTRUCTIONS_CONNECTION_NOT_OS_ENFORCEMENT'};
   fs.mkdirSync(path.join(stage,'bin'));fs.writeFileSync(path.join(stage,'install.json'),json(state));
-  // ASCII launchers keep Unicode/spaces in the installation path via %~dp0/$PSScriptRoot.
-  fs.writeFileSync(path.join(stage,'bin/jh.cmd'),'@echo off\r\n"'+process.execPath+'" "%~dp0..\\runtime\\core\\cli.mjs" --codex-home "%~dp0..\\.." %*\r\nexit /b %ERRORLEVEL%\r\n');
-  fs.writeFileSync(path.join(stage,'bin/jh.ps1'),'& '+"'"+process.execPath.replaceAll("'","''")+"'"+' ([IO.Path]::Combine($PSScriptRoot,\'..\',\'runtime\',\'core\',\'cli.mjs\')) --codex-home ([IO.Path]::GetFullPath([IO.Path]::Combine($PSScriptRoot,\'..\',\'..\'))) @args\r\nexit $LASTEXITCODE\r\n');
+  // cmd.exe reads batch literals in the active code page. Use the BOM-marked
+  // PowerShell entry when the Node executable's path cannot be stored as ASCII.
+  const direct='"'+process.execPath+'" "%~dp0..\\runtime\\core\\cli.mjs" --codex-home "%~dp0..\\.." %*';
+  const viaPowerShell='"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0jh.ps1" %*';
+  const command=/[^\x20-\x7e]/.test(process.execPath)?viaPowerShell:direct;
+  fs.writeFileSync(path.join(stage,'bin/jh.cmd'),'@echo off\r\n'+command+'\r\nexit /b %ERRORLEVEL%\r\n');
+  const nodePath="'"+process.execPath.replaceAll("'","''")+"'";
+  const psEntry=" ([IO.Path]::Combine($PSScriptRoot,'..','runtime','core','cli.mjs'))";
+  const psHome=" ([IO.Path]::GetFullPath([IO.Path]::Combine($PSScriptRoot,'..','..')))";
+  fs.writeFileSync(path.join(stage,'bin/jh.ps1'),'\ufeff& '+nodePath+psEntry+' --codex-home'+psHome+' @args\r\nexit $LASTEXITCODE\r\n');
   fs.renameSync(stage,destination);
   const latest=fs.existsSync(target)?fs.readFileSync(target):Buffer.alloc(0);if(!latest.equals(original))throw Error('GLOBAL_GUIDANCE_CHANGED_DURING_PREPARATION_PRESERVED');
   atomic(target,Buffer.concat([original,Buffer.from(block)]));linked=true;

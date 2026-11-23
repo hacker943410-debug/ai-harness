@@ -1,14 +1,15 @@
 # J Harness v8: project-local installation. No Codex-home registration is required.
 [CmdletBinding()]
 param(
-  [ValidateSet('Plan','Install')][string]$Action='Plan',
+  [ValidateSet('Plan','Install','Recover')][string]$Action='Plan',
   [switch]$ApproveInstall,
+  [switch]$Upgrade,
   [string]$ProjectPath
 )
 $ErrorActionPreference='Stop'
 $ProgressPreference='SilentlyContinue'
-$expectedNode='ae1a50511be58e987483fdbc12125407443926d2d394669ade2352776e920dd3'
-$expectedProduct='8.0.0-alpha.3'
+$expectedNode='247e9693d316da9857e44990e5e11709f596f18112251b8026ec6eed80bdf38a'
+$expectedProduct='JH_PRODUCT_VERSION'
 $packageRoot=[IO.Path]::GetFullPath($PSScriptRoot)
 $sourceRuntime=Join-Path $packageRoot '.agents\j-harness'
 if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or -not [Environment]::Is64BitOperatingSystem){throw 'WINDOWS_X64_REQUIRED'}
@@ -42,7 +43,7 @@ function Runtime-Files([string]$root){
     foreach($entry in Get-ChildItem -LiteralPath $dir -Force){
       if(($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'LINK_IN_RUNTIME_REFUSED'}
       $rel=$entry.FullName.Substring($root.TrimEnd('\').Length+1).Replace('\','/')
-      if($rel -eq 'tests' -or $rel -eq 'manifest.json' -or $rel -eq 'PORTABLE.md'){continue}
+      if($rel -eq 'tests' -or $rel -eq 'manifest.json'){continue}
       if($entry.PSIsContainer){$queue.Enqueue($entry.FullName)}else{$rel}
     }
   }
@@ -59,6 +60,7 @@ function Check-Runtime([string]$root,[string]$manifestSha){
     if(-not $seen.Add(([string]$row.path).Replace('\','/'))){throw 'DUPLICATE_MANIFEST_PATH'}
     if($row.sha256 -notmatch '^[a-f0-9]{64}$' -or -not(Test-Path -LiteralPath $full -PathType Leaf) -or (Digest $full) -ne $row.sha256){throw ('RUNTIME_HASH_MISMATCH: '+$row.path)}
   }
+  if(-not $seen.Contains('PORTABLE.md')){throw 'INCOMPLETE_RUNTIME_MANIFEST'}
   $files=@(Runtime-Files $root)
   if($files.Count -ne $seen.Count){throw 'INCOMPLETE_RUNTIME_MANIFEST'}
   foreach($rel in $files){if(-not $seen.Contains($rel)){throw 'UNLISTED_RUNTIME_FILE'}}
@@ -77,6 +79,8 @@ function Invoke-Node([string]$runtime,[string]$entry,[string[]]$Arguments){
   $info=New-Object Diagnostics.ProcessStartInfo
   $info.FileName=$binary;$info.Arguments=($quoted -join ' ')
   $info.UseShellExecute=$false;$info.CreateNoWindow=$true
+  $info.EnvironmentVariables.Remove('NODE_OPTIONS')
+  $info.EnvironmentVariables.Remove('NODE_PATH')
   $info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true
   $info.StandardOutputEncoding=[Text.UTF8Encoding]::new($false)
   $info.StandardErrorEncoding=[Text.UTF8Encoding]::new($false)
@@ -87,7 +91,7 @@ function Invoke-Node([string]$runtime,[string]$entry,[string[]]$Arguments){
     $output=$process.StandardOutput.ReadToEndAsync();$errors=$process.StandardError.ReadToEndAsync()
     $process.WaitForExit()
     $value=$output.GetAwaiter().GetResult();$message=$errors.GetAwaiter().GetResult()
-    if($process.ExitCode -ne 0){throw ('INSTALLED_V8_CORE_COMMAND_FAILED: '+$message.Trim())}
+    if($process.ExitCode -ne 0){throw ('INSTALLED_V8_CORE_COMMAND_FAILED (exit '+$process.ExitCode+'): '+$message.Trim())}
     return $value
   }finally{$process.Dispose()}
 }
@@ -99,6 +103,35 @@ $sourceManifest=Join-Path $sourceRuntime 'manifest.json'
 if(-not(Test-Path -LiteralPath $sourceManifest -PathType Leaf)){throw 'COMPLETE_V8_PACKAGE_REQUIRED_NO_V7_FALLBACK'}
 $manifestSha=Digest $sourceManifest
 $manifest=Check-Runtime $sourceRuntime $manifestSha
+if($Upgrade){
+  $upgradeEntry=Within $sourceRuntime 'upgrade.mjs'
+  if($Action -eq 'Recover'){
+    if(-not $ApproveInstall){
+      $typed=Read-Host ('Recover J Harness in '+$project+'? Type RECOVER')
+      if($typed -cne 'RECOVER'){
+        @{result='CANCELLED_NO_RECOVERY';project=$project}|ConvertTo-Json
+        return
+      }
+    }
+    Invoke-Node $sourceRuntime $upgradeEntry @('Recover',$project)
+    return
+  }
+  if($Action -eq 'Plan' -or -not $ApproveInstall){
+    $preview=Invoke-Node $sourceRuntime $upgradeEntry @('Plan',$project)
+    if($Action -eq 'Plan'){Write-Output $preview;return}
+    $typed=Read-Host ('Upgrade J Harness in '+$project+'? Type UPGRADE')
+    if($typed -cne 'UPGRADE'){
+      @{result='CANCELLED_NO_UPGRADE';project=$project}|ConvertTo-Json
+      return
+    }
+  }
+  Invoke-Node $sourceRuntime $upgradeEntry @('Install',$project)
+  return
+}
+if($Action -eq 'Recover'){throw 'RECOVER_REQUIRES_UPGRADE_SWITCH'}
+$upgradeLock=Within $project '.jh-artifacts/j-harness-core/upgrades/upgrade.lock'
+$recoveryLock=Within $project '.jh-artifacts/j-harness-core/upgrades/recover.lock'
+if((Test-Path -LiteralPath $upgradeLock) -or (Test-Path -LiteralPath $recoveryLock)){throw 'UPGRADE_IN_PROGRESS_OR_RECOVERY_REQUIRED'}
 $targetRuntime=Within $project '.agents/j-harness'
 $binding=Within $project '.ai/harness-project.json'
 $guidance=Within $project 'AGENTS.md'
@@ -131,7 +164,7 @@ if(-not $ApproveInstall){
 }
 $transaction=[guid]::NewGuid().ToString('N')
 $recordRoot=Within $project ('.jh-artifacts/j-harness-core/installations/'+$transaction)
-$prepared=Join-Path $recordRoot 'runtime.prepare'
+$prepared=Within $project ('.agents/.jh-prepare-'+$transaction)
 $copied=New-Object 'System.Collections.Generic.List[string]'
 $runtimeCreated=$false
 $guidanceBefore=$null;$bindingBefore=$null;$guidanceAfter=$null;$bindingAfter=$null;$setupCompleted=$false
@@ -156,6 +189,9 @@ try{
   [IO.Directory]::CreateDirectory($recordRoot)|Out-Null
   if(-not $already){
     [IO.Directory]::CreateDirectory((Split-Path -Parent $targetRuntime))|Out-Null
+    # Keep the staging tree beside the target to avoid extending nested paths
+    # through the installation receipt directory on Windows PowerShell 5.1.
+    if(Test-Path -LiteralPath $prepared){throw 'PREPARATION_DIRECTORY_ALREADY_EXISTS'}
     Copy-Item -LiteralPath $sourceRuntime -Destination $prepared -Recurse -ErrorAction Stop
     $null=Check-Runtime $prepared $manifestSha
     if(Test-Path -LiteralPath $targetRuntime){throw 'DESTINATION_CHANGED_DURING_PREPARATION'}
@@ -175,6 +211,7 @@ try{
   $observed=Invoke-Core $targetRuntime @('doctor')
   if($observed.version -ne $manifest.version -or $observed.effective -ne 'READY_LOCAL' -or $observed.globalConnectionRequired -ne $false){throw 'V8_POST_INSTALL_VERIFICATION_FAILED'}
   $receipt=[ordered]@{result='V8_PROJECT_INSTALL_COMPLETE';productVersion=$expectedProduct;coreVersion=$observed.version;mode=$observed.mode;effective=$observed.effective;project=$project;globalConnectionRequired=$false;fallback='NONE';alreadyPresent=[bool]$already;guidanceChanged=[bool]$setupResult.changed;manifestSha256=$manifestSha;systemPathChanged=$false;credentialsChanged=$false;installedAtUtc=[DateTime]::UtcNow.ToString('o');launcher=(Join-Path $project 'JHarness.cmd')}
+  $receipt['next']='.\JHarness.cmd quickstart'
   [IO.File]::WriteAllText((Join-Path $recordRoot 'receipt.json'),($receipt|ConvertTo-Json -Depth 6),[Text.UTF8Encoding]::new($false))
   $receipt|ConvertTo-Json -Depth 6
 }catch{

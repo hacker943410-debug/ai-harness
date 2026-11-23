@@ -5,13 +5,13 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
+import {bridgeStart as start,bridgeEnd as end,projectBridge} from './lib/project-bridge.mjs';
 
 const runtime=path.dirname(fileURLToPath(import.meta.url));
 const args=process.argv.slice(2);
 const digest=data=>crypto.createHash('sha256').update(data).digest('hex');
 const read=file=>JSON.parse(fs.readFileSync(file,'utf8').replace(/^\uFEFF/,''));
 const ensurePlain=file=>{for(let cursor=path.resolve(file);;cursor=path.dirname(cursor)){if(fs.existsSync(cursor)&&fs.lstatSync(cursor).isSymbolicLink())throw Error('LINK_PATH_REQUIRES_REVIEW');if(path.dirname(cursor)===cursor)break;}};
-const start='<!-- J-HARNESS-PORTABLE:START -->',end='<!-- J-HARNESS-PORTABLE:END -->';
 try {
   if(args.length!==2||args[0]!=='--project')throw Error('Usage: setup.mjs --project <folder>');
   const project=fs.realpathSync(path.resolve(args[1]));
@@ -33,8 +33,7 @@ try {
   const count=(value,needle)=>value.split(needle).length-1;
   if(count(text,start)!==count(text,end)||count(text,start)>1)throw Error('MANAGED_PROJECT_BRIDGE_REQUIRES_REVIEW');
   const manifestPath=path.join(runtime,'manifest.json'),manifest=read(manifestPath),manifestSha=digest(fs.readFileSync(manifestPath));
-  const runner=fs.existsSync(path.join(runtime,'vendor/win-x64/node.exe'))?`& './${relative}/vendor/win-x64/node.exe' './${relative}/portable.mjs'`:`node '${relative}/portable.mjs'`;
-  const bridge=`\n\n${start}\n## J Harness Core ${manifest.version}\nRead ${relative}/PORTABLE.md before development. Run \`${runner} --project . status\`, then read the jh-guided-development Skill and follow analysis → plan → implement → verify → handoff. Use the project runtime even when a global Codex home is unavailable. Never fall back to v7. Preserve current user instructions and require actual verification and independent review before release.\n${end}\n`;
+  const bridge='\n\n'+projectBridge(relative,manifest.version,fs.existsSync(path.join(runtime,'vendor/win-x64/node.exe')))+'\n';
   if(text.includes(start)) {
     if(!existing||text.indexOf(end)<text.indexOf(start)||text.slice(text.indexOf(start),text.indexOf(end)+end.length)!==bridge.trim())throw Error('MANAGED_PROJECT_BRIDGE_REQUIRES_REVIEW: binding or bridge mismatch; current files preserved');
     console.log(JSON.stringify({status:'READY_LOCAL',version:manifest.version,changed:false,globalConnectionRequired:false}));

@@ -31,7 +31,9 @@ test('one CLI is enough, and read-only inventory cannot change user files',t=>{
  assert.equal(result.evidence.modelSessionVerified,false);
  assert.deepEqual(fs.readdirSync(f.bin),before);
  const plan=planEnvironment(result);
- assert.equal(plan.installation,'NOT_IMPLEMENTED');
+ assert.equal(plan.installation,'GUIDED_MANUAL');
+ assert.equal(plan.installGuide,null);
+ assert.match(plan.requiredNext,/codex --version/);
  assert.equal(plan.hostChanged,false);
 });
 test('AGY or Claude works without other CLI installed',t=>{
@@ -50,10 +52,12 @@ test('old runtime and missing active CLI cause BLOCKED, never silent installatio
    const result=inspect(f,{nodeVersion:version});
    assert.equal(result.state,'SETUP_REQUIRED');
    assert.deepEqual(result.blocked,['node']);
-   assert.equal(planEnvironment(result).state,'NEEDS_APPROVAL_AND_COMPONENTS');
+   assert.equal(planEnvironment(result).state,'SETUP_REQUIRED');
+   assert.match(planEnvironment(result).requiredNext,/Node/);
  }
  const missing=inspect(f,{client:'agy'});
  assert.deepEqual(missing.blocked,['agy']);
+ assert.match(planEnvironment(missing).requiredNext,/https:\/\/antigravity\.google\//);
 });
 test('Roblox dependencies are conditional only',t=>{
  const f=fixture(t);f.tool('codex');
