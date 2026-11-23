@@ -1,4 +1,4 @@
-# J Harness 8.2.1 Windows 이동형 시작 안내
+# J Harness 8.2.2 Windows 이동형 시작 안내
 
 ## 설치하고 첫 작업 시작하기
 
@@ -10,7 +10,7 @@
 
 선택은 프로젝트에 저장됩니다. 이후에는 `.\JHarness.cmd quickstart`만 실행하세요. 사용 CLI를 바꾸려면 `select codex`, `select claude`, `select agy` 중 하나를 실행합니다. 이번에만 다른 CLI의 안내를 보려면 `quickstart --client agy`처럼 실행하세요.
 
-`.\JHarness.cmd doctor`에서 하네스 설치와 프로젝트 연결, `clientGuidance`의 지침 파일 상태를 확인합니다. Codex에서 `AGENTS.override.md`를 쓰는 프로젝트는 해당 파일의 지침이 우선합니다. 기존 지침은 그대로 보존되므로 하네스 연결도 필요한 경우 파일을 검토하세요. `modelApplication`은 실제 CLI 세션에서 따로 확인합니다. 로그인 화면이 뜨면 선택한 CLI에서 진행합니다. `environment plan --client codex`는 해당 CLI의 상세 환경 점검 결과를 JSON으로 보여줍니다.
+`.\JHarness.cmd doctor`에서 하네스 설치와 프로젝트 연결, `clientGuidance`의 지침 파일 상태를 확인합니다. Codex에서 `AGENTS.override.md`를 쓰는 프로젝트는 해당 파일의 지침이 우선합니다. 기존 지침은 그대로 보존되므로 하네스 연결도 필요한 경우 파일을 검토하세요. `modelApplication`은 실제 CLI 세션에서 따로 확인합니다. 로그인 화면이 뜨면 선택한 CLI에서 진행합니다. `environment inspect`와 `environment plan`은 저장한 CLI를 검사합니다. `--client codex`처럼 CLI를 지정하면 그 실행에만 적용합니다.
 
 ## 작업 중 확인할 명령
 
@@ -30,24 +30,26 @@ Ordinary local verification runs with the current user's OS permissions. Local e
 
 The canonical `project_mode` in `.ai/harness-state.json` and `.ai/harness-project.json` takes precedence over stack heuristics. Conflicting or invalid modes block workflow creation. An explicit `verification_scope` in the project binding selects included relative inputs and exclusions; unsafe paths, links, missing or empty inputs block verification. A changed source fingerprint invalidates previous PASS evidence before handoff and finish.
 
-## Alpha 3, 8.1.0 또는 8.2.0 프로젝트 업데이트
+## 기존 프로젝트 업데이트
 
-프로젝트의 CLI 세션을 닫고 진행 중인 작업을 마칩니다. 8.2.1 패키지를 별도 폴더에 푼 다음, 패키지 폴더에서 아래 명령을 실행합니다. 예시 경로를 업데이트할 프로젝트 폴더로 바꾸세요.
+프로젝트의 CLI 세션을 닫고 진행 중인 작업을 마칩니다. 8.2.2 패키지를 별도 폴더에 푼 다음, 패키지 폴더에서 아래 명령을 실행합니다. 예시 경로를 업데이트할 프로젝트 폴더로 바꾸세요.
 
 ```powershell
-.\Install-JHarnessLocal.ps1 -Action Plan -Upgrade -ProjectPath 'C:\Projects\MyProject'
-.\Install-JHarnessLocal.ps1 -Action Install -Upgrade -ApproveInstall -ProjectPath 'C:\Projects\MyProject'
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-JHarnessLocal.ps1 -Action Plan -Upgrade -ProjectPath 'C:\Projects\MyProject'
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-JHarnessLocal.ps1 -Action Install -Upgrade -ApproveInstall -ProjectPath 'C:\Projects\MyProject'
 ```
 
-설치기는 지원하는 Alpha 3, 8.1.0, 8.2.0의 배포 해시를 확인합니다. 첫 명령은 변경 계획을 보여줍니다. 관리 지침, 실행 파일 또는 이전 런타임에 충돌이 있으면 업데이트를 중단합니다. 설치기는 이전 런타임과 관리 파일을 `.jh-artifacts/j-harness-core/upgrades`에 백업한 뒤 새 `doctor`를 실행합니다. 실패하면 이전 버전으로 복구하고 검증합니다.
+설치기는 지원하는 Alpha 3, 8.1.0, 8.2.0, 8.2.1의 배포 해시를 확인합니다. 첫 명령은 변경 계획을 보여줍니다. 관리 지침, 실행 파일 또는 이전 런타임에 충돌이 있으면 업데이트를 중단합니다. 설치기는 이전 런타임과 관리 파일을 `.jh-artifacts/j-harness-core/upgrades`에 백업한 뒤 새 `doctor`를 실행합니다. 실패하면 이전 버전으로 복구하고 검증합니다.
 
-중단으로 `upgrade.lock`이 남으면 잠금 파일, 작업 기록과 백업을 보관하세요. 업데이트에 사용한 8.2.1 패키지와 같은 프로젝트 경로로 복구를 실행합니다.
+중단으로 `upgrade.lock`이 남으면 잠금 파일, 작업 기록과 백업을 보관하세요. 업데이트에 사용한 8.2.2 패키지와 같은 프로젝트 경로로 복구를 실행합니다.
 
 ```powershell
-.\Install-JHarnessLocal.ps1 -Action Recover -Upgrade -ApproveInstall -ProjectPath 'C:\Projects\MyProject'
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-JHarnessLocal.ps1 -Action Recover -Upgrade -ApproveInstall -ProjectPath 'C:\Projects\MyProject'
 ```
 
 복구는 기존 프로세스가 종료됐는지, 파일이 작업 기록과 일치하는지 확인합니다. 완료된 업데이트는 그대로 검증하고, 중단된 업데이트는 이전 런타임과 관리 파일을 복구합니다. 충돌이 나오면 복구 기록을 보관해 검토하세요.
+
+해당 릴리스의 GitHub 설치기 `Install-JHarnessFromGitHub.ps1`에도 같은 `-Action`과 `-Upgrade` 인수를 전달할 수 있습니다. GitHub 경로는 해시를 검증한 ZIP을 임시로 풀어 위 절차를 실행합니다. 업그레이드 계획은 ZIP을 내려받을 수 있지만 프로젝트 파일을 바꾸지 않습니다. 복구할 때는 업데이트에 사용한 버전의 설치기를 사용하세요.
 
 Run `JHarness.cmd doctor` and `JHarness.cmd progress` from the upgraded project. Project settings and historical workflow records remain available. An old verification appears as `STALE` when it was recorded against a different runtime, even when the product sources are byte-identical. Open a new coding session and rerun the project's verification before relying on fresh results.
 

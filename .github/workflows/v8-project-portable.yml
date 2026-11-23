@@ -80,7 +80,7 @@ jobs:
         with:
           name: portable-windows-candidate
           path: ${{ runner.temp }}/jh-portable-artifact
-      - name: Verify and install the downloaded ZIP, then check Alpha 3 upgrade
+      - name: Verify the downloaded ZIP, bootstrap installer and Alpha 3 upgrade
         shell: powershell
         env:
           PACKAGE_SHA256: ${{ needs.windows-package.outputs.sha256 }}
@@ -104,7 +104,7 @@ jobs:
           [IO.Compression.ZipFile]::ExtractToDirectory($candidateArchive,$candidate)
           [IO.Compression.ZipFile]::ExtractToDirectory($archive,$alpha3)
           # The published Alpha 3 installer uses long staging filenames under the test project.
-          & ./scripts/Test-JHarnessPortable.ps1 -PackageRoot $candidate -EvidenceRoot (Join-Path $env:RUNNER_TEMP 'jh-ev') -Alpha3PackageRoot $alpha3
+          & ./scripts/Test-JHarnessPortable.ps1 -PackageRoot $candidate -EvidenceRoot (Join-Path $env:RUNNER_TEMP 'jh-ev') -Alpha3PackageRoot $alpha3 -BootstrapScript ./scripts/Install-JHarnessFromGitHub.ps1 -PackageArchive $candidateArchive
           if($LASTEXITCODE -ne 0){throw 'PORTABLE_TEST_FAILED'}
       - name: Preserve actual test evidence
         if: always()

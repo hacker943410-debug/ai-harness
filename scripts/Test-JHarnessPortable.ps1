@@ -147,9 +147,11 @@ try {
     $firstSelection=Run 'first-project-select' (Launcher $firstProject 'select claude')
     $firstResume=Run 'first-project-quickstart-resume' (Launcher $firstProject 'quickstart')
     $firstDoctor=Run 'first-project-selection-doctor' (Launcher $firstProject 'doctor') | ConvertFrom-Json
+    $firstEnvironment=Run 'first-project-environment' (Launcher $firstProject 'environment plan') | ConvertFrom-Json
     Expect ($firstSelection.Contains('https://code.claude.com/docs/en/quickstart') -and
         $firstResume.Contains('https://code.claude.com/docs/en/quickstart') -and
-        $firstDoctor.clientSelection.state -eq 'SELECTED' -and $firstDoctor.clientSelection.client -eq 'claude') 'FIRST_PROJECT_SELECTED_CLI_NOT_RESTORED'
+        $firstDoctor.clientSelection.state -eq 'SELECTED' -and $firstDoctor.clientSelection.client -eq 'claude' -and
+        $firstEnvironment.selectedClient -eq 'claude') 'FIRST_PROJECT_SELECTED_CLI_NOT_RESTORED'
 
     $null=Run 'first-project-begin' (Launcher $firstProject ('begin '+(Quote '숫자 합계 프로그램을 만들고 실행하는 법을 알려줘')))
     $null=Run 'first-project-plan' (Launcher $firstProject ('advance plan --note '+(Quote '2와 3을 넣으면 5가 나오는지 실제로 테스트한다')))
@@ -185,9 +187,8 @@ try {
     Move-Item -LiteralPath $node -Destination ($node+'.missing')
     $missing=Run 'missing-bundled-node' (Launcher $relocated 'status') 1
     Expect ($missing -match 'BUNDLED_NODE_REQUIRED_NO_GLOBAL_FALLBACK') 'MISSING_NODE_FELL_BACK'
-    Move-Item -LiteralPath ($node+'.missing') -Destination $node
-    $binaryStream=[IO.File]::Open($node,[IO.FileMode]::Open,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)
-    try{$firstByte=$binaryStream.ReadByte();$binaryStream.Position=0;$binaryStream.WriteByte([byte]($firstByte -bxor 255))}finally{$binaryStream.Dispose()}
+    # Keep the genuine fixture binary aside and put different bytes at its original path.
+    Write-Utf8 $node 'Synthetic invalid executable for the bundled Node hash check.'
     $corruptNode=Run 'corrupt-bundled-node' (Launcher $relocated 'status') 1
     Expect ($corruptNode -match 'BUNDLED_NODE_HASH_MISMATCH_NO_FALLBACK') 'CORRUPT_NODE_NOT_BLOCKED_BEFORE_EXECUTION'
     $checks.Add('Corrupt Core, missing bundled Node and corrupt bundled Node blocked before execution with no fallback')
@@ -328,6 +329,22 @@ try {
         Expect ($wrongResult -match 'V8_PACKAGE_SHA256_MISMATCH_NO_FALLBACK' -and -not(Test-Path -LiteralPath $wrongProject)) 'WRONG_ZIP_ACCEPTED_OR_CREATED_PROJECT'
         $bootstrapResult='PASS_PINNED_OFFLINE_DEFAULT_BOOTSTRAP_NETWORK_NOT_RUN'
         $checks.Add('Default bootstrap installs pinned ZIP offline and refuses wrong ZIP hash before creating project')
+        if($Alpha3PackageRoot){
+            $bootstrapUpgrade='& '+(Quote $bootstrap)+' -ProjectPath '+(Quote $old)+' -PackagePath '+(Quote $archive)+' -Upgrade'
+            $beforeBootstrapUpgrade=Tree $old
+            $preview=Run 'bootstrap-upgrade-plan' ($bootstrapUpgrade+' -Action Plan') | ConvertFrom-Json
+            Expect ($preview.result -eq 'PLAN_ONLY_NOT_UPGRADED' -and $preview.previousProductVersion -eq '8.0.0-alpha.3' -and
+                (Tree $old) -ceq $beforeBootstrapUpgrade) 'BOOTSTRAP_UPGRADE_PLAN_MUTATED_OR_WRONG'
+            $updated=Run 'bootstrap-upgrade-apply' ($bootstrapUpgrade+' -Action Install -ApproveInstall') | ConvertFrom-Json
+            Expect ($updated.result -eq 'V8_PROJECT_UPGRADE_COMPLETE' -and $updated.productVersion -eq $packageManifest.distributionVersion) 'BOOTSTRAP_UPGRADE_FAILED'
+            $bootstrapBackup=Join-Path $old $updated.transaction
+            Move-Item -LiteralPath (Join-Path $bootstrapBackup 'receipt.json') -Destination (Join-Path $bootstrapBackup 'test-completed-receipt.json')
+            Write-Utf8 $upgradeLock (@{run=(Split-Path -Leaf $bootstrapBackup);pid=2147483647}|ConvertTo-Json -Compress)
+            $bootstrapRecover=Run 'bootstrap-upgrade-recover' ($bootstrapUpgrade+' -Action Recover -ApproveInstall') | ConvertFrom-Json
+            Expect ($bootstrapRecover.result -eq 'ALPHA3_RESTORED_VERIFIED' -and (Tree $oldRuntime) -ceq $oldPayload -and
+                (Get-FileHash -LiteralPath (Join-Path $old 'check.cjs')).Hash -ceq $productBefore) 'BOOTSTRAP_RECOVERY_DID_NOT_RESTORE_PREVIOUS_RUNTIME'
+            $checks.Add('Default bootstrap upgrades and recovers Alpha 3 through one pinned ZIP entry point')
+        }
     }
     Expect ((Get-FileHash -LiteralPath $sentinel -Algorithm SHA256).Hash -ceq $sentinelHash) 'GLOBAL_HOME_SENTINEL_CHANGED'
     foreach($name in $processEnvironment.Keys){Expect ([Environment]::GetEnvironmentVariable($name,'Process') -ceq $processEnvironment[$name]) ('PROCESS_ENV_CHANGED: '+$name)}

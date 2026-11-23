@@ -34,10 +34,11 @@ test('CLI alpha refuses to misrepresent OS security',()=>{
 test('default CLI pins portable v8 release and leaves profile bootstrap opt in',()=>{
  const s=read('scripts/Install-JHarnessFromGitHub.ps1');
  assert.match(s,/\[string\]\$Mode='Portable'/);
- assert.match(s,/\$productVersion='8\.2\.1'/);
- assert.match(s,/\$coreVersion='8\.2\.1'/);
- assert.match(s,/\$releaseTag='v8\.2\.1'/);
- assert.match(s,/\$assetName='J_Harness_v8\.2\.1_Windows_x64\.zip'/);
+ const version=read('J_HARNESS_VERSION').trim();
+ assert.ok(s.includes(`$productVersion='${version}'`));
+ assert.ok(s.includes(`$coreVersion='${version}'`));
+ assert.ok(s.includes(`$releaseTag='v${version}'`));
+ assert.ok(s.includes(`$assetName='J_Harness_v${version}_Windows_x64.zip'`));
  assert.match(s,/\$expectedZipSha='[a-f0-9]{64}'/);
  assert.match(s,/V8_PACKAGE_SHA256_MISMATCH_NO_FALLBACK/);
  assert.match(s,/Install-JHarnessLocal\.ps1/);
@@ -46,6 +47,10 @@ test('default CLI pins portable v8 release and leaves profile bootstrap opt in',
  assert.match(s,/systemNodeRequired=\$false/);
  assert.match(s,/systemGitRequired=\$false/);
  assert.doesNotMatch(s.replace(/^\s*#.*$/gm,''),/releases\/latest|Invoke-Expression|\biex\b|Set-ExecutionPolicy/i);
- assert.ok(s.indexOf("if($Action -eq 'Plan')")<s.indexOf('Invoke-WebRequest -Uri $assetUrl'));
- assert.ok(s.indexOf("if($Action -eq 'Install' -and -not $ApproveInstall)")<s.indexOf('Invoke-WebRequest -Uri $assetUrl'));
+ const download=s.indexOf('Invoke-WebRequest -Uri $assetUrl');
+ const plainPlan=s.indexOf("if($Action -eq 'Plan' -and -not $Upgrade)");
+ const confirmation=s.indexOf("if($Action -in @('Install','Recover') -and -not $ApproveInstall)");
+ assert.ok(plainPlan>=0&&plainPlan<download);
+ assert.ok(confirmation>=0&&confirmation<download);
+ assert.match(s,/if\(\$Upgrade\)\{\$arguments.Upgrade=\$true\}/);
 });

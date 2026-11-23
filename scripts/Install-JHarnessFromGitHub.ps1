@@ -1,9 +1,10 @@
 ﻿# Default Windows product installer: v8 portable, without a global Codex profile.
 [CmdletBinding()]
 param(
-  [ValidateSet('Plan','Install','Package')][string]$Action='Plan',
+  [ValidateSet('Plan','Install','Package','Recover')][string]$Action='Plan',
   [ValidateSet('Portable','Profile')][string]$Mode='Portable',
   [switch]$ApproveInstall,
+  [switch]$Upgrade,
   [string]$ProjectPath,
   [string]$PackagePath,
   [string]$Destination,
@@ -13,14 +14,15 @@ param(
 $ErrorActionPreference='Stop'
 $ProgressPreference='SilentlyContinue'
 # A pinned v8 product release is selected, never the legacy policy /releases/latest.
-$productVersion='8.2.1'
-$coreVersion='8.2.1'
-$releaseTag='v8.2.1'
-$assetName='J_Harness_v8.2.1_Windows_x64.zip'
-$expectedZipSha='7f52d3340bac888ce1606aa25c5ffc6383267ca85af2861c5fb86b7c73abbeaa'
+$productVersion='8.2.2'
+$coreVersion='8.2.2'
+$releaseTag='v8.2.2'
+$assetName='J_Harness_v8.2.2_Windows_x64.zip'
+$expectedZipSha='8070e9aa32cb60337bbbb6de2cf52bf09ccef1ca950d33a34b95d9a94f9891b4'
 $assetUrl='https://github.com/hacker943410-debug/ai-harness/releases/download/'+$releaseTag+'/'+$assetName
 if(-not $PSBoundParameters.ContainsKey('Mode') -and ($PSBoundParameters.ContainsKey('CodexHome') -or $PSBoundParameters.ContainsKey('ManagedRoot'))){$Mode='Profile'}
 if($Mode -eq 'Profile'){
+  if($Upgrade -or $Action -eq 'Recover'){throw 'PORTABLE_PROJECT_UPGRADE_REQUIRES_PORTABLE_MODE'}
   $legacy=Join-Path $PSScriptRoot 'Install-JHarnessProfileFromGitHub.ps1'
   if(-not(Test-Path -LiteralPath $legacy -PathType Leaf)){throw 'EXPLICIT_PROFILE_MODE_REQUIRES_SOURCE_CHECKOUT'}
   $forward=@{Action=$Action}
@@ -30,6 +32,9 @@ if($Mode -eq 'Profile'){
   return
 }
 if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or [Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString() -ne 'X64'){throw 'WINDOWS_X64_REQUIRED'}
+if($Action -eq 'Recover' -and -not $Upgrade){throw 'RECOVER_REQUIRES_UPGRADE_SWITCH'}
+if($Action -eq 'Package' -and $Upgrade){throw 'PACKAGE_ACTION_DOES_NOT_UPGRADE'}
+if($Upgrade -and -not $ProjectPath){throw 'PROJECT_PATH_REQUIRED_FOR_UPGRADE'}
 if(-not $ProjectPath){
   if(-not $env:LOCALAPPDATA){throw 'PROJECT_PATH_REQUIRED'}
   $ProjectPath=[IO.Path]::Combine($env:LOCALAPPDATA,'JHarness-Portable','workspace')
@@ -46,13 +51,15 @@ function Assert-Safe([string]$value){
   }
 }
 Assert-Safe $project
+if($Upgrade -and -not(Test-Path -LiteralPath $project -PathType Container)){throw 'EXISTING_PROJECT_DIRECTORY_REQUIRED_FOR_UPGRADE'}
 if($expectedZipSha -notmatch '^[a-f0-9]{64}$'){throw 'UNREVIEWED_V8_RELEASE_LOCK'}
 $plan=[ordered]@{product='J Harness';productVersion=$productVersion;coreVersion=$coreVersion;releaseTag=$releaseTag;mode='PROJECT_PORTABLE';action=$Action;project=$project;globalConnectionRequired=$false;codexRequired=$false;systemNodeRequired=$false;systemGitRequired=$false;systemPathChanged=$false;credentialsChanged=$false;supervisorEnforced=$false;fallback='NONE';assetUrl=$assetUrl;sha256=$expectedZipSha;result='PLAN_ONLY_NOT_INSTALLED'}
-if($Action -eq 'Plan'){$plan|ConvertTo-Json -Depth 6;return}
+if($Action -eq 'Plan' -and -not $Upgrade){$plan|ConvertTo-Json -Depth 6;return}
 if($Action -eq 'Package' -and -not $Destination){throw 'PACKAGE_DESTINATION_REQUIRED'}
-if($Action -eq 'Install' -and -not $ApproveInstall){
-  $typed=Read-Host ('Install J Harness v8 portable in '+$project+'? Type INSTALL')
-  if($typed -cne 'INSTALL'){$plan.result='CANCELLED_NO_DOWNLOAD';$plan|ConvertTo-Json -Depth 6;return}
+if($Action -in @('Install','Recover') -and -not $ApproveInstall){
+  $confirmation=if($Action -eq 'Recover'){'RECOVER'}elseif($Upgrade){'UPGRADE'}else{'INSTALL'}
+  $typed=Read-Host ($confirmation+' J Harness v8 portable in '+$project+'? Type '+$confirmation)
+  if($typed -cne $confirmation){$plan.result='CANCELLED_NO_DOWNLOAD';$plan|ConvertTo-Json -Depth 6;return}
 }
 $tempRoot=[IO.Path]::GetFullPath([IO.Path]::GetTempPath())
 $work=Join-Path $tempRoot ('JHarness-v8-download-'+[guid]::NewGuid().ToString('N'))
@@ -96,12 +103,25 @@ try{
     Copy-Item -LiteralPath $unpacked -Destination $dest -Recurse -ErrorAction Stop
     [ordered]@{result='V8_PORTABLE_PACKAGE_READY';productVersion=$productVersion;coreVersion=$coreVersion;destination=$dest;install=(Join-Path $dest 'Install-JHarness.cmd');globalConnectionRequired=$false;fallback='NONE'}|ConvertTo-Json -Depth 6
   }else{
+    $arguments=@{Action=$Action;ProjectPath=$project}
+    if($Upgrade){$arguments.Upgrade=$true}
+    if($Action -ne 'Plan'){$arguments.ApproveInstall=$true}
     $global:LASTEXITCODE=0
-    $observed=& $installer -Action Install -ApproveInstall -ProjectPath $project
+    $observed=& $installer @arguments
     $installExit=$LASTEXITCODE
     if($installExit -ne 0){throw 'V8_LOCAL_INSTALLATION_FAILED_INSPECT_RECOVERY'}
     $installed=($observed|Out-String)|ConvertFrom-Json
-    if($installed.result -ne 'V8_PROJECT_INSTALL_COMPLETE' -or $installed.coreVersion -ne $coreVersion -or $installed.productVersion -ne $productVersion -or $installed.effective -ne 'READY_LOCAL' -or $installed.globalConnectionRequired -ne $false){throw 'V8_INSTALLATION_RESULT_NOT_VERIFIED'}
+    if($Action -eq 'Recover'){
+      if($installed.result -notmatch '^(?:COMPLETED_UPGRADE_VERIFIED|[A-Z0-9_]+_(?:RESTORED_VERIFIED|PREPARATION_INTERRUPTED_ORIGINAL_VERIFIED))$' -or
+        -not $installed.transaction -or -not $installed.recoveredUtc){throw 'V8_RECOVERY_RESULT_NOT_VERIFIED'}
+    }else{
+      $expectedResults=if(-not $Upgrade){@('V8_PROJECT_INSTALL_COMPLETE')}elseif($Action -eq 'Plan'){
+        @('PLAN_ONLY_NOT_UPGRADED','ALREADY_CURRENT')
+      }else{@('V8_PROJECT_UPGRADE_COMPLETE','ALREADY_CURRENT')}
+      if($installed.result -notin $expectedResults -or $installed.coreVersion -ne $coreVersion -or $installed.productVersion -ne $productVersion -or
+        ($installed.result -ne 'PLAN_ONLY_NOT_UPGRADED' -and $installed.effective -ne 'READY_LOCAL') -or
+        (-not $Upgrade -and $installed.globalConnectionRequired -ne $false)){throw 'V8_INSTALLATION_RESULT_NOT_VERIFIED'}
+    }
     $installed|ConvertTo-Json -Depth 6
   }
 }catch{
