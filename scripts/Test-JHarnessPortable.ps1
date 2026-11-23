@@ -141,6 +141,9 @@ try {
     $firstInstall=Run 'first-project-install-cmd' $installCommand | ConvertFrom-Json
     Expect ($firstInstall.result -eq 'V8_PROJECT_INSTALL_COMPLETE' -and $firstInstall.next -eq '.\JHarness.cmd quickstart') 'FIRST_PROJECT_INSTALL_FAILED'
     $firstBefore=Tree $firstProject
+    $badge=Run 'first-project-verified-badge' (Launcher $firstProject 'badge')
+    Expect ($badge.Trim() -ceq ('[J Harness v'+$packageManifest.version+']') -and
+        (Tree $firstProject) -ceq $firstBefore) 'FIRST_PROJECT_BADGE_FAILED_OR_MUTATED'
     $firstQuickstart=Run 'first-project-quickstart' (Launcher $firstProject 'quickstart')
     Expect ($firstQuickstart.Contains('select codex') -and $firstQuickstart.Contains('select claude') -and
         $firstQuickstart.Contains('select agy') -and (Tree $firstProject) -ceq $firstBefore) 'FIRST_PROJECT_SELECTION_MENU_FAILED'
@@ -278,7 +281,10 @@ try {
         $expectedBinding=$expectedBinding.Replace($receipt.previousManifestSha256,$receipt.manifestSha256)
         Expect ([IO.File]::ReadAllText($oldBinding) -ceq $expectedBinding) 'UPGRADE_UNMANAGED_BINDING_BYTES_CHANGED'
         $newGuide=[IO.File]::ReadAllBytes($oldGuide)
-        $expectedGuide=[Text.Encoding]::UTF8.GetString($guideBytes).Replace('## J Harness Core 8.0.0-core-beta.1',('## J Harness Core '+$receipt.coreVersion))
+        $pattern='(?s)<!-- J-HARNESS-PORTABLE:START -->.*?<!-- J-HARNESS-PORTABLE:END -->'
+        $canonical=[regex]::Match([IO.File]::ReadAllText($guidance),$pattern)
+        Expect ($canonical.Success -and $canonical.Value.Contains('[J Harness v'+$receipt.coreVersion+']')) 'FRESH_BRIDGE_MISSING_BADGE'
+        $expectedGuide=[regex]::Replace([Text.Encoding]::UTF8.GetString($guideBytes),$pattern,[Text.RegularExpressions.MatchEvaluator]{param($m) $canonical.Value})
         Expect ([Text.Encoding]::UTF8.GetString($newGuide) -ceq $expectedGuide) 'UPGRADE_UNMANAGED_GUIDANCE_BYTES_CHANGED'
         Expect ((Get-FileHash -LiteralPath (Join-Path $artifactDir 'workflow.json')).Hash -ceq $stateHash -and
             (Get-FileHash -LiteralPath (Join-Path $artifactDir 'events.jsonl')).Hash -ceq $eventsHash -and

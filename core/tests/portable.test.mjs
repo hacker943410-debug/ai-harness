@@ -67,6 +67,9 @@ test('portable Core operates without global installation and refuses damaged evi
   const bin=path.join(temp,'cli bin');fs.mkdirSync(bin);
   fs.writeFileSync(path.join(bin,process.platform==='win32'?'claude.exe':'claude'),'DISCOVERY ONLY');
   const onboarding=args=>run(args,0,selected,installed,{...env,PATH:bin});
+  assert.equal(onboarding(['badge']).trim(),'[J Harness v'+version+']');
+  assert.match(after.toString('utf8'),/once per user turn/);
+  assert.ok(after.toString('utf8').includes('[J Harness v'+version+' · 지침 로드]'));
   const clientState=()=>JSON.parse(onboarding(['doctor'])).clientSelection;
   const preference=path.join(selected,'.jh-artifacts/j-harness-core/client-selection.json');
   const choiceMenu=onboarding(['quickstart']);
@@ -130,6 +133,7 @@ test('portable Core operates without global installation and refuses damaged evi
   assert.equal(doctor().agy.additionalGeminiGuidance,'PRESENT');
   fs.unlinkSync(agents);
   assert.equal(doctor().agents,'MISSING');
+  assert.match(run(['badge'],1,selected,installed),/PROJECT_AGENTS_GUIDANCE_REQUIRES_REVIEW/);
   assert.match(connect(1),/PROJECT_AGENTS_GUIDANCE_REQUIRES_REVIEW/);
   fs.writeFileSync(agents,after);
   fs.appendFileSync(agents,'\nUser-owned addition after setup.\n');
@@ -185,6 +189,7 @@ fs.writeFileSync=function(file,...args){
   assert.equal(plan.selectedClient,'claude');
   assert.equal(plan.state,'SETUP_REQUIRED');
   assert.match(run(['quickstart']),/JHarness\.cmd setup/);
+  assert.match(run(['badge'],1),/PROJECT_AGENTS_GUIDANCE_REQUIRES_REVIEW/);
   assert.match(run(['select','codex'],1),/PROJECT_SETUP_REQUIRED/);
   assert.equal(Object.hasOwn(json(['doctor']),'supervisor'),false);
   assert.ok(plan.beginnerSteps.some(step=>step.includes('environment inspect --client claude')));

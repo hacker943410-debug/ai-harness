@@ -58,7 +58,18 @@ const v821 = {
   },
   recoveryLabel: 'V8_2_1',
 };
-const previousBuild = pin => [alpha,v81,v82,v821].find(build => build.manifest === pin);
+const v822 = {
+  distribution: '8.2.2',
+  core: '8.2.2',
+  manifest: 'e44289503ce11116bfb547f2024dddfc5dcfd346470c99b99efd4257e85e3800',
+  portableGuide: '2c1a7e0e5220b765f58e4b30a5020bd2d4175204d421d95c876bab0e7ada08f9',
+  launcherHashes: {
+    ...v821.launcherHashes,
+    'JHarness-README.md': '5c75c4a3951436d99a03a7bf7d07f73a5b0e8d9d9d511188237db264f938f326',
+  },
+  recoveryLabel: 'V8_2_2',
+};
+const previousBuild = pin => [alpha,v81,v82,v821,v822].find(build => build.manifest === pin);
 const manifestHash = runtime => sha256(fs.readFileSync(contained(runtime, 'manifest.json')));
 const decode = bytes => new TextDecoder('utf-8', {fatal:true,ignoreBOM:true}).decode(bytes);
 const read = file => JSON.parse(decode(fs.readFileSync(file)).replace(/^\uFEFF/, ''));
@@ -143,7 +154,7 @@ function inspectUpgrade(project, target, targetPin) {
     return {result:{...result,result:'ALREADY_CURRENT',effective:'READY_LOCAL'},edits:[]};
   }
   const priorBuild = previousBuild(priorPin);
-  if (!priorBuild) throw Error('ONLY_PINNED_ALPHA3_8_1_0_8_2_0_OR_8_2_1_PORTABLE_UPGRADE_SUPPORTED');
+  if (!priorBuild) throw Error('ONLY_PINNED_ALPHA3_8_1_0_8_2_0_8_2_1_OR_8_2_2_PORTABLE_UPGRADE_SUPPORTED');
   const prior = validateRuntime(runtime,project);
   if (prior.version !== priorBuild.core || prior.distributionVersion !== priorBuild.distribution || prior.projectBinding !== 'BOUND_VERIFIED') {
     throw Error('BOUND_'+priorBuild.recoveryLabel+'_REQUIRED');

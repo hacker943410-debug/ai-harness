@@ -1,4 +1,4 @@
-# J Harness 8.2.2 Windows 이동형 시작 안내
+# J Harness 8.2.3 Windows 이동형 시작 안내
 
 ## 설치하고 첫 작업 시작하기
 
@@ -9,6 +9,8 @@
 5. 같은 프로젝트 폴더에서 선택한 CLI를 시작하고, `quickstart`에 나온 첫 요청 예시를 실제 만들고 싶은 프로그램으로 바꿔 입력합니다. 하네스가 프로젝트 지침을 읽고 필요한 도구, 첫 기능, 테스트와 실행법을 안내하도록 요청합니다.
 
 선택은 프로젝트에 저장됩니다. 이후에는 `.\JHarness.cmd quickstart`만 실행하세요. 사용 CLI를 바꾸려면 `select codex`, `select claude`, `select agy` 중 하나를 실행합니다. 이번에만 다른 CLI의 안내를 보려면 `quickstart --client agy`처럼 실행하세요.
+
+새 AI 세션은 프로젝트 지침에 따라 대화 차례마다 `[J Harness v8.2.3]`을 한 번 표시합니다. 첫 차례에는 AI가 `badge`로 설치된 런타임과 프로젝트 연결을 읽기 전용으로 확인한 뒤 표시합니다. 확인 도구를 사용할 수 없으면 `[J Harness v8.2.3 · 지침 로드]`를 표시합니다. JSON 등 고정된 출력 형식에서는 별도의 진행 메시지를 지원할 때 표시합니다.
 
 `.\JHarness.cmd doctor`에서 하네스 설치와 프로젝트 연결, `clientGuidance`의 지침 파일 상태를 확인합니다. Codex에서 `AGENTS.override.md`를 쓰는 프로젝트는 해당 파일의 지침이 우선합니다. 기존 지침은 그대로 보존되므로 하네스 연결도 필요한 경우 파일을 검토하세요. `modelApplication`은 실제 CLI 세션에서 따로 확인합니다. 로그인 화면이 뜨면 선택한 CLI에서 진행합니다. `environment inspect`와 `environment plan`은 저장한 CLI를 검사합니다. `--client codex`처럼 CLI를 지정하면 그 실행에만 적용합니다.
 
@@ -32,16 +34,16 @@ The canonical `project_mode` in `.ai/harness-state.json` and `.ai/harness-projec
 
 ## 기존 프로젝트 업데이트
 
-프로젝트의 CLI 세션을 닫고 진행 중인 작업을 마칩니다. 8.2.2 패키지를 별도 폴더에 푼 다음, 패키지 폴더에서 아래 명령을 실행합니다. 예시 경로를 업데이트할 프로젝트 폴더로 바꾸세요.
+프로젝트의 CLI 세션을 닫고 진행 중인 작업을 마칩니다. 8.2.3 패키지를 별도 폴더에 푼 다음, 패키지 폴더에서 아래 명령을 실행합니다. 예시 경로를 업데이트할 프로젝트 폴더로 바꾸세요.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-JHarnessLocal.ps1 -Action Plan -Upgrade -ProjectPath 'C:\Projects\MyProject'
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-JHarnessLocal.ps1 -Action Install -Upgrade -ApproveInstall -ProjectPath 'C:\Projects\MyProject'
 ```
 
-설치기는 지원하는 Alpha 3, 8.1.0, 8.2.0, 8.2.1의 배포 해시를 확인합니다. 첫 명령은 변경 계획을 보여줍니다. 관리 지침, 실행 파일 또는 이전 런타임에 충돌이 있으면 업데이트를 중단합니다. 설치기는 이전 런타임과 관리 파일을 `.jh-artifacts/j-harness-core/upgrades`에 백업한 뒤 새 `doctor`를 실행합니다. 실패하면 이전 버전으로 복구하고 검증합니다.
+설치기는 지원하는 Alpha 3, 8.1.0, 8.2.0, 8.2.1, 8.2.2의 배포 해시를 확인합니다. 첫 명령은 변경 계획을 보여줍니다. 관리 지침, 실행 파일 또는 이전 런타임에 충돌이 있으면 업데이트를 중단합니다. 설치기는 이전 런타임과 관리 파일을 `.jh-artifacts/j-harness-core/upgrades`에 백업한 뒤 새 `doctor`를 실행합니다. 실패하면 이전 버전으로 복구하고 검증합니다.
 
-중단으로 `upgrade.lock`이 남으면 잠금 파일, 작업 기록과 백업을 보관하세요. 업데이트에 사용한 8.2.2 패키지와 같은 프로젝트 경로로 복구를 실행합니다.
+중단으로 `upgrade.lock`이 남으면 잠금 파일, 작업 기록과 백업을 보관하세요. 업데이트에 사용한 8.2.3 패키지와 같은 프로젝트 경로로 복구를 실행합니다.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-JHarnessLocal.ps1 -Action Recover -Upgrade -ApproveInstall -ProjectPath 'C:\Projects\MyProject'

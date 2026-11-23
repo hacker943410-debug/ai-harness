@@ -21,6 +21,11 @@ try{
  if(argv.length===1&&argv[0]==='--help'&&commandArgs.length===0&&Object.hasOwn(workflowHelp,cmd))print(workflowHelp[cmd]);
  else if(cmd==='install')print(install(h));
  else if(cmd==='status')print(status(h));
+ else if(cmd==='badge'&&portableContext()){
+  if(argv.length||commandArgs.length)throw Error('USAGE: badge');
+  if(projectGuidance(project,portableContext()).agents!=='MANAGED_BLOCK_PRESENT')throw Error('PROJECT_AGENTS_GUIDANCE_REQUIRES_REVIEW');
+  print('[J Harness v'+version+']');
+ }
  else if(cmd==='doctor'&&portableContext()){
   const boundary=executionBoundary(project);
   print({...status(h),runtimeIntegrity:'VERIFIED',cli:{required:false},globalHomeRequired:false,
