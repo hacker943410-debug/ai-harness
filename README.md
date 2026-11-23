@@ -1,6 +1,6 @@
-# J Harness — Windows v8.2.1 / policy provenance v7.0.0
+# J Harness — Windows v8.2.2 / policy provenance v7.0.0
 
-**기본 설치는 [v8.2.1 Windows 이동형 배포](https://github.com/hacker943410-debug/ai-harness/releases/tag/v8.2.1)입니다.** [설치·전환·검증 안내](docs/releases/v8.2.1.md). 실제 Core는 `8.2.1`, 이동형 어댑터는 `1.0.0`입니다. 제품 버전은 `J_HARNESS_VERSION`에서 확인하고, `HARNESS_VERSION`은 26개 공통 정책의 출처 버전 `7.0.0`을 유지합니다.
+**기본 설치는 [v8.2.2 Windows 이동형 배포](https://github.com/hacker943410-debug/ai-harness/releases/tag/v8.2.2)입니다.** [설치·업데이트·검증 안내](docs/releases/v8.2.2.md). 실제 Core는 `8.2.2`, 이동형 어댑터는 `1.0.0`입니다. 제품 버전은 `J_HARNESS_VERSION`에서 확인하고, `HARNESS_VERSION`은 26개 공통 정책의 출처 버전 `7.0.0`을 유지합니다.
 
 새 PC에는 Windows x64와 PowerShell 5.1 이상이 필요합니다. ZIP에 Node 22.23.5와 Core·정책·Skills가 들어 있어 시스템 Node·Git·글로벌 프로필 없이 설치할 수 있습니다. 다운로드 후 하네스의 로컬 실행에는 네트워크가 필요하지 않습니다. 모델 서비스·문서 도구에는 각 도구의 이용 조건이 적용됩니다.
 
@@ -12,15 +12,15 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\JHarness-Install.ps1 -
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\JHarness-Install.ps1 -Action Install -ApproveInstall -ProjectPath 'C:\Projects\MyProject'
 ```
 
-인수를 생략하면 `Plan`으로 확인합니다. 설치 승인은 `-ApproveInstall`로 전달합니다. 설치기는 `v8.2.1` ZIP과 고정 SHA-256을 사용하며 다운로드·무결성 오류가 발생하면 중단합니다. 기존 프로젝트를 업데이트할 때는 [ZIP 업데이트 안내](docs/releases/v8.2.1.md#설치하고-첫-작업-시작하기)를 따르세요.
+인수를 생략하면 설치 계획을 확인합니다. 기존 프로젝트는 같은 설치기에 `-Action Plan -Upgrade -ProjectPath`로 경로를 전달해 업데이트 계획을 확인하세요. 적용과 복구 명령은 [기존 프로젝트 업데이트 안내](docs/releases/v8.2.2.md#기존-프로젝트-업데이트)에 있습니다. 설치기는 `v8.2.2` ZIP의 고정 SHA-256을 확인합니다.
 
 프로젝트의 `.agents/j-harness`에 실행 파일을 두고 루트 `JHarness.cmd status`로 `READY_LOCAL`을 확인합니다. 기존 사용자 지침·인증·PATH와 프로젝트 기록을 보존합니다. 기존 관리 지침이나 바인딩이 충돌하면 강제 덮어쓰기 없이 검토해야 합니다. Alpha2의 프로필 설치가 명시적으로 필요한 경우에만 `-Mode Profile`을 사용하며 [기존 안내](docs/releases/v8.0.0-alpha.2.md)를 따릅니다. v7·Alpha2 태그와 첨부파일은 불변으로 보존합니다.
 
 `READY_LOCAL`은 로컬 런타임 준비 상태입니다. 발행자 서명·OS 보안 강제·실제 모델 행동·다른 물리 PC·운영 배포를 증명하지 않습니다. 실제 명령 결과와 배포 검증 기록은 릴리스 자료로 제공합니다. 회사 Word 스킬은 유지하지만 개인 원본·로고·프로필은 공개 배포하지 않습니다.
 
-## 8.2.1 변경 사항
+## 8.2.2 변경 사항
 
-코딩을 처음 시작하는 사용자도 J Harness를 일반 사용자 폴더에 설치하고, 사용 중인 코딩 CLI 하나로 환경 설정부터 구현·테스트·실행까지 이어갈 수 있습니다. 8.2.1에서 `.\JHarness.cmd quickstart`를 실행하면 사용할 AI 선택이 첫 단계로 표시됩니다. [Alpha 3부터의 변경 이력](CHANGELOG.md)과 [8.2.1 설치·검증 안내](docs/releases/v8.2.1.md)를 참고하세요.
+설치 후 `.\JHarness.cmd quickstart`에서 사용할 AI CLI를 하나 고릅니다. `environment inspect`와 `environment plan`은 그 선택을 기본으로 사용합니다. 공개 설치기에서 기존 프로젝트의 업데이트 계획, 적용과 중단 후 복구를 이어서 실행할 수 있습니다. [Alpha 3부터의 변경 이력](CHANGELOG.md)
 
 일반 배포 검증은 새 설치, 환경 안내, 첫 프로젝트의 실제 실행·테스트, 기존 프로젝트 보존, 업데이트와 복구를 확인합니다. 새 CLI 세션과 다른 PC의 동작은 해당 환경에서 확인합니다. Windows Supervisor 서비스와 보호된 감사 저장소는 별도 실험이며 이동형 설치 및 일반 배포의 선행 조건에서 제외합니다.
 

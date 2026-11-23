@@ -5,6 +5,8 @@
 - `environment inspect`와 `environment plan`이 프로젝트에 저장한 AI CLI를 기본으로 점검합니다. `--client`는 해당 명령에만 적용됩니다.
 - GitHub 설치기에서 기존 프로젝트에 대한 업데이트 계획, 적용, 복구를 지원합니다. `8.2.1`에서의 전환을 추가하고, ZIP 안의 안내서에 Windows PowerShell에서 바로 실행할 수 있는 업데이트·복구 명령을 적었습니다.
 
+[8.2.2 설치·업데이트 안내와 검증 범위](docs/releases/v8.2.2.md)
+
 ## J Harness 8.2.1
 
 - 새 설치 후 첫 `quickstart`에서 Codex, Claude Code, AGY 중 사용할 CLI를 고릅니다. 선택은 프로젝트에 저장하고, 이후에는 해당 CLI의 설정 및 첫 요청을 안내합니다.
