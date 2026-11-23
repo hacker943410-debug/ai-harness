@@ -187,9 +187,8 @@ try {
     Move-Item -LiteralPath $node -Destination ($node+'.missing')
     $missing=Run 'missing-bundled-node' (Launcher $relocated 'status') 1
     Expect ($missing -match 'BUNDLED_NODE_REQUIRED_NO_GLOBAL_FALLBACK') 'MISSING_NODE_FELL_BACK'
-    Move-Item -LiteralPath ($node+'.missing') -Destination $node
-    $binaryStream=[IO.File]::Open($node,[IO.FileMode]::Open,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)
-    try{$firstByte=$binaryStream.ReadByte();$binaryStream.Position=0;$binaryStream.WriteByte([byte]($firstByte -bxor 255))}finally{$binaryStream.Dispose()}
+    # Keep the genuine fixture binary aside and put different bytes at its original path.
+    Write-Utf8 $node 'Synthetic invalid executable for the bundled Node hash check.'
     $corruptNode=Run 'corrupt-bundled-node' (Launcher $relocated 'status') 1
     Expect ($corruptNode -match 'BUNDLED_NODE_HASH_MISMATCH_NO_FALLBACK') 'CORRUPT_NODE_NOT_BLOCKED_BEFORE_EXECUTION'
     $checks.Add('Corrupt Core, missing bundled Node and corrupt bundled Node blocked before execution with no fallback')
