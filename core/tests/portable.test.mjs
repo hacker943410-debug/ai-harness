@@ -85,9 +85,13 @@ test('portable Core operates without global installation and refuses damaged evi
   fs.writeFileSync(path.join(bin,process.platform==='win32'?'codex.exe':'codex'),'DISCOVERY ONLY');
   assert.match(onboarding(['quickstart']),/claude --version/);
   assert.match(onboarding(['quickstart','--client','codex']),/codex --version/);
+  assert.equal(JSON.parse(onboarding(['environment','inspect'])).selectedClient,'claude');
+  assert.equal(JSON.parse(onboarding(['environment','plan'])).selectedClient,'claude');
+  assert.equal(JSON.parse(onboarding(['environment','inspect','--client','codex'])).selectedClient,'codex');
   assert.deepEqual(clientState(),{state:'SELECTED',client:'claude'});
   assert.match(onboarding(['select','agy']),/https:\/\/antigravity\.google/);
   assert.match(onboarding(['quickstart']),/https:\/\/antigravity\.google/);
+  assert.equal(JSON.parse(run(['environment','inspect'],3,selected,installed,{...env,PATH:bin})).selectedClient,'agy');
   assert.deepEqual(clientState(),{state:'SELECTED',client:'agy'});
   assert.match(run(['select','unknown'],1,selected,installed),/UNKNOWN_CLIENT/);
   assert.deepEqual(clientState(),{state:'SELECTED',client:'agy'});

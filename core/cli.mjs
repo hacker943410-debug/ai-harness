@@ -30,9 +30,11 @@ try{
  }
  else if(cmd==='doctor'){const observed=status(h);const located=resolveCodex();print({...observed,cli:{installed:!!located,version:observed.codexVersion??null,versionSource:'CACHED_AT_INSTALL_NOT_LIVE_EXECUTION',execution:located},environmentHome:home(),profileMismatch:home()!==h,projectHasAgents:fs.existsSync(path.join(project,'AGENTS.md')),projectHasOverride:fs.existsSync(path.join(project,'AGENTS.override.md')),notes:['Global instructions apply to new Codex sessions. Project guidance can override them.','No config.toml, authentication, MCP registration, service, or OS account changes are needed.','A linked file alone is not proof of model behavior.']});}
  else if(cmd==='environment'){
-  const mode=argv.shift()||'inspect',client=option('client','codex'),profile=option('profile','general');
+  const mode=argv.shift()||'inspect',client=option('client'),profile=option('profile','general');
   if(!['inspect','plan'].includes(mode)||argv.length||commandArgs.length)throw Error('ENVIRONMENT_READONLY_INSPECT_OR_PLAN_ONLY');
-  const examined=inspectEnvironment({client,profile});
+  const context=portableContext();
+  const selected=client??(context?clientSelection(context).client:null)??'codex';
+  const examined=inspectEnvironment({client:selected,profile});
   print(mode==='plan'?planEnvironment(examined):examined);
   if(mode==='inspect'&&examined.blocked.length)process.exitCode=3;
  }
